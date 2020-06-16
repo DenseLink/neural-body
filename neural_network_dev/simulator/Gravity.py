@@ -1,5 +1,8 @@
-import math
+'''
+Simulator originally frim
+'''
 
+import math
 import random
 import matplotlib.pyplot as plot
 from mpl_toolkits.mplot3d import Axes3D
@@ -17,6 +20,11 @@ class body:
         self.velocity = velocity
         self.name = name
 
+
+'''
+Looks like this is the main function to calculate the acceleration of a single body
+given the location of all current bodies.
+'''
 def calculate_single_body_acceleration(bodies, body_index):
     G_const = 6.67408e-11 #m3 kg-1 s-2
     acceleration = point(0,0,0)
@@ -32,6 +40,11 @@ def calculate_single_body_acceleration(bodies, body_index):
 
     return acceleration
 
+
+'''
+Calculates the velocity of an object at a.... point in time?  
+Is this guy just estimating an acceleration integration with multiplying by time step?
+'''
 def compute_velocity(bodies, time_step = 1):
     for body_index, target_body in enumerate(bodies):
         acceleration = calculate_single_body_acceleration(bodies, body_index)
@@ -112,5 +125,6 @@ if __name__ == "__main__":
         body( location = venus["location"], mass = venus["mass"], velocity = venus["velocity"], name = "venus"),
         ]
     
+    # time_step -> The physical unit of time to calculate the displacement.   Velocity * Time Step
     motions = run_simulation(bodies, time_step = 100, number_of_steps = 80000, report_freq = 1000)
     plot_output(motions, outfile = 'orbits.png')
