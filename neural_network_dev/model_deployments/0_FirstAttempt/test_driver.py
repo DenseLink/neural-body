@@ -32,24 +32,24 @@ def main():
     # Randomly select row to make prediction with and make numpy
     # arrays for input vector and actual simulation result.
     row_num = 445
-    data_row = complete_motion_df.iloc[445]
+    pred_row_num = row_num + 1
+    data_row = complete_motion_df.iloc[row_num]
+    pred_row = complete_motion_df.iloc[pred_row_num]
     # Use last 3 columns of data row for keeping track of the simulation position
     # of the planet being predicted.
-    model_pos = data_row.iloc[-3:].values
+    # Grabbing target from prediction since we are using a predictive NN.
+    model_pos = pred_row.iloc[-3:].values
     # Create numpy array as input vector to model.
     input_data = data_row.iloc[0:-3].values
     # Reshape the numpy arrays for the input_data to an array of columns
     # rather than just an array.
     input_data = np.reshape(input_data, (-1, len(input_data)))
     # Create object to run predictions using the model specified by the path.
-    network_location = "NN-Deploy-V1.01_2-layer_selu_lecun-normal_mae_Adam_lr-1e-6_bs-128_epoch-3500.h5"
+    network_location = "Predict-NN-Deploy-V1.02_2-layer_relu_he-normal_msle_Adam_lr-1e-6_bs-128_epoch-3500.h5"
     nn = NeuralNet(network_location, "Pluto")
+
     # Pass input_data to model to make a prediction.
     pred_pos = nn.make_prediction(input_data)
-
-    #Try just straight loading the model and making predictions.
-    #model = tf.keras.models.load_model(network_location)
-    #pred_pos = model.predict(input_data)
 
     # Print model results and predicted results.
     # Calculate MAE and accuracy.
