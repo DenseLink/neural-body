@@ -4,6 +4,8 @@ more data from it.
 
 """
 
+# COMMENTED OUT CODE FOR PREDICTION MAKING SO SIMULATION ONLY
+
 # Imports
 import sys
 from BenrulesRealTimeSim import BenrulesRealTimeSim
@@ -16,7 +18,7 @@ def main():
     time_step = 100
     # Total number of time steps performed by the simulation.
     # Total length of simulation = time_step * number_of_steps.
-    number_of_steps = 100
+    number_of_steps = 500
 
     # Create simulator object
     simulation = BenrulesRealTimeSim(time_step=time_step,
@@ -28,16 +30,16 @@ def main():
     while curr_time_step < number_of_steps:
         curr_time_step += 1
         # Get next state of the simulation.
-        current_positions, predicted_position = simulation.get_next_sim_state()
-
+        # current_positions, predicted_position = simulation.get_next_sim_state()
+        current_positions = simulation.get_next_sim_state()
         # Output the current position of all bodies
         print("-----------------------------------------------------------------")
         for key, coordinates in current_positions.items():
             print("Name: {} / Coordinates: {}".format(key, coordinates))
         # Print predicted position
-        key = list(predicted_position.keys())[0]
-        print("Name: {} / Coordinates: {}".format(key,
-                                                  predicted_position.get(key)))
+        # key = list(predicted_position.keys())[0]
+        # print("Name: {} / Coordinates: {}".format(key,
+        #                                           predicted_position.get(key)))
         print("-----------------------------------------------------------------")
     return None
 
