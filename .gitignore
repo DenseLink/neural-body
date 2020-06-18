@@ -1,0 +1,15 @@
+# Don't track content of these folders
+# Ignore pycache and pycharm config files for demo-simualtor.
+neural_network_dev/simulator/0_benrules-realtime/.idea
+neural_network_dev/simulator/0_benrules-realtime/__pycache__
+
+
+# Compiled source #
+###################
+
+
+# Packages #
+############
+# it's better to unpack these files and commit the raw source
+# git has its own built in compression methods
+
