@@ -11,7 +11,7 @@ in a simulation.
 import math
 import pandas as pd
 import numpy as np
-# from NNModelLoader import NeuralNet
+from NNModelLoader import NeuralNet
 
 
 class BenrulesRealTimeSim:
@@ -58,7 +58,7 @@ class BenrulesRealTimeSim:
             history_columns.append(current_body.name + "_z")
         # Create dataframe with above column names for tracking history.
         initial_df = pd.DataFrame(columns=history_columns)
-        # Return the empty stucture of the dataframe.
+        # Return the empty structure of the dataframe.
         return initial_df
 
     def __init__(self, time_step=100, planet_predicting='pluto', nn_path=''):
@@ -87,8 +87,8 @@ class BenrulesRealTimeSim:
         # Amount of time that has passed in a single time step (I think in seconds)
         self._time_step = time_step
         # Create neural network object that lets us run neural network predictions as well.
-        # self._nn = NeuralNet(model_path=nn_path,
-        #                      planet_predicting=planet_predicting)
+        self._nn = NeuralNet(model_path=nn_path,
+                             planet_predicting=planet_predicting)
         # Add current system state to the history tracking.
         coordinate_list = []
         for target_body in self._bodies:
@@ -162,9 +162,8 @@ class BenrulesRealTimeSim:
         # Strangely, its actually faster to append to a normal python list than a
         # numpy array, so better to aggregate with list then convert to numpy array.
         # Get position data from last point in simulation.  Use as input vector to nn.
-        #input_vector = np.array(coordinate_list[0:-3]).reshape(1, -1)
-        # input_vector = self._body_locations_hist.iloc[len(self._body_locations_hist)-1, 0:-3].values.reshape(1, -1)
-        # pred_pos = self._nn.make_prediction(input_vector)
+        input_vector = self._body_locations_hist.iloc[len(self._body_locations_hist)-1, 0:-3].values.reshape(1, -1)
+        pred_pos = self._nn.make_prediction(input_vector)
 
         # Compute the next time step and update positions of all bodies in self_bodies.
         self._compute_gravity_step()
@@ -185,8 +184,8 @@ class BenrulesRealTimeSim:
 
         # Return dictionary with planet name as key and a list with each planet name
         # containing the coordinates
-        # return simulation_positions, pred_pos
-        return simulation_positions
+        return simulation_positions, pred_pos
+        # return simulation_positions
 
     @property
     def body_locations_hist(self):

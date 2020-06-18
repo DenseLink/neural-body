@@ -23,23 +23,24 @@ def main():
     # Create simulator object
     simulation = BenrulesRealTimeSim(time_step=time_step,
                                      planet_predicting='pluto',
-                                     nn_path="Predict-NN-Deploy-V1.02_2-layer_relu_he-normal_msle_Adam_lr-1e-6_bs-128_epoch-3500.h5")
+                                     nn_path="Predict-NN-Deploy-V1.02-LargeDataset_2-layer_selu_lecun-normal_mae_Adam_lr-1e-6_bs-128_epoch-250.h5")
 
     # Run simulation
     curr_time_step = 0
     while curr_time_step < number_of_steps:
         curr_time_step += 1
         # Get next state of the simulation.
-        # current_positions, predicted_position = simulation.get_next_sim_state()
-        current_positions = simulation.get_next_sim_state()
+        current_positions, predicted_position = simulation.get_next_sim_state()
+        #current_positions = simulation.get_next_sim_state()
         # Output the current position of all bodies
         print("-----------------------------------------------------------------")
         for key, coordinates in current_positions.items():
             print("Name: {} / Coordinates: {}".format(key, coordinates))
         # Print predicted position
-        # key = list(predicted_position.keys())[0]
-        # print("Name: {} / Coordinates: {}".format(key,
-        #                                           predicted_position.get(key)))
+        key = list(predicted_position.keys())[0]
+        print("NN Predicted Objects")
+        print("Name: {} / Coordinates: {}".format(key,
+                                                  predicted_position.get(key)))
         print("-----------------------------------------------------------------")
     return None
 
