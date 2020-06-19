@@ -1,11 +1,20 @@
-"""
-This module contains the real time simulator class that
-takes a set of bodies and calculates their next state / frame / time step
-in a simulation.
+"""Real-Time basic simulator for planetary motions with neural network
+inference for prediction of pluto's position.
 
+This module contains the BenrulesRealTimeSim class, which creates a real time
+simulator of the sun, planets, and pluto.  The non-real-time version was
+forked from GitHub user benrules2 at the below repo:
+https://gist.github.com/benrules2/220d56ea6fe9a85a4d762128b11adfba
+The simulator originally would simulate a fixed number of time steps and
+then output a record of the past simulation.  The code was repackaged into a
+class and methods added to allow querying and advancing of the simulator
+in real-time at a fixed time step.
+Further additions were made to then integrate a class for loading a neural
+network (NeuralNet) that would load a Tensorflow model, take a vector
+containing all other planetary positions (X, Y, Z) and output the predicted
+position of Pluto in the next time step.
 """
 
-# COMMENTED OUT CODE FOR PREDICTION MAKING SO SIMULATION ONLY
 
 # Imports
 import math
@@ -15,19 +24,43 @@ from NNModelLoader import NeuralNet
 
 
 class BenrulesRealTimeSim:
-    # Sub classes for simulation data types
-    class _point:
+    """
+
+    """
+    # Nested Classes
+    class _Point:
         """
         Class to represent a 3D point in space in a location list.
+
+        The class can be used to represent a fixed point in 3D space or the
+        magnitude and direction of a velocity or acceleration vector in 3D
+        space.
+
+        :param x: x position of object in simulation space relative to sun at
+        time step 0.
+        :param y: y position of object in simulation space relative to sun at
+        time step 0.
+        :param z: z position of object in simulation space relative to sun at
+        time step 0.
         """
         def __init__(self, x, y, z):
             self.x = x
             self.y = y
             self.z = z
 
-    class _body:
+    class _Body:
         """
         Class to represent physical attributes of a body.
+
+        This class stores the location (from the point class), mass, velocity,
+        and name associated with a body in simulation space.
+
+        :param location: 3D location of body in simulation space represented by
+        the _Point class.
+        :param mass: Mass in kg of the body.
+        :param velocity: Initial velocity magnitude and direction of the body
+        at time step 0 in simulation space.  Represented by the _Point class.
+        :param name: Name of the body being stored.
         """
         def __init__(self, location, mass, velocity, name=""):
             self.location = location
@@ -36,20 +69,52 @@ class BenrulesRealTimeSim:
             self.name = name
 
     # Class Variables
-    # Planet data (location (m), mass (kg), velocity (m/s)
-    sun = {"location": _point(0, 0, 0), "mass": 2e30, "velocity": _point(0, 0, 0)}
-    mercury = {"location": _point(0, 5.7e10, 0), "mass": 3.285e23, "velocity": _point(47000, 0, 0)}
-    venus = {"location": _point(0, 1.1e11, 0), "mass": 4.8e24, "velocity": _point(35000, 0, 0)}
-    earth = {"location": _point(0, 1.5e11, 0), "mass": 6e24, "velocity": _point(30000, 0, 0)}
-    mars = {"location": _point(0, 2.2e11, 0), "mass": 2.4e24, "velocity": _point(24000, 0, 0)}
-    jupiter = {"location": _point(0, 7.7e11, 0), "mass": 1e28, "velocity": _point(13000, 0, 0)}
-    saturn = {"location": _point(0, 1.4e12, 0), "mass": 5.7e26, "velocity": _point(9000, 0, 0)}
-    uranus = {"location": _point(0, 2.8e12, 0), "mass": 8.7e25, "velocity": _point(6835, 0, 0)}
-    neptune = {"location": _point(0, 4.5e12, 0), "mass": 1e26, "velocity": _point(5477, 0, 0)}
-    pluto = {"location": _point(0, 3.7e12, 0), "mass": 1.3e22,
-             "velocity": _point(4748, 0, 0)}  # Why is pluto closer than neptune?
+
+    # Planet data units: (location (m), mass (kg), velocity (m/s)
+    #
+    # These are the possible bodies that can be simulated with stable orbits
+    # over long time periods.  Other bodies can be added later if needed,
+    # but initial attempts at satellites led to unstable orbits.
+    sun = {"location": _Point(0, 0, 0),
+           "mass": 2e30,
+           "velocity": _Point(0, 0, 0)}
+    mercury = {"location": _Point(0, 5.7e10, 0),
+               "mass": 3.285e23,
+               "velocity": _Point(47000, 0, 0)}
+    venus = {"location": _Point(0, 1.1e11, 0),
+             "mass": 4.8e24,
+             "velocity": _Point(35000, 0, 0)}
+    earth = {"location": _Point(0, 1.5e11, 0),
+             "mass": 6e24,
+             "velocity": _Point(30000, 0, 0)}
+    mars = {"location": _Point(0, 2.2e11, 0),
+            "mass": 2.4e24,
+            "velocity": _Point(24000, 0, 0)}
+    jupiter = {"location": _Point(0, 7.7e11, 0),
+               "mass": 1e28,
+               "velocity": _Point(13000, 0, 0)}
+    saturn = {"location": _Point(0, 1.4e12, 0),
+              "mass": 5.7e26,
+              "velocity": _Point(9000, 0, 0)}
+    uranus = {"location": _Point(0, 2.8e12, 0),
+              "mass": 8.7e25,
+              "velocity": _Point(6835, 0, 0)}
+    neptune = {"location": _Point(0, 4.5e12, 0),
+               "mass": 1e26,
+               "velocity": _Point(5477, 0, 0)}
+    pluto = {"location": _Point(0, 3.7e12, 0),
+             "mass": 1.3e22,
+             "velocity": _Point(4748, 0, 0)}
 
     def _initialize_history(self):
+        """
+        Function to create the initial structure of a Pandas dataframe for
+        recording the position of every body in simulation space at each time
+        step.
+
+        :return: Pandas dataframe containing the structure for recording
+        entire history of the simulation.
+        """
         # Create list of columns
         history_columns = []
         for current_body in self._bodies:
@@ -63,30 +128,70 @@ class BenrulesRealTimeSim:
 
     def __init__(self, time_step=100, planet_predicting='pluto', nn_path=''):
         """
-        Initialize the history list that keeps track of past planet positions.
-        Will use Pandas dataframe that can easily have portions converted to
-        numpy arrays.
+        Simulation initialization function.
+
+        :param time_step: Time is seconds between simulation steps.  Used to
+        displacement over that time.
+        :param planet_predicting: Name of the planet being predicted by the
+        neural network.
+        :param nn_path: File path to the location of the .h5 file storing the
+        neural network that will be loaded with Tensorflow in the NeuralNet
+        class.
         """
         # Setup the initial set of bodies in the simulation.
         self._bodies = [
-            self._body(location=self.sun["location"], mass=self.sun["mass"], velocity=self.sun["velocity"], name="sun"),
-            self._body(location=self.mercury["location"], mass=self.mercury["mass"], velocity=self.mercury["velocity"], name="mercury"),
-            self._body(location=self.venus["location"], mass=self.venus["mass"], velocity=self.venus["velocity"], name="venus"),
-            self._body(location=self.earth["location"], mass=self.earth["mass"], velocity=self.earth["velocity"], name="earth"),
-            self._body(location=self.mars["location"], mass=self.mars["mass"], velocity=self.mars["velocity"], name="mars"),
-            self._body(location=self.jupiter["location"], mass=self.jupiter["mass"], velocity=self.jupiter["velocity"], name="jupiter"),
-            self._body(location=self.saturn["location"], mass=self.saturn["mass"], velocity=self.saturn["velocity"], name="saturn"),
-            self._body(location=self.uranus["location"], mass=self.uranus["mass"], velocity=self.uranus["velocity"], name="uranus"),
-            self._body(location=self.neptune["location"], mass=self.neptune["mass"], velocity=self.neptune["velocity"], name="neptune"),
-            self._body(location=self.pluto["location"], mass=self.pluto["mass"], velocity=self.pluto["velocity"], name="pluto")
+            self._Body(location=self.sun["location"],
+                       mass=self.sun["mass"],
+                       velocity=self.sun["velocity"],
+                       name="sun"),
+            self._Body(location=self.mercury["location"],
+                       mass=self.mercury["mass"],
+                       velocity=self.mercury["velocity"],
+                       name="mercury"),
+            self._Body(location=self.venus["location"],
+                       mass=self.venus["mass"],
+                       velocity=self.venus["velocity"],
+                       name="venus"),
+            self._Body(location=self.earth["location"],
+                       mass=self.earth["mass"],
+                       velocity=self.earth["velocity"],
+                       name="earth"),
+            self._Body(location=self.mars["location"],
+                       mass=self.mars["mass"],
+                       velocity=self.mars["velocity"],
+                       name="mars"),
+            self._Body(location=self.jupiter["location"],
+                       mass=self.jupiter["mass"],
+                       velocity=self.jupiter["velocity"],
+                       name="jupiter"),
+            self._Body(location=self.saturn["location"],
+                       mass=self.saturn["mass"],
+                       velocity=self.saturn["velocity"],
+                       name="saturn"),
+            self._Body(location=self.uranus["location"],
+                       mass=self.uranus["mass"],
+                       velocity=self.uranus["velocity"],
+                       name="uranus"),
+            self._Body(location=self.neptune["location"],
+                       mass=self.neptune["mass"],
+                       velocity=self.neptune["velocity"],
+                       name="neptune"),
+            self._Body(location=self.pluto["location"],
+                       mass=self.pluto["mass"],
+                       velocity=self.pluto["velocity"],
+                       name="pluto")
         ]
+        # CONTINUE DOCUMENTATION HERE.
         # Setup pandas dataframe to keep track of simulation history.
-        # Pandas dataframe is easy to convert to any data file format and has plotting shortcuts
-        # for easier end-of-simulation plotting.
+        #
+        # Pandas dataframe is easy to convert to any data file format
+        # and has plotting shortcuts for easier end-of-simulation plotting.
         self._body_locations_hist = self._initialize_history()
-        # Amount of time that has passed in a single time step (I think in seconds)
+        # Amount of time that has passed in a single time step
+        # (I think in seconds)
         self._time_step = time_step
-        # Create neural network object that lets us run neural network predictions as well.
+        # Create neural network object that lets us run neural network
+        # predictions as well.
         self._nn = NeuralNet(model_path=nn_path,
                              planet_predicting=planet_predicting)
         # Add current system state to the history tracking.
@@ -96,33 +201,38 @@ class BenrulesRealTimeSim:
             coordinate_list.append(target_body.location.y)
             coordinate_list.append(target_body.location.z)
         # Store coordinates to dataframe tracking simulation history
-        self._body_locations_hist.loc[len(self._body_locations_hist)] = coordinate_list
+        self._body_locations_hist.loc[len(self._body_locations_hist)] \
+            = coordinate_list
 
     def _calculate_single_body_acceleration(self, body_index):
         """
-        Looks like this is the main function to calculate the acceleration of a single body
-        given the location of all current bodies.
+        Looks like this is the main function to calculate the acceleration
+        of a single body given the location of all current bodies.
         """
         G_const = 6.67408e-11  # m3 kg-1 s-2
-        acceleration = self._point(0, 0, 0)
+        acceleration = self._Point(0, 0, 0)
         target_body = self._bodies[body_index]
         for index, external_body in enumerate(self._bodies):
             if index != body_index:
-                r = (target_body.location.x - external_body.location.x) ** 2 + (
-                            target_body.location.y - external_body.location.y) ** 2 + (
-                                target_body.location.z - external_body.location.z) ** 2
+                r = (target_body.location.x - external_body.location.x) ** 2 \
+                    + (target_body.location.y - external_body.location.y) ** 2 \
+                    + (target_body.location.z - external_body.location.z) ** 2
                 r = math.sqrt(r)
                 tmp = G_const * external_body.mass / r ** 3
-                acceleration.x += tmp * (external_body.location.x - target_body.location.x)
-                acceleration.y += tmp * (external_body.location.y - target_body.location.y)
-                acceleration.z += tmp * (external_body.location.z - target_body.location.z)
+                acceleration.x += tmp * (external_body.location.x
+                                         - target_body.location.x)
+                acceleration.y += tmp * (external_body.location.y
+                                         - target_body.location.y)
+                acceleration.z += tmp * (external_body.location.z
+                                         - target_body.location.z)
 
         return acceleration
 
     def _compute_velocity(self):
         """
         Calculates the velocity of an object at a.... point in time?
-        Is this guy just estimating an acceleration integration with multiplying by time step?
+        Is this guy just estimating an acceleration integration with
+        multiplying by time step?
         """
         for body_index, target_body in enumerate(self._bodies):
             acceleration = self._calculate_single_body_acceleration(body_index)
@@ -143,10 +253,11 @@ class BenrulesRealTimeSim:
 
     def _compute_gravity_step(self):
         """
-        Simple function that computes the velocity of each body in each direction
-        and updates the body's current location.
+        Simple function that computes the velocity of each body
+        in each direction and updates the body's current location.
         :param time_step:
-        :return: dictionary with 3 item lists containing the x,y,z positions of each planet.
+        :return: dictionary with 3 item lists containing the x,y,z positions
+        of each planet.
                 The dictionary is referenced by the planet name.
         """
         self._compute_velocity()
@@ -154,36 +265,46 @@ class BenrulesRealTimeSim:
 
     def get_next_sim_state(self):
         """
-        Function to calculate the position of all system bodies in the next time step / frame.
+        Function to calculate the position of all system bodies in the next
+        time step / frame.
         Also stores history of the simulation to self._body_locations_hist.
         :return:
         """
         # Predict planet location using neural network.
-        # Strangely, its actually faster to append to a normal python list than a
-        # numpy array, so better to aggregate with list then convert to numpy array.
-        # Get position data from last point in simulation.  Use as input vector to nn.
-        input_vector = self._body_locations_hist.iloc[len(self._body_locations_hist)-1, 0:-3].values.reshape(1, -1)
+        #
+        # Strangely, its actually faster to append to a normal python list
+        # than a numpy array, so better to aggregate with list then convert
+        # to numpy array.
+        # Get position data from last point in simulation.
+        # Use as input vector to nn.
+        input_vector = self._body_locations_hist.iloc[
+                       len(self._body_locations_hist)-1,
+                       0:-3].values.reshape(1, -1)
         pred_pos = self._nn.make_prediction(input_vector)
 
-        # Compute the next time step and update positions of all bodies in self_bodies.
+        # Compute the next time step and update positions of all bodies
+        # in self_bodies.
         self._compute_gravity_step()
-        # Format position data for each planet into simple lists.  Dictionary key is the name
-        # of the planet.
+        # Format position data for each planet into simple lists.  Dictionary
+        # key is the name of the planet.
         simulation_positions = {}
-        # Also create a coordinate list that can be added as row to the history dataframe
+        # Also create a coordinate list that can be added as row to the
+        # history dataframe
         coordinate_list = []
         for target_body in self._bodies:
-            simulation_positions.update({target_body.name: [target_body.location.x,
-                                                            target_body.location.y,
-                                                            target_body.location.z]})
+            simulation_positions.update(
+                {target_body.name: [target_body.location.x,
+                                    target_body.location.y,
+                                    target_body.location.z]})
             coordinate_list.append(target_body.location.x)
             coordinate_list.append(target_body.location.y)
             coordinate_list.append(target_body.location.z)
         # Store coordinates to dataframe tracking simulation history
-        self._body_locations_hist.loc[len(self._body_locations_hist)] = coordinate_list
+        self._body_locations_hist.loc[
+            len(self._body_locations_hist)] = coordinate_list
 
-        # Return dictionary with planet name as key and a list with each planet name
-        # containing the coordinates
+        # Return dictionary with planet name as key and a list with each planet
+        # name containing the coordinates
         return simulation_positions, pred_pos
         # return simulation_positions
 
