@@ -29,14 +29,11 @@ _____________________________________________________________________________
 
 """
 
-# Dunders
-
 # Imports
 import tensorflow as tf
-import numpy as np
-
 
 # Classes and Functions
+
 
 class NeuralNet:
     """Class to load Tensorflow model stored in .h5 file and run
@@ -45,24 +42,33 @@ class NeuralNet:
     # Instance Methods
     def __init__(self, model_path, planet_predicting):
         """
-        Constructor for model class.  Loads the model into a private instance variable that
-        can then be called on to make predictions on the position of Pluto.
-        :param model_path: Path, including name, to the .h5 file storing the neural net.
-        :param planet_predicting: Name of planet the model is predicting.  Just to keep track.
-        :return: None.
+        Constructor for model class.  Loads the model into a private instance
+        variable that can then be called on to make predictions on the
+        position of planet the network was trained on.
+
+        :param model_path: Path, including name, to the .h5 file storing the
+        neural net.
+        :param planet_predicting: Name of planet the model is predicting.
+        Just to keep track.
         """
+
         self._model = tf.keras.models.load_model(model_path)
         self.planet_predicting = planet_predicting
 
     def make_prediction(self, input_vector):
         """
-        Function to take a vector of all other planet positions and output the XYZ position
-        of the planet we are predicting for the current time step.
-        :param input_vector: Numpy array of all other planets and stars in the system.
-        :return: Numpy array of X,Y,Z positions of planet we are predicting.
+        Function to take a vector of all other planet positions and output
+        the XYZ position of the planet being predicted for the current time
+        step.
+
+        :param input_vector: Numpy array of all other planets and stars in the
+        system.
+        :return: Dictionary of X,Y,Z positions of planet we are predicting.
         """
+
         x_pred, y_pred, z_pred = self._model.predict(input_vector)
         # Process the predicted values to output a single numpy array rather
         # than three 2D arrays with a single value each.
-        return {self.planet_predicting: [x_pred[0, 0], y_pred[0, 0], z_pred[0, 0]]}
-        # return np.array([x_pred[0, 0], y_pred[0, 0], z_pred[0, 0]])
+        return {self.planet_predicting: [x_pred[0, 0],
+                                         y_pred[0, 0],
+                                         z_pred[0, 0]]}

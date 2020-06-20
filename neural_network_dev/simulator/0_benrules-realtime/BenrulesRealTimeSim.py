@@ -15,7 +15,6 @@ containing all other planetary positions (X, Y, Z) and output the predicted
 position of Pluto in the next time step.
 """
 
-
 # Imports
 import math
 import pandas as pd
@@ -25,6 +24,30 @@ from NNModelLoader import NeuralNet
 
 class BenrulesRealTimeSim:
     """
+    Class containing a basic, real-time simulator for planet motions that also
+    interacts with the NNModelLoader class to load a neural network that
+    predicts the motion of one of the bodies in the next time step.
+
+    Attributes:
+        sun         Initial physical state of the Sun in the simulation
+        mercury     Initial physical state of the Mercury in the simulation
+        venus       Initial physical state of the Venus in the simulation
+        earth       Initial physical state of the Earth in the simulation
+        mars        Initial physical state of the Mars in the simulation
+        jupiter     Initial physical state of the Jupiter in the simulation
+        saturn      Initial physical state of the Saturn in the simulation
+        uranus      Initial physical state of the Uranus in the simulation
+        neptune     Initial physical state of the Neptune in the simulation
+        pluto       Initial physical state of the Pluto in the simulation
+
+    Instance Variables:
+    :ivar _bodies: Current physical state of each body at the current time step
+    :ivar _body_locations_hist: Pandas dataframe containing the positional
+    history of all bodies in the simulation.
+    :ivar _time_step: The amount of time the simulation uses between time
+    steps.  The amount of "simulation time" that passes.
+    :ivar _nn: NNModelLoader object instance that contains the neural network
+    loaded in Tensorflow.
 
     """
     # Nested Classes
@@ -43,6 +66,7 @@ class BenrulesRealTimeSim:
         :param z: z position of object in simulation space relative to sun at
         time step 0.
         """
+
         def __init__(self, x, y, z):
             self.x = x
             self.y = y
@@ -62,6 +86,7 @@ class BenrulesRealTimeSim:
         at time step 0 in simulation space.  Represented by the _Point class.
         :param name: Name of the body being stored.
         """
+
         def __init__(self, location, mass, velocity, name=""):
             self.location = location
             self.mass = mass
@@ -115,6 +140,7 @@ class BenrulesRealTimeSim:
         :return: Pandas dataframe containing the structure for recording
         entire history of the simulation.
         """
+
         # Create list of columns
         history_columns = []
         for current_body in self._bodies:
@@ -138,6 +164,7 @@ class BenrulesRealTimeSim:
         neural network that will be loaded with Tensorflow in the NeuralNet
         class.
         """
+
         # Setup the initial set of bodies in the simulation.
         self._bodies = [
             self._Body(location=self.sun["location"],
@@ -206,9 +233,16 @@ class BenrulesRealTimeSim:
 
     def _calculate_single_body_acceleration(self, body_index):
         """
-        Looks like this is the main function to calculate the acceleration
-        of a single body given the location of all current bodies.
+        Function to calculate the acceleration forces on a given body.
+
+        This function takes in the index of a particular body in the class'
+        bodies list and calculates the resulting acceleration vector on that
+        body given the physical state of all other bodies.
+
+        :param body_index: Index of body in class' body list on which the
+        resulting acceleration will be calculated.
         """
+
         G_const = 6.67408e-11  # m3 kg-1 s-2
         acceleration = self._Point(0, 0, 0)
         target_body = self._bodies[body_index]
@@ -230,10 +264,15 @@ class BenrulesRealTimeSim:
 
     def _compute_velocity(self):
         """
-        Calculates the velocity of an object at a.... point in time?
-        Is this guy just estimating an acceleration integration with
-        multiplying by time step?
+        Calculates the velocity vector for each body in the class' bodies list.
+
+        Given the physical state of each body in the system, this function
+        calls the _calculate_single_body_acceleration on each body in the
+        system and uses the resulting acceleration vector along with the
+        defined simulation time step to calculate the resulting velocity
+        vector for each body.
         """
+
         for body_index, target_body in enumerate(self._bodies):
             acceleration = self._calculate_single_body_acceleration(body_index)
             target_body.velocity.x += acceleration.x * self._time_step
@@ -242,10 +281,15 @@ class BenrulesRealTimeSim:
 
     def _update_location(self):
         """
-        Function that moves all body locations forward by one time step.
-        :param:
-        :return:
+        Calculates next location of each body in the system.
+
+        This method, assuming the _compute_velocity method was already called,
+        takes the new velocities of all bodies and uses the defined time step
+        to calculate the resulting displacement for each body over that time
+        step.  The displacement is then added to the current positions in order
+        to get the body's new location.
         """
+
         for target_body in self._bodies:
             target_body.location.x += target_body.velocity.x * self._time_step
             target_body.location.y += target_body.velocity.y * self._time_step
@@ -253,23 +297,35 @@ class BenrulesRealTimeSim:
 
     def _compute_gravity_step(self):
         """
-        Simple function that computes the velocity of each body
-        in each direction and updates the body's current location.
-        :param time_step:
-        :return: dictionary with 3 item lists containing the x,y,z positions
-        of each planet.
-                The dictionary is referenced by the planet name.
+        Calls the _compute_velocity and _update_location methods in order to
+        update the system state by one time step.
         """
+
         self._compute_velocity()
         self._update_location()
 
     def get_next_sim_state(self):
         """
         Function to calculate the position of all system bodies in the next
-        time step / frame.
-        Also stores history of the simulation to self._body_locations_hist.
-        :return:
+        time step.
+
+        When this method is called, the current system state is passed to the
+        neural network to calculate the position of a certain body in the next
+        time step.  After the neural network completes, the simulation then
+        advances all bodies ahead using "physics".  The positions of all
+        bodies resulting from the "physics" are then packaged into a dictionary
+        with the body name as key and a list containing the x,y,z coordinates
+        of the body as the value attached to that key.  The predicted position
+        from the neural network is also packaged as a dictionary with the name
+        as key and predicted coordinates as the value.
+
+        :returns:
+            - simulation_positions - Dictionary containing all body positions
+            in the next time step calculated with "physics".
+            - pred_pos - Dictionary containing the predicted position of a
+            body using the neural network.
         """
+
         # Predict planet location using neural network.
         #
         # Strangely, its actually faster to append to a normal python list
@@ -310,8 +366,23 @@ class BenrulesRealTimeSim:
 
     @property
     def body_locations_hist(self):
+        """
+        Getter that returns a Pandas dataframe with the entire simulation
+        history.
+
+        :return body_locations_hist: Pandas dataframe containing the entire
+        history of the simulation.  The positional data of all bodies over all
+        time steps.
+        """
         return self._body_locations_hist
 
     @property
     def bodies(self):
+        """
+        Getter that retrieves the current state of the entire system in the
+        simulation.
+
+        :return bodies:  Returns the list of bodies.  Each item in the list
+        is a Body object containing the physical state of the body.
+        """
         return self._bodies
