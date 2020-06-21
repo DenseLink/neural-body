@@ -221,6 +221,7 @@ class BenrulesRealTimeSim:
         # predictions as well.
         self._nn = NeuralNet(model_path=nn_path,
                              planet_predicting=planet_predicting)
+        self._planet_predicting_name = planet_predicting
         # Add current system state to the history tracking.
         coordinate_list = []
         for target_body in self._bodies:
@@ -333,9 +334,24 @@ class BenrulesRealTimeSim:
         # to numpy array.
         # Get position data from last point in simulation.
         # Use as input vector to nn.
-        input_vector = self._body_locations_hist.iloc[
-                       len(self._body_locations_hist)-1,
-                       0:-3].values.reshape(1, -1)
+        #
+        # Need to use the name of the planet to find which one to extract from
+        # the input vector.
+
+        # Extract last row of dataframe recording simulator history, remove
+        # the planet we are trying to predict from the columns, and convert
+        # to numpy array as the input vector to the neural network.
+        last_row = self._body_locations_hist.iloc[-1, :].copy()
+        # Drop columns from dataframe for the planet we are trying to predict.
+        last_row = last_row.drop([self._planet_predicting_name + "_x",
+                                  self._planet_predicting_name + "_y",
+                                  self._planet_predicting_name + "_z"])
+        input_vector = last_row.values.reshape(1, -1)
+
+        # OLD CONVERSION FROM BEFORE - REMOVE LATER
+        # input_vector = self._body_locations_hist.iloc[
+        #                len(self._body_locations_hist)-1,
+        #                0:-3].values.reshape(1, -1)
         pred_pos = self._nn.make_prediction(input_vector)
 
         # Compute the next time step and update positions of all bodies
@@ -362,7 +378,6 @@ class BenrulesRealTimeSim:
         # Return dictionary with planet name as key and a list with each planet
         # name containing the coordinates
         return simulation_positions, pred_pos
-        # return simulation_positions
 
     @property
     def body_locations_hist(self):
@@ -386,3 +401,14 @@ class BenrulesRealTimeSim:
         is a Body object containing the physical state of the body.
         """
         return self._bodies
+
+    @property
+    def planet_predicting_name(self):
+        """
+        Getter that retrieves the name of the planet the neural network is
+        trying to predict the position of.
+
+        :return planet_predicting_name:  Name of the planet the neural network
+        is trying to predict.
+        """
+        return self._planet_predicting_name

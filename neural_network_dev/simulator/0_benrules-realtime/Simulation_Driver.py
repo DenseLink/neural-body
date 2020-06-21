@@ -22,8 +22,8 @@ def main():
 
     # Create simulator object
     simulation = BenrulesRealTimeSim(time_step=time_step,
-                                     planet_predicting='pluto',
-                                     nn_path="Predict-NN-Deploy-V1.02-LargeDataset_2-layer_selu_lecun-normal_mae_Adam_lr-1e-6_bs-128_epoch-250.h5")
+                                     planet_predicting='mars',
+                                     nn_path="MARS-Predict-NN-Deploy-V1.02-LargeDataset_2-layer_selu_lecun-normal_mae_Adam_lr-1e-5_bs-128_epoch-750.h5")
 
     # Run simulation
     curr_time_step = 0
