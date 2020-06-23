@@ -99,49 +99,47 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
             # print("-----------------------------------------------------------------")
             # print(curr_time_step , ":")
             # print('(' + str(current_positions['earth'][0]) + " , " + str(current_positions['earth'][1]) + ")")
-            sunmovex = int(current_positions['sun'][0] / zoom)
-            sunmovey = int(current_positions['sun'][1] / zoom)
 
             # print (sunmovex, sunmovey)
 
-            x1 = int(current_positions['mercury'][0] / zoom) + sunx - sunmovex
-            y1 = int(current_positions['mercury'][1] / zoom) + suny - sunmovey
-            xi1 = int(current_positions['mercury'][0] / zoom*8) + sun_i_x - sunmovex
-            yi1 = int(current_positions['mercury'][1] / zoom*8) + sun_i_y - sunmovey
+            x1 = int((current_positions['mercury'][0] - current_positions['sun'][0]) / zoom) + sunx
+            y1 = int((current_positions['mercury'][1] - current_positions['sun'][1]) / zoom) + suny
+            xi1 = int((current_positions['mercury'][0] - current_positions['sun'][0])/ zoom*8) + sun_i_x
+            yi1 = int((current_positions['mercury'][1] - current_positions['sun'][1])/ zoom*8) + sun_i_y
             # print("x1:", x1, "...y1:", y1)
 
-            x2 = int(current_positions['venus'][0] / zoom) + sunx - sunmovex
-            y2 = int(current_positions['venus'][1] / zoom) + suny - sunmovey
-            xi2 = int(current_positions['venus'][0] / zoom*8) + sun_i_x - sunmovex
-            yi2 = int(current_positions['venus'][1] / zoom*8) + sun_i_y - sunmovey
+            x2 = int((current_positions['venus'][0] - current_positions['sun'][0]) / zoom) + sunx
+            y2 = int((current_positions['venus'][1] - current_positions['sun'][1]) / zoom) + suny
+            xi2 = int((current_positions['venus'][0] - current_positions['sun'][0]) / zoom*8) + sun_i_x
+            yi2 = int((current_positions['venus'][1] - current_positions['sun'][1]) / zoom*8) + sun_i_y
             # print("x2:", x2, "...y2:", y2)
 
-            x3 = int(current_positions['earth'][0] / zoom) + sunx - sunmovex
-            y3 = int(current_positions['earth'][1] / zoom) + suny - sunmovey
-            xi3 = int(current_positions['earth'][0] / zoom*8) + sun_i_x - sunmovex
-            yi3 = int(current_positions['earth'][1] / zoom*8) + sun_i_y - sunmovey
+            x3 = int((current_positions['earth'][0] - current_positions['sun'][0]) / zoom) + sunx
+            y3 = int((current_positions['earth'][1] - current_positions['sun'][1]) / zoom) + suny
+            xi3 = int((current_positions['earth'][0] - current_positions['sun'][0]) / zoom*8) + sun_i_x
+            yi3 = int((current_positions['earth'][1] - current_positions['sun'][1]) / zoom*8) + sun_i_y
             # print("x3:", x3, "...y3:", y3)
 
-            x4 = int(current_positions['mars'][0] / zoom) + sunx - sunmovex
-            y4 = int(current_positions['mars'][1] / zoom) + suny - sunmovey
-            xi4 = int(current_positions['mars'][0] / zoom*8) + sun_i_x - sunmovex
-            yi4 = int(current_positions['mars'][1] / zoom*8) + sun_i_y - sunmovey
+            x4 = int((current_positions['mars'][0] - current_positions['sun'][0]) / zoom) + sunx
+            y4 = int((current_positions['mars'][1] - current_positions['sun'][1]) / zoom) + suny
+            xi4 = int((current_positions['mars'][0] - current_positions['sun'][0]) / zoom*8) + sun_i_x
+            yi4 = int((current_positions['mars'][1] - current_positions['sun'][1]) / zoom*8) + sun_i_y
 
-            x5 = int(current_positions['jupiter'][0] / zoom) + sunx
-            y5 = int(current_positions['jupiter'][1] / zoom) + suny
+            x5 = int((current_positions['jupiter'][0] - current_positions['sun'][0]) / zoom) + sunx
+            y5 = int((current_positions['jupiter'][1] - current_positions['sun'][1]) / zoom) + suny
 
-            x6 = int(current_positions['saturn'][0] / zoom) + sunx
-            y6 = int(current_positions['saturn'][1] / zoom) + suny
+            x6 = int((current_positions['saturn'][0] - current_positions['sun'][0]) / zoom) + sunx
+            y6 = int((current_positions['saturn'][1] - current_positions['sun'][1]) / zoom) + suny
 
-            x7 = int(current_positions['uranus'][0] / zoom) + sunx
-            y7 = int(current_positions['uranus'][1] / zoom) + suny
+            x7 = int((current_positions['uranus'][0] - current_positions['sun'][0]) / zoom) + sunx
+            y7 = int((current_positions['uranus'][1] - current_positions['sun'][1]) / zoom) + suny
 
-            x8 = int(current_positions['neptune'][0] / zoom) + sunx
-            y8 = int(current_positions['neptune'][1] / zoom) + suny
+            x8 = int((current_positions['neptune'][0] - current_positions['sun'][0]) / zoom) + sunx
+            y8 = int((current_positions['neptune'][1] - current_positions['sun'][1]) / zoom) + suny
 
             if 'pluto' in predicted_position:
-                x9 = int(predicted_position['pluto'][0] / zoom) + sunx
-                y9 = int(predicted_position['pluto'][1] / zoom) + suny
+                x9 = int((predicted_position['pluto'][0] - current_positions['sun'][0]) / zoom) + sunx
+                y9 = int((predicted_position['pluto'][1] - current_positions['sun'][1]) / zoom) + suny
             else:
                 x9 = 0
                 y9 = 0
