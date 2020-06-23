@@ -8,6 +8,7 @@ more data from it.
 
 # Imports
 import sys
+import pandas
 from BenrulesRealTimeSim import BenrulesRealTimeSim
 
 # Main code
@@ -20,10 +21,26 @@ def main():
     # Total length of simulation = time_step * number_of_steps.
     number_of_steps = 500
 
+    # Read simulator and satellite initial state from config .csv file.
+    keep_trying_read = True
+    config_file_location = "mars_sim_config.csv"
+    sim_config_df = None
+    while keep_trying_read:
+        try:
+            sim_config_df = pandas.read_csv(config_file_location,
+                                            header=0)
+            # If at this point, then file has been read.
+            keep_trying_read = False
+        except FileNotFoundError as error:
+            print("Unable to find config file.  Try Again.")
+            continue
+
     # Create simulator object
     simulation = BenrulesRealTimeSim(time_step=time_step,
                                      planet_predicting='mars',
                                      nn_path="MARS-Predict-NN-Deploy-V1.02-LargeDataset_2-layer_selu_lecun-normal_mae_Adam_lr-1e-5_bs-128_epoch-750.h5")
+
+
 
     # Run simulation
     curr_time_step = 0
