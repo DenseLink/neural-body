@@ -4,6 +4,11 @@ neural_network_dev/simulator/0_benrules-realtime/.idea
 neural_network_dev/simulator/0_benrules-realtime/__pycache__
 
 
+# ignore PyCharm config in demo simulator
+0_demo-sim/.idea
+0_demo-sim/__pycache__
+
+
 # Compiled source #
 ###################
 
