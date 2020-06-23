@@ -4,8 +4,6 @@ more data from it.
 
 """
 
-# COMMENTED OUT CODE FOR PREDICTION MAKING SO SIMULATION ONLY
-
 # Imports
 import sys
 import pandas
@@ -37,10 +35,7 @@ def main():
 
     # Create simulator object
     simulation = BenrulesRealTimeSim(time_step=time_step,
-                                     planet_predicting='mars',
-                                     nn_path="MARS-Predict-NN-Deploy-V1.02-LargeDataset_2-layer_selu_lecun-normal_mae_Adam_lr-1e-5_bs-128_epoch-750.h5")
-
-
+                                     in_config_df=sim_config_df)
 
     # Run simulation
     curr_time_step = 0

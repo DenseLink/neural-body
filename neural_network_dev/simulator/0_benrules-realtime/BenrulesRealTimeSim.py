@@ -131,6 +131,12 @@ class BenrulesRealTimeSim:
              "mass": 1.3e22,
              "velocity": _Point(4748, 0, 0)}
 
+    # Dictionary containing the neural network file names.  Each neural network
+    # is specially trained at predicting the position of that satellite in the
+    # sol system.  Will expand neural network later to more situations.
+    _neural_networks = {"mars":"MARS-Predict-NN-Deploy-V1.02-LargeDataset_2-layer_selu_lecun-normal_mae_Adam_lr-1e-5_bs-128_epoch-750.h5",
+                       "pluto":"Predict-NN-Deploy-V1.02-LargeDataset_2-layer_selu_lecun-normal_mae_Adam_lr-1e-6_bs-128_epoch-250.h5"}
+
     def _initialize_history(self):
         """
         Function to create the initial structure of a Pandas dataframe for
@@ -152,7 +158,44 @@ class BenrulesRealTimeSim:
         # Return the empty structure of the dataframe.
         return initial_df
 
-    def __init__(self, time_step=100, planet_predicting='pluto', nn_path=''):
+    def _parse_sim_config(self, in_df):
+        """
+        Function to convert Pandas dataframe containing simulator configuration
+        to a list of Body objects that are digestible by the simulator.
+
+        :param in_df: Dataframe containing the simulation configuration.
+        :return: list of Body objects with name, mass, location, and initial
+        velocity set.
+        """
+
+        # Using iterrows() to go over each row in dataframe and extract info
+        # from each row.
+        self._bodies = []
+        for index, row in in_df.iterrows():
+            # Check if satellite or other.
+            # If satellite, then set predicting name to choose the right
+            # neural network.
+            if row["satellite?"] == "yes":
+                self._satellite_predicting_name = str(row["body_name"])
+            self._bodies.append(
+                self._Body(
+                    location = self._Point(
+                        float(row["location_x"]),
+                        float(row["location_y"]),
+                        float(row["location_z"])
+                    ),
+                    mass = float(row["body_mass"]),
+                    velocity = self._Point(
+                        float(row["velocity_x"]),
+                        float(row["velocity_y"]),
+                        float(row["velocity_z"])
+                    ),
+                    name = str(row["body_name"])
+                )
+            )
+
+
+    def __init__(self, in_config_df, time_step=100):
         """
         Simulation initialization function.
 
@@ -165,63 +208,69 @@ class BenrulesRealTimeSim:
         class.
         """
 
-        # Setup the initial set of bodies in the simulation.
-        self._bodies = [
-            self._Body(location=self.sun["location"],
-                       mass=self.sun["mass"],
-                       velocity=self.sun["velocity"],
-                       name="sun"),
-            self._Body(location=self.mercury["location"],
-                       mass=self.mercury["mass"],
-                       velocity=self.mercury["velocity"],
-                       name="mercury"),
-            self._Body(location=self.venus["location"],
-                       mass=self.venus["mass"],
-                       velocity=self.venus["velocity"],
-                       name="venus"),
-            self._Body(location=self.earth["location"],
-                       mass=self.earth["mass"],
-                       velocity=self.earth["velocity"],
-                       name="earth"),
-            self._Body(location=self.mars["location"],
-                       mass=self.mars["mass"],
-                       velocity=self.mars["velocity"],
-                       name="mars"),
-            self._Body(location=self.jupiter["location"],
-                       mass=self.jupiter["mass"],
-                       velocity=self.jupiter["velocity"],
-                       name="jupiter"),
-            self._Body(location=self.saturn["location"],
-                       mass=self.saturn["mass"],
-                       velocity=self.saturn["velocity"],
-                       name="saturn"),
-            self._Body(location=self.uranus["location"],
-                       mass=self.uranus["mass"],
-                       velocity=self.uranus["velocity"],
-                       name="uranus"),
-            self._Body(location=self.neptune["location"],
-                       mass=self.neptune["mass"],
-                       velocity=self.neptune["velocity"],
-                       name="neptune"),
-            self._Body(location=self.pluto["location"],
-                       mass=self.pluto["mass"],
-                       velocity=self.pluto["velocity"],
-                       name="pluto")
-        ]
+        # Setup the initial set of bodies in the simulation by parsing from
+        # config dataframe.
+        self._satellite_predicting_name = None
+        self._bodies = None
+        self._parse_sim_config(in_config_df)
+        # self._bodies = [
+        #     self._Body(location=self.sun["location"],
+        #                mass=self.sun["mass"],
+        #                velocity=self.sun["velocity"],
+        #                name="sun"),
+        #     self._Body(location=self.mercury["location"],
+        #                mass=self.mercury["mass"],
+        #                velocity=self.mercury["velocity"],
+        #                name="mercury"),
+        #     self._Body(location=self.venus["location"],
+        #                mass=self.venus["mass"],
+        #                velocity=self.venus["velocity"],
+        #                name="venus"),
+        #     self._Body(location=self.earth["location"],
+        #                mass=self.earth["mass"],
+        #                velocity=self.earth["velocity"],
+        #                name="earth"),
+        #     self._Body(location=self.mars["location"],
+        #                mass=self.mars["mass"],
+        #                velocity=self.mars["velocity"],
+        #                name="mars"),
+        #     self._Body(location=self.jupiter["location"],
+        #                mass=self.jupiter["mass"],
+        #                velocity=self.jupiter["velocity"],
+        #                name="jupiter"),
+        #     self._Body(location=self.saturn["location"],
+        #                mass=self.saturn["mass"],
+        #                velocity=self.saturn["velocity"],
+        #                name="saturn"),
+        #     self._Body(location=self.uranus["location"],
+        #                mass=self.uranus["mass"],
+        #                velocity=self.uranus["velocity"],
+        #                name="uranus"),
+        #     self._Body(location=self.neptune["location"],
+        #                mass=self.neptune["mass"],
+        #                velocity=self.neptune["velocity"],
+        #                name="neptune"),
+        #     self._Body(location=self.pluto["location"],
+        #                mass=self.pluto["mass"],
+        #                velocity=self.pluto["velocity"],
+        #                name="pluto")
+        # ]
         # CONTINUE DOCUMENTATION HERE.
         # Setup pandas dataframe to keep track of simulation history.
         #
         # Pandas dataframe is easy to convert to any data file format
         # and has plotting shortcuts for easier end-of-simulation plotting.
         self._body_locations_hist = self._initialize_history()
-        # Amount of time that has passed in a single time step
-        # (I think in seconds)
+        # Amount of time that has passed in a single time step in seconds.
         self._time_step = time_step
         # Create neural network object that lets us run neural network
         # predictions as well.
+        # Default to mars model if key in dictionary not found.
+        nn_path = self._neural_networks.get(str(self._satellite_predicting_name),
+                                            "mars")
         self._nn = NeuralNet(model_path=nn_path,
-                             planet_predicting=planet_predicting)
-        self._planet_predicting_name = planet_predicting
+                             planet_predicting=self._satellite_predicting_name)
+        #self._planet_predicting_name = planet_predicting
         # Add current system state to the history tracking.
         coordinate_list = []
         for target_body in self._bodies:
@@ -343,9 +392,9 @@ class BenrulesRealTimeSim:
         # to numpy array as the input vector to the neural network.
         last_row = self._body_locations_hist.iloc[-1, :].copy()
         # Drop columns from dataframe for the planet we are trying to predict.
-        last_row = last_row.drop([self._planet_predicting_name + "_x",
-                                  self._planet_predicting_name + "_y",
-                                  self._planet_predicting_name + "_z"])
+        last_row = last_row.drop([self._satellite_predicting_name + "_x",
+                                  self._satellite_predicting_name + "_y",
+                                  self._satellite_predicting_name + "_z"])
         input_vector = last_row.values.reshape(1, -1)
 
         # OLD CONVERSION FROM BEFORE - REMOVE LATER
@@ -403,7 +452,7 @@ class BenrulesRealTimeSim:
         return self._bodies
 
     @property
-    def planet_predicting_name(self):
+    def satellite_predicting_name(self):
         """
         Getter that retrieves the name of the planet the neural network is
         trying to predict the position of.
@@ -411,4 +460,4 @@ class BenrulesRealTimeSim:
         :return planet_predicting_name:  Name of the planet the neural network
         is trying to predict.
         """
-        return self._planet_predicting_name
+        return self._satellite_predicting_name
