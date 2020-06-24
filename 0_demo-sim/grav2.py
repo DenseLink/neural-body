@@ -4,7 +4,26 @@ import sys
 import pandas as pd
 from BenrulesRealTimeSim import BenrulesRealTimeSim
 import os
+
+# Set audio driver to avoid ALSA errors
 os.environ['SDL_AUDIODRIVER'] = 'dsp'
+
+# Check if DISPLAY has been detected.  If not, assume WSL with pycharm and grab
+# display connection.
+# Only needed for launching from pycharm
+try:
+    print(os.environ["DISPLAY"])
+except KeyError as error:
+    # If at this point, DISPLAY doesn't exist and needs to be set.
+    line_list = []
+    with open('/etc/resolv.conf') as f:
+        for line in f:
+            pass
+        last_line = line
+        line_list = last_line.split(' ')
+        f.close()
+    # Set the display
+    os.environ["DISPLAY"] = line_list[-1].rstrip() + ":0"
 
 pygame.init()
 
