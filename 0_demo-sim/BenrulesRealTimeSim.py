@@ -137,7 +137,7 @@ class BenrulesRealTimeSim:
     # Dictionary containing the neural network file names.  Each neural network
     # is specially trained at predicting the position of that satellite in the
     # sol system.  Will expand neural network later to more situations.
-    _neural_networks = {"mars":"MARS-Predict-NN-Deploy-V1.02-LargeDataset_2-layer_selu_lecun-normal_mae_Adam_lr-1e-5_bs-128_epoch-750.h5",
+    _neural_networks = {"mars":"MARS-Predict-NN-Deploy-V1.02-LargeDataset_2-layer_selu_lecun-normal_mae_Adam_lr-1e-5_bs-128_epoch-350.h5",
                        "pluto":"Predict-NN-Deploy-V1.02-LargeDataset_2-layer_selu_lecun-normal_mae_Adam_lr-1e-6_bs-128_epoch-250.h5"}
 
     def _initialize_history(self):
