@@ -191,6 +191,13 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                                 255 - 255 * (i / tail_length)),
                                              [x_track[k][j], y_track[k][j]], [x_track[k][j - 1], y_track[k][j - 1]], 1)
 
+                            if k < 4 and j > tail_length - 10:
+                                pygame.draw.line(screen, (
+                                    255 - 255 * (i / 10), 255 - 255 * (i / 10),
+                                    255 - 255 * (i / 10)),
+                                                 [((x_track[k][j] - sunx)*8)+sun_i_x, ((y_track[k][j] - suny)*8)+sun_i_y], [((x_track[k][j - 1] - sunx)*8)+sun_i_x, ((y_track[k][j - 1] - suny)*8)+sun_i_y], 1)
+
+
 
                 pygame.draw.circle(screen, (255, 255, 0), [x2, y2], 5)
                 pygame.draw.circle(screen, (0, 255, 255), [x3, y3], 5)
