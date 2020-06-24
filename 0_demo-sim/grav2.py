@@ -107,7 +107,6 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 current_positions, predicted_position = simulation.get_next_sim_state()
                 current_positions, predicted_position = simulation.get_next_sim_state()
 
-
             if speed == 4 and pause == 0:
                 current_positions, predicted_position = simulation.get_next_sim_state()
                 current_positions, predicted_position = simulation.get_next_sim_state()
@@ -321,16 +320,39 @@ def menu(screen, states, scr_width, scr_height):
     if input_active == 1:
         pause = 1
         prompt = "Please type the name or path of the init file:"
-        pygame.draw.rect(screen, (0, 0, 0),
-                         pygame.Rect(int(scr_width / 2.6), int(scr_height / 2.7), int(scr_width / 1.8),
-                                     int(scr_height / 5)))
-        pygame.draw.rect(screen, (255, 255, 255),
-                         pygame.Rect(int(scr_width / 2.6), int(scr_height / 2.7), int(scr_width / 1.8),
-                                     int(scr_height / 5)),2)
-        pygame.draw.rect(screen, (255, 255, 255),
-                         pygame.Rect(int(scr_width / 2.51), int(scr_height / 2.2), int(scr_width / 1.9),
-                                     int(scr_height / 15)), 2)
-        text_handler(screen, prompt, int(scr_width / 2.6) + 10, int(scr_height / 2.7) + 10, 25, 255)
+        pygame.draw.rect(screen,
+                         (0, 0, 0),
+                         pygame.Rect(
+                             int(scr_width / 2.6),
+                             int(scr_height / 2.7),
+                             int(scr_width / 1.8),
+                             int(scr_height / 5)
+                         )
+                         )
+        pygame.draw.rect(screen,
+                         (255, 255, 255),
+                         pygame.Rect(
+                             int(scr_width / 2.6),
+                             int(scr_height / 2.7),
+                             int(scr_width / 1.8),
+                             int(scr_height / 5)
+                         ),
+                         2)
+        pygame.draw.rect(screen,
+                         (255, 255, 255),
+                         pygame.Rect(
+                             int(scr_width / 2.51),
+                             int(scr_height / 2.2),
+                             int(scr_width / 1.9),
+                             int(scr_height / 15)
+                         ),
+                         2)
+        text_handler(screen,
+                     prompt,
+                     int(scr_width / 2.6) + 10,
+                     int(scr_height / 2.7) + 10,
+                     25,
+                     255)
         if int(scr_width / 2.51) + int(scr_width / 1.9) > click_x > int(scr_width / 2.51) and int(scr_height / 2.2) + \
                 int(scr_height / 15) > click_y > int(scr_height / 2.2):
             if action_flag == 1:
@@ -382,27 +404,84 @@ def text_handler(screen, text, scr_x, scr_y, size, color):
 
 
 def boxes(screen, scr_width, scr_height):
-    pygame.draw.rect(screen, (255, 255, 255),
-                     pygame.Rect(int(scr_width / 30), int(scr_width / 30), int(scr_width / 3.3), int(scr_height / 2.4)),
+    pygame.draw.rect(screen,
+                     (255, 255, 255),
+                     pygame.Rect(
+                         int(scr_width / 30),
+                         int(scr_width / 30),
+                         int(scr_width / 3.3),
+                         int(scr_height / 2.4)
+                     ),
                      2)
-    pygame.draw.rect(screen, (255, 255, 255),
-                     pygame.Rect(int(scr_width / 30), int(scr_height / 2), int(scr_width / 3.3), int(scr_height / 2.2)),
+    pygame.draw.rect(screen,
+                     (255, 255, 255),
+                     pygame.Rect(
+                         int(scr_width / 30),
+                         int(scr_height / 2),
+                         int(scr_width / 3.3),
+                         int(scr_height / 2.2)
+                     ),
                      2)
-    pygame.draw.rect(screen, (255, 255, 255),
-                     pygame.Rect(int(scr_width / 2.8), int(scr_width / 30), int(scr_width / 1.64),
-                                 int(scr_height / 1.1)),
+    pygame.draw.rect(screen,
+                     (255, 255, 255),
+                     pygame.Rect(
+                         int(scr_width / 2.8),
+                         int(scr_width / 30),
+                         int(scr_width / 1.64),
+                         int(scr_height / 1.1)
+                     ),
                      2)
 
 
 def menu_text(screen, scr_width, scr_height):
-    text_handler(screen, 'Inner Planets', int(scr_width / 13.8), int(scr_height / 1.9), 35, 255)
-    text_handler(screen, 'The Solar System', int(scr_width / 2), int(scr_height / 15), 35, 255)
-    text_handler(screen, 'Menu', int(scr_width / 25), int(scr_height / 15), 50, 255)
-    text_handler(screen, 'Pause/ Play', int(scr_width / 25), int(scr_height / 15 * 2.3), 30, 120)
-    text_handler(screen, 'Toggle View', int(scr_width / 25), int(scr_height / 15 * 3.1), 30, 120)
-    text_handler(screen, 'Adjust Speed', int(scr_width / 25), int(scr_height / 15 * 3.9), 30, 120)
-    text_handler(screen, 'Reverse Simulation', int(scr_width / 25), int(scr_height / 15 * 4.7), 30, 120)
-    text_handler(screen, 'Upload Init File', int(scr_width / 25), int(scr_height / 15 * 5.5), 30, 120)
+    text_handler(screen,
+                 'Inner Planets',
+                 int(scr_width / 13.8),
+                 int(scr_height / 1.9),
+                 35,
+                 255)
+    text_handler(screen,
+                 'The Solar System',
+                 int(scr_width / 2),
+                 int(scr_height / 15),
+                 35,
+                 255)
+    text_handler(screen,
+                 'Menu',
+                 int(scr_width / 25),
+                 int(scr_height / 15),
+                 50,
+                 255)
+    text_handler(screen,
+                 'Pause/ Play',
+                 int(scr_width / 25),
+                 int(scr_height / 15 * 2.3),
+                 30,
+                 120)
+    text_handler(screen,
+                 'Toggle View',
+                 int(scr_width / 25),
+                 int(scr_height / 15 * 3.1),
+                 30,
+                 120)
+    text_handler(screen,
+                 'Adjust Speed',
+                 int(scr_width / 25),
+                 int(scr_height / 15 * 3.9),
+                 30,
+                 120)
+    text_handler(screen,
+                 'Reverse Simulation',
+                 int(scr_width / 25),
+                 int(scr_height / 15 * 4.7),
+                 30,
+                 120)
+    text_handler(screen,
+                 'Upload Init File',
+                 int(scr_width / 25),
+                 int(scr_height / 15 * 5.5),
+                 30,
+                 120)
 
 
 if __name__ == "__main__":
