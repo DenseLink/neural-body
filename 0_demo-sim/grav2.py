@@ -22,7 +22,7 @@ def main():
     clock = pygame.time.Clock()
 
     # trackers for the planet trails
-    num_planets = 9
+    num_planets = 13
     tail_length = 150
     orbits(screen, num_planets, tail_length, clock, scr_width, scr_height)
 
@@ -48,8 +48,9 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
     # speed = 10  # 1 is about a 35 second year (earth)
 
     zoomFactor = 15  # 15 is the max to show all planets... 1 is the min to show only through mars
-    zoom = 1000000000 * zoomFactor
-    time_step = 750000 * speed
+    zoom = 1000000000 * zoomFactor # needs to be 1000000000
+    zoomI = 15000000000
+    time_step = 118800 * speed
     curr_time_step = 0
 
     simulation = BenrulesRealTimeSim(time_step=time_step, in_config_df = pd.read_csv("mars_sim_config.csv"))
@@ -100,30 +101,36 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
             # print(curr_time_step , ":")
             # print('(' + str(current_positions['earth'][0]) + " , " + str(current_positions['earth'][1]) + ")")
 
+
+
+            # sunmovex = int((current_positions['sun'][0]) / (zoom/10))
+            # sunmovey = int((current_positions['sun'][1]) / (zoom/10))
             # print (sunmovex, sunmovey)
+
 
             x1 = int((current_positions['mercury'][0] - current_positions['sun'][0]) / zoom) + sunx
             y1 = int((current_positions['mercury'][1] - current_positions['sun'][1]) / zoom) + suny
-            xi1 = int((current_positions['mercury'][0] - current_positions['sun'][0])/ zoom*8) + sun_i_x
-            yi1 = int((current_positions['mercury'][1] - current_positions['sun'][1])/ zoom*8) + sun_i_y
-            # print("x1:", x1, "...y1:", y1)
+            xi1 = int((current_positions['mercury'][0] - current_positions['sun'][0])/ zoomI*8) + sun_i_x
+            yi1 = int((current_positions['mercury'][1] - current_positions['sun'][1])/ zoomI*8) + sun_i_y
+            # if degree % 4 == 0:
+            #     print("x1:", x1, "...y1:", y1)
 
             x2 = int((current_positions['venus'][0] - current_positions['sun'][0]) / zoom) + sunx
             y2 = int((current_positions['venus'][1] - current_positions['sun'][1]) / zoom) + suny
-            xi2 = int((current_positions['venus'][0] - current_positions['sun'][0]) / zoom*8) + sun_i_x
-            yi2 = int((current_positions['venus'][1] - current_positions['sun'][1]) / zoom*8) + sun_i_y
+            xi2 = int((current_positions['venus'][0] - current_positions['sun'][0]) / zoomI*8) + sun_i_x
+            yi2 = int((current_positions['venus'][1] - current_positions['sun'][1]) / zoomI*8) + sun_i_y
             # print("x2:", x2, "...y2:", y2)
 
             x3 = int((current_positions['earth'][0] - current_positions['sun'][0]) / zoom) + sunx
             y3 = int((current_positions['earth'][1] - current_positions['sun'][1]) / zoom) + suny
-            xi3 = int((current_positions['earth'][0] - current_positions['sun'][0]) / zoom*8) + sun_i_x
-            yi3 = int((current_positions['earth'][1] - current_positions['sun'][1]) / zoom*8) + sun_i_y
+            xi3 = int((current_positions['earth'][0] - current_positions['sun'][0]) / zoomI*8) + sun_i_x
+            yi3 = int((current_positions['earth'][1] - current_positions['sun'][1]) / zoomI*8) + sun_i_y
             # print("x3:", x3, "...y3:", y3)
 
             x4 = int((current_positions['mars'][0] - current_positions['sun'][0]) / zoom) + sunx
             y4 = int((current_positions['mars'][1] - current_positions['sun'][1]) / zoom) + suny
-            xi4 = int((current_positions['mars'][0] - current_positions['sun'][0]) / zoom*8) + sun_i_x
-            yi4 = int((current_positions['mars'][1] - current_positions['sun'][1]) / zoom*8) + sun_i_y
+            xi4 = int((current_positions['mars'][0] - current_positions['sun'][0]) / zoomI*8) + sun_i_x
+            yi4 = int((current_positions['mars'][1] - current_positions['sun'][1]) / zoomI*8) + sun_i_y
 
             x5 = int((current_positions['jupiter'][0] - current_positions['sun'][0]) / zoom) + sunx
             y5 = int((current_positions['jupiter'][1] - current_positions['sun'][1]) / zoom) + suny
@@ -170,6 +177,12 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 x_track[6][tail_length - 1] = x7
                 x_track[7][tail_length - 1] = x8
                 x_track[8][tail_length - 1] = x9
+                x_track[9][tail_length - 1] = xi1
+                x_track[10][tail_length - 1] = xi2
+                x_track[11][tail_length - 1] = xi3
+                x_track[12][tail_length - 1] = xi4
+                # x_track[13][tail_length - 1] = sunmovex # place the sun position here
+
                 y_track[0][tail_length - 1] = y1
                 y_track[1][tail_length - 1] = y2
                 y_track[2][tail_length - 1] = y3
@@ -179,6 +192,11 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 y_track[6][tail_length - 1] = y7
                 y_track[7][tail_length - 1] = y8
                 y_track[8][tail_length - 1] = y9
+                y_track[9][tail_length - 1] = yi1
+                y_track[10][tail_length - 1] = yi2
+                y_track[11][tail_length - 1] = yi3
+                y_track[12][tail_length - 1] = yi4
+                # y_track[13][tail_length - 1] = sunmovey # place sun position here
 
             if view == 0:
                 # iterates through the 2D list and draws the planet's trails
@@ -191,11 +209,11 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                                 255 - 255 * (i / tail_length)),
                                              [x_track[k][j], y_track[k][j]], [x_track[k][j - 1], y_track[k][j - 1]], 1)
 
-                            if k < 4 and j > tail_length - 10:
-                                pygame.draw.line(screen, (
-                                    255 - 255 * (i / 10), 255 - 255 * (i / 10),
-                                    255 - 255 * (i / 10)),
-                                                 [((x_track[k][j] - sunx)*8)+sun_i_x, ((y_track[k][j] - suny)*8)+sun_i_y], [((x_track[k][j - 1] - sunx)*8)+sun_i_x, ((y_track[k][j - 1] - suny)*8)+sun_i_y], 1)
+                            # if k < 4 and j > tail_length - 10:
+                            #     pygame.draw.line(screen, (
+                            #         255 - 255 * (i / 10), 255 - 255 * (i / 10),
+                            #         255 - 255 * (i / 10)),
+                            #                      [((x_track[k][j] - sunx)*8)+sun_i_x, ((y_track[k][j] - suny)*8)+sun_i_y], [((x_track[k][j - 1] - sunx)*8)+sun_i_x, ((y_track[k][j - 1] - suny)*8)+sun_i_y], 1)
 
 
 
