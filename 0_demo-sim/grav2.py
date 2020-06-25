@@ -452,10 +452,10 @@ def printKey(screen):  # scr_width, scr_height
     """
         Method that will display the key for the planets drawn on the screen when activated.
         
-        Parameters: screen
-        
-        Other methods used: pygame.draw.circle - replicates the planets drawn on the screen
+        Methods used: pygame.draw.circle - replicates the planets drawn on the screen
                             text_handler - names each of the replicated planets
+                            
+        :param screen: window created by pygame used to display application
     """
     pygame.draw.circle(screen, (255, 255, 0), [850, 70], 4)
     text_handler(screen, "- Venus", 857, 65, 11, 255)
@@ -478,6 +478,37 @@ def printKey(screen):  # scr_width, scr_height
 
 
 def menu(screen, states, scr_width, scr_height, numDays):
+    """
+        Method that will display main menu, as well as handles actions to the menu. If mouse is hovering over menu item
+        the text for that menu item will change from grey to white. If clicked on or hovered over, menu item will activate. 
+        
+        Methods used: text_handler - displays text on the screen
+                      pygame.draw - draws rectangles on the screen to separate parts of the application.
+                            
+        :param play_pause: 
+        :param toggle:
+        :param adjust:
+        :param upload:
+        :param nasa_right:
+        :param key_menu_option:
+        :param day_select:
+        
+        List of states of the application:
+        
+        :param pause:
+        :param view:
+        :param speed:
+        :param rev:
+        :param upload:
+        :param click_now:
+        :param input_active:
+        :param nasa:
+        :param input2_active:
+        :param textbox2_active:
+        :param input2_text:
+        
+        :return: returns the above list of states to feed information to the program for control of specific features
+    """
     play_pause = [int(scr_width / 33), int(scr_height / 15 * 1.9)]
     toggle = [int(scr_width / 33), int(scr_height / 15 * 2.7)]
     adjust = [int(scr_width / 33), int(scr_height / 15 * 3.5)]
