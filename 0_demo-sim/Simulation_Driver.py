@@ -39,6 +39,8 @@ def main():
 
     # Run simulation
     curr_time_step = 0
+    # Prompt to change time step after this many time steps.
+    prompt_after_time_steps = 300
     while curr_time_step < number_of_steps:
         curr_time_step += 1
         # Get next state of the simulation.
@@ -53,8 +55,16 @@ def main():
         print("NN Predicted Objects")
         print("Name: {} / Coordinates: {}".format(key,
                                                   predicted_position.get(key)))
+        # Print the current time step of the simulation.
+        print("The current simulation time step is: {}".format(
+            simulation.current_time_step
+        ))
         print("-----------------------------------------------------------------")
-    return None
+        if curr_time_step == prompt_after_time_steps:
+            rewind_step = int(input("Which time step would you like to rewind to?: "))
+            simulation.current_time_step = rewind_step
+
+
 
 if __name__ == "__main__":
     main()

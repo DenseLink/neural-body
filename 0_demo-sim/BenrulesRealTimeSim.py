@@ -137,8 +137,12 @@ class BenrulesRealTimeSim:
     # Dictionary containing the neural network file names.  Each neural network
     # is specially trained at predicting the position of that satellite in the
     # sol system.  Will expand neural network later to more situations.
-    _neural_networks = {"mars":"MARS-Predict-NN-Deploy-V1.02-LargeDataset_2-layer_selu_lecun-normal_mae_Adam_lr-1e-5_bs-128_epoch-350.h5",
-                       "pluto":"Predict-NN-Deploy-V1.02-LargeDataset_2-layer_selu_lecun-normal_mae_Adam_lr-1e-6_bs-128_epoch-250.h5"}
+    _neural_networks = {"mars":"MARS-Predict-NN-Deploy-V1.02-LargeDataset_"
+                               "2-layer_selu_lecun-normal_mae_Adam_lr-1e-"
+                               "5_bs-128_epoch-350.h5",
+                       "pluto":"Predict-NN-Deploy-V1.02-LargeDataset_2-layer"
+                               "_selu_lecun-normal_mae_Adam_lr-1e-6_bs-"
+                               "128_epoch-250.h5"}
 
     def _initialize_history(self):
         """
@@ -209,6 +213,8 @@ class BenrulesRealTimeSim:
         :param nn_path: File path to the location of the .h5 file storing the
         neural network that will be loaded with Tensorflow in the NeuralNet
         class.
+
+        # TODO: Add additional parameters to docstring for time step tracking.
         """
 
         # Setup the initial set of bodies in the simulation by parsing from
@@ -227,11 +233,12 @@ class BenrulesRealTimeSim:
         # Create neural network object that lets us run neural network
         # predictions as well.
         # Default to mars model if key in dictionary not found.
-        nn_path = self._neural_networks.get(str(self._satellite_predicting_name),
-                                            "mars")
-        self._nn = self._NeuralNet(model_path=nn_path,
-                             planet_predicting=self._satellite_predicting_name)
-        #self._planet_predicting_name = planet_predicting
+        nn_path = self._neural_networks.get(str(
+            self._satellite_predicting_name), "mars")
+        self._nn = self._NeuralNet(
+            model_path=nn_path,
+            planet_predicting=self._satellite_predicting_name
+        )
         # Add current system state to the history tracking.
         coordinate_list = []
         for target_body in self._bodies:
@@ -241,6 +248,13 @@ class BenrulesRealTimeSim:
         # Store coordinates to dataframe tracking simulation history
         self._body_locations_hist.loc[len(self._body_locations_hist)] \
             = coordinate_list
+        # Set counters to track the current time step of the simulator and
+        # maximum time step the simulator has reached.  This will allow us
+        # to rewind the simulator to a previous state and grab coordinates
+        # from the dataframe tracking simulation history or to continue
+        # simulating time steps that have not been reached yet.
+        self._current_time_step = 0
+        self._max_time_step_reached = 0
 
     def _calculate_single_body_acceleration(self, body_index):
         """
@@ -337,53 +351,87 @@ class BenrulesRealTimeSim:
             body using the neural network.
         """
 
+        # Depending on the current time step and max time step reached, figure
+        # out where to pull data from to make prediction with neural network
+        # and how to create the next time step of the simulation.  If the
+        # current time step is less than the max time step, then pull sim
+        # data from the history dataframe.  If current time step is equal to
+        # the max time step, then continue calculating positions with the
+        # simulator.
+        if self._current_time_step < 0:
+            # If negative time step entered, just set to 0 time.
+            self._current_time_step = 0
+        if self._current_time_step > self._max_time_step_reached:
+            # If trying a time step further in the future, set time step to
+            # current maximum reached.
+            self._current_time_step = self._max_time_step_reached
+        if self._current_time_step == self._max_time_step_reached:
+            # Extract last row of dataframe recording simulator history, remove
+            # the planet we are trying to predict from the columns, and convert
+            # to numpy array as the input vector to the neural network.
+            prediction_data_row = self._body_locations_hist.iloc[-1, :].copy()
+            # Compute the next time step and update positions of all bodies
+            # in self_bodies.
+            self._compute_gravity_step()
+            # Format position data for each planet into simple lists.
+            # Dictionary key is the name of the planet.
+            simulation_positions = {}
+            # Also create a coordinate list that can be added as row to the
+            # history dataframe
+            coordinate_list = []
+            for target_body in self._bodies:
+                simulation_positions.update(
+                    {target_body.name: [target_body.location.x,
+                                        target_body.location.y,
+                                        target_body.location.z]})
+                coordinate_list.append(target_body.location.x)
+                coordinate_list.append(target_body.location.y)
+                coordinate_list.append(target_body.location.z)
+            # Store coordinates to dataframe tracking simulation history
+            self._body_locations_hist.loc[
+                len(self._body_locations_hist)] = coordinate_list
+            # Push time step counters forward
+            self._current_time_step += 1
+            self._max_time_step_reached += 1
+        else:
+            # Extract row of previous time step to current time step for
+            # constructing input vector to neural network.
+            prediction_data_row = self._body_locations_hist.iloc[
+                self._current_time_step - 1, :].copy()
+            coordinate_list = self._body_locations_hist.iloc[
+                self._current_time_step, :].tolist()
+            # Format position data for each planet into simple lists.
+            # Dictionary key is the name of the planet.
+            simulation_positions = {}
+            # Iterate over all columns in the extracted row and extract the
+            # planet name along with the planet name.
+            col_names = list(self._body_locations_hist.columns)
+            index = 0
+            while index < len(col_names):
+                # Extract body name from columns
+                body_name = col_names[index].split('_')[0]
+                simulation_positions.update(
+                    {body_name: [coordinate_list[index],
+                                 coordinate_list[index + 1],
+                                 coordinate_list[index + 2]]}
+                )
+                # Advance index by 3 columns to skip x, y, and z columns.
+                index += 3
+            # Push current time step forward 1
+            self._current_time_step += 1
+
         # Predict planet location using neural network.
-        #
-        # Strangely, its actually faster to append to a normal python list
-        # than a numpy array, so better to aggregate with list then convert
-        # to numpy array.
-        # Get position data from last point in simulation.
-        # Use as input vector to nn.
-        #
         # Need to use the name of the planet to find which one to extract from
         # the input vector.
-
-        # Extract last row of dataframe recording simulator history, remove
-        # the planet we are trying to predict from the columns, and convert
-        # to numpy array as the input vector to the neural network.
-        last_row = self._body_locations_hist.iloc[-1, :].copy()
         # Drop columns from dataframe for the planet we are trying to predict.
-        last_row = last_row.drop([self._satellite_predicting_name + "_x",
-                                  self._satellite_predicting_name + "_y",
-                                  self._satellite_predicting_name + "_z"])
-        input_vector = last_row.values.reshape(1, -1)
-
-        # OLD CONVERSION FROM BEFORE - REMOVE LATER
-        # input_vector = self._body_locations_hist.iloc[
-        #                len(self._body_locations_hist)-1,
-        #                0:-3].values.reshape(1, -1)
+        prediction_data_row = prediction_data_row.drop(
+            [self._satellite_predicting_name + "_x",
+             self._satellite_predicting_name + "_y",
+             self._satellite_predicting_name + "_z"]
+        )
+        input_vector = prediction_data_row.values.reshape(1, -1)
+        # Predict position of satellite
         pred_pos = self._nn.make_prediction(input_vector)
-
-        # Compute the next time step and update positions of all bodies
-        # in self_bodies.
-        self._compute_gravity_step()
-        # Format position data for each planet into simple lists.  Dictionary
-        # key is the name of the planet.
-        simulation_positions = {}
-        # Also create a coordinate list that can be added as row to the
-        # history dataframe
-        coordinate_list = []
-        for target_body in self._bodies:
-            simulation_positions.update(
-                {target_body.name: [target_body.location.x,
-                                    target_body.location.y,
-                                    target_body.location.z]})
-            coordinate_list.append(target_body.location.x)
-            coordinate_list.append(target_body.location.y)
-            coordinate_list.append(target_body.location.z)
-        # Store coordinates to dataframe tracking simulation history
-        self._body_locations_hist.loc[
-            len(self._body_locations_hist)] = coordinate_list
 
         # Return dictionary with planet name as key and a list with each planet
         # name containing the coordinates
@@ -422,3 +470,30 @@ class BenrulesRealTimeSim:
         is trying to predict.
         """
         return self._satellite_predicting_name
+
+    @property
+    def current_time_step(self):
+        """
+        Getter that retrieves the current time step the simulator is at.
+
+        :return current_time_step: Current time step the simulator is at.
+        """
+        return self._current_time_step
+
+    @current_time_step.setter
+    def current_time_step(self, in_time_step):
+        """
+        Setter to change the current time step of the simulator.  Essentially
+        rewinding the simulation back to a point in its history.
+        """
+        self._current_time_step = in_time_step
+
+    @property
+    def max_time_step_reached(self):
+        """
+        Getter that retrieves the maximum time step the simulation has reached.
+
+        :return max_time_step_reached: Max time step the simulation has
+        reached.
+        """
+        return self._max_time_step_reached
