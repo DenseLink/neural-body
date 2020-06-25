@@ -94,7 +94,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
             # Ranges from 15 to show all planets down to 1 to show only through Mars.
             # Zooms are later used for scaling views from simulation space to the view
             # of the inner planets and view of the outer planet.
-            zoom_factor = 15
+            zoom_factor = 17
             zoom = 1000000000 * zoom_factor
             # Set inner planet view zoom
             zoom_i = 15000000000
