@@ -61,7 +61,7 @@ def main():
         ))
         print("-----------------------------------------------------------------")
         if curr_time_step == prompt_after_time_steps:
-            rewind_step = int(input("Which time step would you like to rewind to?: "))
+            rewind_step = int(input("Which time step would you like to jump to?: "))
             simulation.current_time_step = rewind_step
 
 

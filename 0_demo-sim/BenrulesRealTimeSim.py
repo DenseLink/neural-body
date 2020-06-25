@@ -358,13 +358,6 @@ class BenrulesRealTimeSim:
         # data from the history dataframe.  If current time step is equal to
         # the max time step, then continue calculating positions with the
         # simulator.
-        if self._current_time_step < 0:
-            # If negative time step entered, just set to 0 time.
-            self._current_time_step = 0
-        if self._current_time_step > self._max_time_step_reached:
-            # If trying a time step further in the future, set time step to
-            # current maximum reached.
-            self._current_time_step = self._max_time_step_reached
         if self._current_time_step == self._max_time_step_reached:
             # Extract last row of dataframe recording simulator history, remove
             # the planet we are trying to predict from the columns, and convert
@@ -485,8 +478,27 @@ class BenrulesRealTimeSim:
         """
         Setter to change the current time step of the simulator.  Essentially
         rewinding the simulation back to a point in its history.
+
+        If negative time entered, default to 0 time.  If time entered past the
+        maximum time reached, the simulator will "fast-forward" to that time
+        step.
         """
-        self._current_time_step = in_time_step
+
+        # Make sure we can't go back before the big bang.
+        if in_time_step < 0:
+            in_time_step = 0
+        # If time goes beyond the max time the simulator has reached, advance
+        # the simulator to that time.
+        if in_time_step > self._max_time_step_reached:
+            while self._max_time_step_reached < in_time_step:
+                current_positions, predicted_position \
+                    = self.get_next_sim_state()
+        # If the time is between 0 and the max, set the current time step to 
+        # the given time step.
+        if (in_time_step >= 0) and \
+                (in_time_step <= self._max_time_step_reached):
+            self._current_time_step = in_time_step
+
 
     @property
     def max_time_step_reached(self):
