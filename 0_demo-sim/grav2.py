@@ -182,7 +182,6 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                                - current_positions['sun'][0]) / zoom_i * 8) + sun_i_x
                     yi1 = int((current_positions['mercury'][1]
                                - current_positions['sun'][1]) / zoom_i * 8) + sun_i_y
-                # print("x1:", x1, "...y1:", y1)
 
                 if 'venus' in predicted_position:
                     x2 = int((predicted_position['venus'][0]
@@ -204,7 +203,6 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                                - current_positions['sun'][0]) / zoom_i * 8) + sun_i_x
                     yi2 = int((current_positions['venus'][1]
                                - current_positions['sun'][1]) / zoom_i * 8) + sun_i_y
-                # print("x2:", x2, "...y2:", y2)
 
                 if 'earth' in predicted_position:
                     x3 = int((predicted_position['earth'][0]
@@ -226,7 +224,6 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                                - current_positions['sun'][0]) / zoom_i * 8) + sun_i_x
                     yi3 = int((current_positions['earth'][1]
                                - current_positions['sun'][1]) / zoom_i * 8) + sun_i_y
-                # print("x3:", x3, "...y3:", y3)
 
                 if 'mars' in predicted_position:
                     x4 = int((predicted_position['mars'][0]
@@ -333,7 +330,6 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                     x_track[10][tail_length - 1] = xi2
                     x_track[11][tail_length - 1] = xi3
                     x_track[12][tail_length - 1] = xi4
-                    # x_track[13][tail_length - 1] = sunmovex # place the sun position here
 
                     y_track[0][tail_length - 1] = y1
                     y_track[1][tail_length - 1] = y2
@@ -348,7 +344,6 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                     y_track[10][tail_length - 1] = yi2
                     y_track[11][tail_length - 1] = yi3
                     y_track[12][tail_length - 1] = yi4
-                    # y_track[13][tail_length - 1] = sunmovey # place sun position here
 
                 if view == 0:
                     # Iterates through the 2D list and draws the planet's trails
@@ -454,23 +449,31 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
 
 
 def printKey(screen):  # scr_width, scr_height
+    """
+        Method that will display the key for the planets drawn on the screen when activated.
+        
+        Parameters: screen
+        
+        Other methods used: pygame.draw.circle - replicates the planets drawn on the screen
+                            text_handler - names each of the replicated planets
+    """
     pygame.draw.circle(screen, (255, 255, 0), [850, 70], 4)
     text_handler(screen, "- Venus", 857, 65, 11, 255)
-    pygame.draw.circle(screen, (0, 255, 255), [850, 90], 4)  # 3
+    pygame.draw.circle(screen, (0, 255, 255), [850, 90], 4)  
     text_handler(screen, "- Earth", 857, 85, 11, 255)
-    pygame.draw.circle(screen, (255, 255, 255), [850, 110], 4)  # 4
+    pygame.draw.circle(screen, (255, 255, 255), [850, 110], 4)  
     text_handler(screen, "- Mars", 857, 105, 11, 255)
-    pygame.draw.circle(screen, (255, 0, 0), [850, 130], 4)  # 5
+    pygame.draw.circle(screen, (255, 0, 0), [850, 130], 4)  
     text_handler(screen, "- Jupiter", 857, 125, 11, 255)
-    pygame.draw.circle(screen, (0, 255, 0), [850, 50], 4)  # 1
+    pygame.draw.circle(screen, (0, 255, 0), [850, 50], 4)  
     text_handler(screen, "- Mercury", 857, 45, 11, 255)
-    pygame.draw.circle(screen, (100, 50, 220), [850, 150], 4)  # 6
+    pygame.draw.circle(screen, (100, 50, 220), [850, 150], 4)  
     text_handler(screen, "- Saturn", 857, 145, 11, 255)
-    pygame.draw.circle(screen, (73, 155, 55), [850, 170], 4)  # 7
+    pygame.draw.circle(screen, (73, 155, 55), [850, 170], 4)  
     text_handler(screen, "- Uranus", 857, 165, 11, 255)
-    pygame.draw.circle(screen, (55, 75, 95), [850, 190], 4)  # 8
+    pygame.draw.circle(screen, (55, 75, 95), [850, 190], 4)  
     text_handler(screen, "- Neptune", 857, 185, 11, 255)
-    pygame.draw.circle(screen, (255, 102, 255), [850, 210], 4)  # 9
+    pygame.draw.circle(screen, (255, 102, 255), [850, 210], 4)  
     text_handler(screen, "- Pluto", 857, 205, 11, 255)
 
 
