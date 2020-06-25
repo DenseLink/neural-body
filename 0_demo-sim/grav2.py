@@ -436,6 +436,13 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 textbox2_active = states[11]
                 input2_text = states[12]
 
+                if(input2_text != "" and input2_active == 0):
+                    x_track = [[0] * tail_length for i in range(num_planets)]
+                    y_track = [[0] * tail_length for i in range(num_planets)]
+                    simulation.current_time_step = int(input2_text)
+                    numDays = int(input2_text)
+                    input2_text = ""
+
                 view = states[1]
                 click_now = states[5]
                 for event in pygame.event.get():
@@ -538,7 +545,7 @@ def menu(screen, states, scr_width, scr_height, numDays):
         text_handler(screen, 'Show Planet Key', key_menu_option[0], key_menu_option[1], 30, 255)
         printKey(screen)
     elif day_select[0] + 250 > click_x > day_select[0] and day_select[1] + 30 > click_y > day_select[1]:
-        text_handler(screen, 'Rewind to A Day', day_select[0], day_select[1], 30, 255)
+        text_handler(screen, 'Travel to A Day', day_select[0], day_select[1], 30, 255)
         if action_flag == 1:
             input2_active = 1
 
@@ -607,7 +614,7 @@ def menu(screen, states, scr_width, scr_height, numDays):
 
     if input2_active == 1:
         pause = 1
-        prompt = "Please type the name or path of the init file:"
+        prompt = "Please type the time travel day #:"
         pygame.draw.rect(screen,
                          (0, 0, 0),
                          pygame.Rect(
@@ -779,7 +786,7 @@ def menu_text(screen, scr_width, scr_height):
                  30,
                  120)
     text_handler(screen,
-                 'Rewind to A Day',
+                 'Travel to A Day',
                  int(scr_width / 33),
                  int(scr_height / 15 * 6.7),
                  30,
