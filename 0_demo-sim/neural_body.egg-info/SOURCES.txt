@@ -3,6 +3,7 @@ README.md
 setup.cfg
 setup.py
 neural_body/BenrulesRealTimeSim.py
+neural_body/__init__.py
 neural_body/grav2.py
 neural_body.egg-info/PKG-INFO
 neural_body.egg-info/SOURCES.txt
