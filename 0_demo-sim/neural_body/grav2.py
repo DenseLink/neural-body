@@ -3,13 +3,14 @@ import math
 import sys
 import pandas as pd
 from neural_body.BenrulesRealTimeSim import BenrulesRealTimeSim
+# neural_body.BenrulesRealTimeSim import BenrulesRealTimeSim
 import os
 
 # Set audio driver to avoid ALSA errors
 os.environ['SDL_AUDIODRIVER'] = 'dsp'
 
 # Grab the current working to use for referencing data files
-current_working_directory = os.path.dirname(os.path.realpath(__file__))
+
 
 # Check if DISPLAY has been detected.  If not, assume WSL with pycharm and grab
 # display connection.
@@ -65,6 +66,7 @@ def sun(screen, x, y):
     :param x: the integer x-coordinate pixel value where the sun should be placed
     :param y: the integer y-coordinate pixel value where the sun should be placed
     """
+    current_working_directory = os.path.dirname(os.path.realpath(__file__))
     sun_img = pygame.image.load(current_working_directory + '/img/sun.png')
     sun_img = pygame.transform.scale(sun_img, (10, 10))
     screen.blit(sun_img, (x, y))
@@ -204,6 +206,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
             # TODO: Get CSV location from prompt and load CSV file to pandas dataframe.
             # TODO: Add error handling for file opening.
             # TODO: Add error handling that check to make sure pluto or mars are the only "satellites" selected.  Make sure it is a valid config file.
+            current_working_directory = os.path.dirname(os.path.realpath(__file__))
             start_string = current_working_directory + "/sim_configs/mars_sim_config.csv"
             if past_input != "":
                 start_string = past_input
@@ -684,8 +687,10 @@ def menu(screen, states, scr_width, scr_height, numDays):
             input2_active = 1
 
     if input_active == 1:
+        current_working_directory = os.path.dirname(os.path.realpath(__file__)) + "/sim_configs/"
         pause = 1
-        prompt = "Please type the name or path of the init file:"
+        prompt = "Please type the name of the init file within"
+
         pygame.draw.rect(screen,
                          (0, 0, 0),
                          pygame.Rect(
@@ -717,7 +722,13 @@ def menu(screen, states, scr_width, scr_height, numDays):
                      prompt,
                      int(scr_width / 2.6) + 10,
                      int(scr_height / 2.7) + 10,
-                     25,
+                     18,
+                     255)
+        text_handler(screen,
+                     current_working_directory,
+                     int(scr_width / 2.6) + 10,
+                     int(scr_height / 2.5) + 10,
+                     9,
                      255)
         if int(scr_width / 2.51) + int(scr_width / 1.9) > click_x > int(scr_width / 2.51) and int(scr_height / 2.2) + \
                 int(scr_height / 15) > click_y > int(scr_height / 2.2):
@@ -727,22 +738,76 @@ def menu(screen, states, scr_width, scr_height, numDays):
                              pygame.Rect(int(scr_width / 2.51) + 1, int(scr_height / 2.2) + 1, int(scr_width / 1.9) - 1,
                                          int(scr_height / 15) - 1))
         if textbox_active == 1:
-            pygame.draw.rect(screen, (100, 100, 100),
-                             pygame.Rect(int(scr_width / 2.51) + 1, int(scr_height / 2.2) + 1, int(scr_width / 1.9) - 1,
-                                         int(scr_height / 15) - 1))
-            events = pygame.event.get()
-            for event in events:
-                if event.type == pygame.KEYDOWN:
-                    if input_active == 1:
-                        if event.key == pygame.K_RETURN:
-                            input_active = 0
-                            textbox_active = 0
-                            pause = 0
-                        elif event.key == pygame.K_BACKSPACE:
-                            input_text = input_text[:-1]
-                        else:
-                            input_text += event.unicode
-            text_handler(screen, input_text + "|", int(scr_width / 2.51) + 3, int(scr_height / 2.17) + 3, 30, 255)
+            valid_File = 0
+
+            if (int(scr_width / 2.6) > click_x or click_x > int(scr_width / 2.6) + int(scr_width / 1.8)) or (int(
+                    scr_height / 2.7) > click_y or click_y > int(scr_height / 2.7) + int(
+                scr_height / 5)) and action_flag == 1:
+                print("clicked outside")
+                input_text = ""
+                input_active = 0
+                textbox_active = 0
+                pause = 0
+                valid_File = 1
+
+            while valid_File == 0 or valid_File == 2:
+                action_flag, click_now, click_x, click_y = click_handler(click_now)
+                pygame.display.update(pygame.Rect(
+                             int(scr_width / 2.6),
+                             int(scr_height / 2.7),
+                             int(scr_width / 1.8),
+                             int(scr_height / 5)
+                         ))
+                pygame.draw.rect(screen, (100, 100, 100),
+                                 pygame.Rect(int(scr_width / 2.51) + 1, int(scr_height / 2.2) + 1, int(scr_width / 1.9) - 1,
+                                             int(scr_height / 15) - 1))
+                events = pygame.event.get()
+
+                if (int(scr_width / 2.6) > click_x or click_x > int(scr_width / 2.6) + int(scr_width / 1.8)) or (int(
+                        scr_height / 2.7) > click_y or click_y > int(scr_height / 2.7) + int(scr_height / 5)):
+                    if action_flag == 1:
+                        print("clicked outside")
+                        input_text = ""
+                        input_active = 0
+                        textbox_active = 0
+                        valid_File = 1
+                        pause = 0
+
+                for event in events:
+                    if event.type == pygame.KEYDOWN:
+                        if input_active == 1:
+                            if event.key == pygame.K_RETURN:
+                                time_step = 86400 * speed
+                                try:
+                                    input_text = current_working_directory + input_text
+                                    simulation = BenrulesRealTimeSim(
+                                        time_step=time_step,
+                                        in_config_df=pd.read_csv(input_text)
+                                    )
+                                except:
+                                    valid_File =2
+                                    print("An error is thrown, v = 2")
+                                    input_text = ""
+                                    text_handler(screen,
+                                                 "Invalid file, please try again!",
+                                                 int(scr_width / 2.6) + 10,
+                                                 int(scr_height / 1.9) + 10,
+                                                 12,
+                                                 255)
+                                else:
+                                    valid_File = 1
+                                    print("Is a valid file, v = 1")
+                                    input_active = 0
+                                    textbox_active = 0
+                                    pause = 0
+                            elif event.key == pygame.K_BACKSPACE:
+                                input_text = input_text[:-1]
+                            else:
+                                input_text += event.unicode
+                if valid_File != 1:
+                    text_handler(screen, input_text + "|", int(scr_width / 2.51) + 3, int(scr_height / 2.17) + 3, 30, 255)
+                #if valid_File == 2:
+
         else:
             text_handler(screen, input_text, int(scr_width / 2.51) + 3, int(scr_height / 2.17) + 3, 30, 255)
 
