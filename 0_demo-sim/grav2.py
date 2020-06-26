@@ -29,6 +29,11 @@ pygame.init()
 
 
 def main():
+    """
+        Main function of the program, where all of the fun begins. Basic enviroment attributes are set such as the screen
+        dimensions, number of planets (total on screen, main view plus inner planet view), the planet tail length,
+        and the program clock
+    """
     # Set screen size and launch window
     scr_width = 1000
     scr_height = 700
@@ -51,17 +56,11 @@ def main():
 # the planets and the png that keeps their dark side shadowed
 def sun(screen, x, y):
     """
-    A simple function for putting the sun on the screen at a given coordinate.
+    A simple function for loading the sun image and placing it on the screen at a given coordinate.
 
-    TODO: In the future, this style will be used for the planets and the png that keeps their dark side shadowed.
-
-    Args:
-        screen: Output display.
-        x:
-        y:
-
-    Returns:
-
+    :param screen: window created by pygame used to display application
+    :param x: the integer x-coordinate pixel value where the sun should be placed
+    :param y: the integer y-coordinate pixel value where the sun should be placed
     """
     sun_img = pygame.image.load('sun.png')
     sun_img = pygame.transform.scale(sun_img, (10, 10))
@@ -69,6 +68,96 @@ def sun(screen, x, y):
 
 
 def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
+    """
+          Function that runs the simulation. Handles function calls to display all visual elements and determine orbital locations.
+
+          This class operates as the master of the program, containing the infnite loop that the program relies on in
+          order to function. All important interactions between the various components of the program are routed through
+          this class, and many vital mathematic operations reside within it. Because global variables are not used, this class
+          acts as an intermediate to pass variables as parameters and recieve them back as returned values.
+
+          Methods used: pygame.draw.circle - replicates the planets drawn on the screen
+                        text_handler - names each of the replicated planets
+                        BenrulesRealTimeSim - creates a real time simulator of the sun, planets, and pluto.
+                        pygame.image.load - loads an image from a file
+                        pygame.transform.scale - scales an image to a specified width and height
+                        get_next_sim_state - updates the dictionary of current simulation data to the next time_step
+                        screen.fill - changes the color of the entire pygame canvas
+                        screen.blit - method to display a supplied image on the scren as output
+                        pygame.draw.line - pygame method used to draw a line, here is used to draw the trails
+                        pygame.draw.circle - pygame method used to draw circles, here used to represent the planets
+                        current_time_step - Setter function used to change the point in time of the simulation
+                        pygame.event.get() - method to handle a user interaction event
+                        pygame.quit() - Pygame method used to quit running pygame
+                        sys.exit() - Method used to exit the program
+                        pygame.display.flip() - method to refresh the pygame display
+                        clock.tick(60) - method used to set a frame rate of 60 frames per second
+
+            Input Parameters:
+                :param num_planets: Int representing the number of planet bodies on the entire screen, inner planets view + solar system view
+                :param tail_length: Int representing the length of the tail to follow behind the orbiting planets
+                :param clock: a local variable storing a copy of the pygame clock time
+                :param screen: window created by pygame used to display application
+                :param scr_width: An in that represents the width of the screen
+                :param scr_height: An int that represents the height of the screen
+
+            Used Parameters:
+                :param input_text: string containing user-entered filepath for a new init file
+                :param past_input: string used to store input_text between when it is reset and when it needs to be used to call a file
+                :param textbox_active: Int that determines whether the input textbox is to be displayed, 0 if no, 1 if yes
+                :param pause: An int that specifies whether or not the simulation runs, 0 means it's running, 1 means it is paused
+                :param view: An int that determines what view is displayed, 0 for overhead view, 1 for side view
+                :param speed: An int that determines the speed of the simulation, 1x, 2x, 4x, etc
+                :param click_now: An int that determines whether the mouse is being clicked, 0 means no click, 1 means click
+                :param input_active: An int that determines whether the file input text box shows, 0, means no show, 1 means it will show
+                :param nasa: String that activates pluto, Yes, means NASA is correct, and pluto is not a planet, No means NASA is incorrect and pluto is a planet
+                :param input2_active: An int that displays the travel to a day textbox, 0 means no show, 1 means it shows
+                :param textbox2_active: An int that determines whether the travel to textbox is showing, 0 means no, 1 means yes
+                :param input2_text: String that determines what day will be traveled to after the travel to day is determined
+                :param zoom: Int used to scaled the planets to fit on the screen
+                :param zoom_factor: Int used to scale the zoom to give varying views of the solar system if changed
+                :param zoom_i: Int used to scale the inner planets coordinates to fit on the screen
+                :param num_planets: Number of total bodies being displayed on the screen, whole solar system view + inner planets view
+                :param time_step: Int used to determine length of time between
+                :param curr_time_step: Int that represents how many time steps have passed in the simulation
+                :param start_string: String containing the default path for an init file
+                :param simulation:  An object encompassing an n-body simulation that predicts a single body dependent on the state of all other simulated bodies in the system.
+                :param sunx: Int representing the x coordinate of the sun image
+                :param suny: Int representing the y coordinate of the sun image
+                :param sun_i_x: Int representing the x coordinate of the sun image for the inner planets view
+                :param sun_i_y: Int representing the x coordinate of the sun image for the inner planets view
+                :param sun_img: Object used to hold the image of the sun that is printed to the screen
+                :param current_positions: Dictionary that contains the name and a list of x, y coordinates for each non-predicted planet
+                :param predicted_positions: Dictionary that contains the name and list of x, y coordinates for the predicted planet(s)
+                :param x1: X coordinate relative to the printed sun image for Mercury
+                :param xi1: X coordinate relative to the printed sun image for Mercury for the inner planets view
+                :param y1: Y coordinate relative to the printed sun image for Mercury
+                :param yi1: Y coordinate relative to the printed sun image for Mercury for the inner planets view
+                :param x2: X coordinate relative to the printed sun image for Venus
+                :param xi2: X coordinate relative to the printed sun image for Venus for the inner planets view
+                :param y2: Y coordinate relative to the printed sun image for Venus
+                :param yi2: Y coordinate relative to the printed sun image for Venus for the inner planets view
+                :param x3: X coordinate relative to the printed sun image for Earth
+                :param xi3: X coordinate relative to the printed sun image for Earth for the inner planets view
+                :param y3: Y coordinate relative to the printed sun image for Earth
+                :param yi3: Y coordinate relative to the printed sun image for Earth for the inner planets view
+                :param x4: X coordinate relative to the printed sun image for Mars
+                :param xi4: X coordinate relative to the printed sun image for Mars for the inner planets view
+                :param y4: Y coordinate relative to the printed sun image for Mars
+                :param yi4: X coordinate relative to the printed sun image for Mars for the inner planets view
+                :param x5: X coordinate relative to the printed sun image for Jupiter
+                :param y5: Y coordinate relative to the printed sun image for Jupiter
+                :param x6: X coordinate relative to the printed sun image for Saturn
+                :param y6: Y coordinate relative to the printed sun image for Saturn
+                :param x7: X coordinate relative to the printed sun image for Uranus
+                :param y7: Y coordinate relative to the printed sun image for Uranus
+                :param x8: X coordinate relative to the printed sun image for Pluto
+                :param y8: Y coordinate relative to the printed sun image for Pluto
+                :param x9: X coordinate relative to the printed sun image for Neptune
+                :param y9: Y coordinate relative to the printed sun image for Neptune
+                :param x_track[]: List that contains the x coordinates for the planets to print the trails
+                :param y_track[]: List that contains the y coordinates fot the planets to print the trails
+    """
     input_text = ""
     while True:
         past_input = input_text
@@ -431,7 +520,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 textbox2_active = states[11]
                 input2_text = states[12]
 
-                if(input2_text != "" and input2_active == 0):
+                if (input2_text != "" and input2_active == 0):
                     x_track = [[0] * tail_length for i in range(num_planets)]
                     y_track = [[0] * tail_length for i in range(num_planets)]
                     simulation.current_time_step = int(input2_text)
@@ -451,62 +540,71 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
 def printKey(screen):  # scr_width, scr_height
     """
         Method that will display the key for the planets drawn on the screen when activated.
-        
+
         Methods used: pygame.draw.circle - replicates the planets drawn on the screen
-                            text_handler - names each of the replicated planets
-                            
+                      text_handler - names each of the replicated planets
+
         :param screen: window created by pygame used to display application
     """
     pygame.draw.circle(screen, (255, 255, 0), [850, 70], 4)
     text_handler(screen, "- Venus", 857, 65, 11, 255)
-    pygame.draw.circle(screen, (0, 255, 255), [850, 90], 4)  
+    pygame.draw.circle(screen, (0, 255, 255), [850, 90], 4)
     text_handler(screen, "- Earth", 857, 85, 11, 255)
-    pygame.draw.circle(screen, (255, 255, 255), [850, 110], 4)  
+    pygame.draw.circle(screen, (255, 255, 255), [850, 110], 4)
     text_handler(screen, "- Mars", 857, 105, 11, 255)
-    pygame.draw.circle(screen, (255, 0, 0), [850, 130], 4)  
+    pygame.draw.circle(screen, (255, 0, 0), [850, 130], 4)
     text_handler(screen, "- Jupiter", 857, 125, 11, 255)
-    pygame.draw.circle(screen, (0, 255, 0), [850, 50], 4)  
+    pygame.draw.circle(screen, (0, 255, 0), [850, 50], 4)
     text_handler(screen, "- Mercury", 857, 45, 11, 255)
-    pygame.draw.circle(screen, (100, 50, 220), [850, 150], 4)  
+    pygame.draw.circle(screen, (100, 50, 220), [850, 150], 4)
     text_handler(screen, "- Saturn", 857, 145, 11, 255)
-    pygame.draw.circle(screen, (73, 155, 55), [850, 170], 4)  
+    pygame.draw.circle(screen, (73, 155, 55), [850, 170], 4)
     text_handler(screen, "- Uranus", 857, 165, 11, 255)
-    pygame.draw.circle(screen, (55, 75, 95), [850, 190], 4)  
+    pygame.draw.circle(screen, (55, 75, 95), [850, 190], 4)
     text_handler(screen, "- Neptune", 857, 185, 11, 255)
-    pygame.draw.circle(screen, (255, 102, 255), [850, 210], 4)  
+    pygame.draw.circle(screen, (255, 102, 255), [850, 210], 4)
     text_handler(screen, "- Pluto", 857, 205, 11, 255)
 
 
 def menu(screen, states, scr_width, scr_height, numDays):
     """
         Method that will display main menu, as well as handles actions to the menu. If mouse is hovering over menu item
-        the text for that menu item will change from grey to white. If clicked on or hovered over, menu item will activate. 
-        
+        the text for that menu item will change from grey to white. If clicked on or hovered over, menu item will activate.
+
         Methods used: text_handler - displays text on the screen
                       pygame.draw - draws rectangles on the screen to separate parts of the application.
-                            
-        :param play_pause: 
-        :param toggle:
-        :param adjust:
-        :param upload:
-        :param nasa_right:
-        :param key_menu_option:
-        :param day_select:
-        
+
+        List of input parameters:
+
+        :param screen: window created by pygame used to display application
+        :param states: A list of the current states of the system, see list of states below
+        :param scr_width: An in that represents the width of the screen
+        :param scr_height: An int that represents the height of the screen
+        :param numDays: An int that represents how many Earth days have passed in the simulation
+
+        List of Menu Selection Areas:
+
+        :param play_pause: List that contains the length and width parameters for the play/pause menu option
+        :param toggle: List that contains the length and width parameters for the view toggle menu option
+        :param adjust: List that contains the length and width parameters for the speed adjustment menu option
+        :param upload: List that contains the length and width parameters for the file upload menu option
+        :param nasa_right: List that contains the length and width parameters for the display pluto menu option
+        :param key_menu_option: List that contains the length and width parameters for the display key menu option
+        :param day_select: List that contains the length and width parameters for the point in time selection menu option
+
         List of states of the application:
-        
-        :param pause:
-        :param view:
-        :param speed:
-        :param rev:
-        :param upload:
-        :param click_now:
-        :param input_active:
-        :param nasa:
-        :param input2_active:
-        :param textbox2_active:
-        :param input2_text:
-        
+
+        :param pause: An int that specifies whether or not the simulation runs, 0 means it's running, 1 means it is paused
+        :param view: An int that determines what view is displayed, 0 for overhead view, 1 for side view
+        :param speed: An int that determines the speed of the simulation, 1x, 2x, 4x, etc
+        :param rev: An int that would determine if the simulation is running in reverse or not, not currently implemented
+        :param click_now: An int that determines whether the mouse is being clicked, 0 means no click, 1 means click
+        :param input_active: An int that determines whether the file input text box shows, 0, means no show, 1 means it will show
+        :param nasa: String that activates pluto, Yes, means NASA is correct, and pluto is not a planet, No means NASA is incorrect and pluto is a planet
+        :param input2_active: An int that displays the travel to a day textbox, 0 means no show, 1 means it shows
+        :param textbox2_active: An int that determines whether the travel to textbox is showing, 0 means no, 1 means yes
+        :param input2_text: String that determines what day will be traveled to after the travel to day is determined
+
         :return: returns the above list of states to feed information to the program for control of specific features
     """
     play_pause = [int(scr_width / 33), int(scr_height / 15 * 1.9)]
@@ -709,12 +807,24 @@ def menu(screen, states, scr_width, scr_height, numDays):
         else:
             text_handler(screen, input2_text, int(scr_width / 2.51) + 3, int(scr_height / 2.17) + 3, 30, 255)
 
+    return [pause, view, speed, rev, upload, click_now, input_active, textbox_active, input_text, nasa, input2_active,
+            textbox2_active, input2_text]
 
-    return [pause, view, speed, rev, upload, click_now, input_active, textbox_active, input_text, nasa, input2_active, textbox2_active, input2_text]
 
-
-# returns actionFlag, click_now
 def click_handler(click_now):
+    """
+        Function to easily capture mouse location and actions. click_now is used to prevent clicks from being repeated
+        each time the simulation screen is re-rendered.
+
+        :param click_now: contains an integer of either 0 or 1 that denotes whether or not the mouse was pressed down duing the
+        previous program cycle in order to handle sustained presses
+
+        :returns:
+        action_flag- Flag is set to 0 if the click is a continued press, 1 if the click is new
+        click_now- Set to 0 if the left mouse button is released, 1 if pressed
+        click_x- The inetger x-coordinate of the mouse
+        click_y- The integer y-coordinate of the mouse
+    """
     mouse = pygame.mouse.get_pos()
     click = pygame.mouse.get_pressed()
     if click[0] == 1:
@@ -727,6 +837,17 @@ def click_handler(click_now):
 
 
 def text_handler(screen, text, scr_x, scr_y, size, color):
+    """
+        Function to place custom text on the screen at any desired location. The color of the text is currently restricted to
+        shades of grey and white to match the visual theme we are pursuing.
+
+        :param screen: the usable area for drawing within the application window
+        :param text: string of text to be displayed on the screen. One line only.
+        :param scr_x: the x coordinate for the text to be located at. Must be an integer
+        :param scr_y: the y coordinate for the text to be located at. Must be an integer
+        :param size: the size of the text to be displayed, in pixels (height). Must be an integer
+        :param color: grey shade of the output. Must be an integer between 0 and 255.
+    """
     large_text = pygame.font.Font('freesansbold.ttf', size)
     text_surf = large_text.render(text, True, (color, color, color))
     text_rect = text_surf.get_rect()
@@ -735,6 +856,14 @@ def text_handler(screen, text, scr_x, scr_y, size, color):
 
 
 def boxes(screen, scr_width, scr_height):
+    """
+        Function to draw the boundries of the three areas of the application. These being the menu, solar system view, and
+        inner planet view. These views are static and rendered first, putting them at the bottom of the visual instnaces
+
+        :param screen: the usable area for drawing within the application window
+        :param scr_width: the width of the screen in pixels. This will always be an integer used for object placement math.
+        :param scr_height: the height of the screen in pixels. This will always be an integer used for object placement math.
+    """
     pygame.draw.rect(screen,
                      (255, 255, 255),
                      pygame.Rect(
@@ -765,6 +894,14 @@ def boxes(screen, scr_width, scr_height):
 
 
 def menu_text(screen, scr_width, scr_height):
+    """
+        Function to display the base text of the menu on the screen. All values start out as light grey but are overlaid with
+        white text by another method when moused over
+
+        :param screen: the usable area for drawing within the application window
+        :param scr_width: the width of the screen in pixels. This will always be an integer used for object placement math.
+        :param scr_height: the height of the screen in pixels. This will always be an integer used for object placement math.
+    """
     text_handler(screen,
                  'Inner Planets',
                  int(scr_width / 13.8),
