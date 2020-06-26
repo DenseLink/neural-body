@@ -1,0 +1,12 @@
+Metadata-Version: 2.1
+Name: neural-body
+Version: 0.1.0
+Summary: An n-body simulator
+Home-page: https://github.com/nedgar76/neural-body
+Author: AstroGators
+License: UNKNOWN
+Description: # I can describe things here
+        
+Platform: UNKNOWN
+Requires-Python: >=3.8, <4
+Description-Content-Type: text/markdown

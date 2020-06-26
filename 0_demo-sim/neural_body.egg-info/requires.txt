@@ -1,0 +1,4 @@
+numpy
+pandas
+pygame==2.0.0.dev10
+tensorflow

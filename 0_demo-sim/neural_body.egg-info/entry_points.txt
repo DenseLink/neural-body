@@ -1,0 +1,3 @@
+[console_scripts]
+neural_body = neural_body.grav2:main
+

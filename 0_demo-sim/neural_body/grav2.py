@@ -2,11 +2,14 @@ import pygame
 import math
 import sys
 import pandas as pd
-from BenrulesRealTimeSim import BenrulesRealTimeSim
+from neural_body.BenrulesRealTimeSim import BenrulesRealTimeSim
 import os
 
 # Set audio driver to avoid ALSA errors
 os.environ['SDL_AUDIODRIVER'] = 'dsp'
+
+# Grab the current working to use for referencing data files
+current_working_directory = os.path.dirname(os.path.realpath(__file__))
 
 # Check if DISPLAY has been detected.  If not, assume WSL with pycharm and grab
 # display connection.
@@ -62,7 +65,7 @@ def sun(screen, x, y):
     :param x: the integer x-coordinate pixel value where the sun should be placed
     :param y: the integer y-coordinate pixel value where the sun should be placed
     """
-    sun_img = pygame.image.load('sun.png')
+    sun_img = pygame.image.load(current_working_directory + '/img/sun.png')
     sun_img = pygame.transform.scale(sun_img, (10, 10))
     screen.blit(sun_img, (x, y))
 
@@ -201,7 +204,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
             # TODO: Get CSV location from prompt and load CSV file to pandas dataframe.
             # TODO: Add error handling for file opening.
             # TODO: Add error handling that check to make sure pluto or mars are the only "satellites" selected.  Make sure it is a valid config file.
-            start_string = "mars_sim_config.csv"
+            start_string = current_working_directory + "/sim_configs/mars_sim_config.csv"
             if past_input != "":
                 start_string = past_input
             simulation = BenrulesRealTimeSim(
@@ -215,7 +218,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
 
             sun_i_x = 185
             sun_i_y = 540
-            sun_img = pygame.image.load('sun.png')
+            sun_img = pygame.image.load(current_working_directory + '/img/sun.png')
             sun_img = pygame.transform.scale(sun_img, (10, 10))
 
             # Get next simulator state (positioning of all objects).
@@ -397,7 +400,6 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
 
                 # If simulation not paused, then continue with moving the objects.
                 if pause == 0:
-                    # TODO: Could a queue just be used here?
                     # shifts all data points within the lists to the left to make room for the new trail data point
                     for j in range(0, num_planets):
                         for i in range(0, tail_length - 1):
@@ -862,6 +864,7 @@ def boxes(screen, scr_width, scr_height):
 
         :param screen: the usable area for drawing within the application window
         :param scr_width: the width of the screen in pixels. This will always be an integer used for object placement math.
+        :param scr_height: the height of the screen in pixels. This will always be an integer used for object placement math.
         :param scr_height: the height of the screen in pixels. This will always be an integer used for object placement math.
     """
     pygame.draw.rect(screen,

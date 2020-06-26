@@ -20,6 +20,7 @@ import math
 import pandas as pd
 import numpy as np
 import tensorflow as tf
+import os
 
 
 class BenrulesRealTimeSim:
@@ -230,11 +231,16 @@ class BenrulesRealTimeSim:
         self._body_locations_hist = self._initialize_history()
         # Amount of time that has passed in a single time step in seconds.
         self._time_step = time_step
+        # Grab the current working to use for referencing data files
+        self._current_working_directory = os.path.dirname(os.path.realpath(__file__))
         # Create neural network object that lets us run neural network
         # predictions as well.
         # Default to mars model if key in dictionary not found.
-        nn_path = self._neural_networks.get(str(
-            self._satellite_predicting_name), "mars")
+        nn_path = self._current_working_directory + "/nn/" \
+                  + self._neural_networks.get(
+            str(self._satellite_predicting_name),
+            "mars"
+        )
         self._nn = self._NeuralNet(
             model_path=nn_path,
             planet_predicting=self._satellite_predicting_name

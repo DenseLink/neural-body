@@ -1,0 +1,17 @@
+LICENSE.txt
+README.md
+setup.cfg
+setup.py
+neural_body/BenrulesRealTimeSim.py
+neural_body/grav2.py
+neural_body.egg-info/PKG-INFO
+neural_body.egg-info/SOURCES.txt
+neural_body.egg-info/dependency_links.txt
+neural_body.egg-info/entry_points.txt
+neural_body.egg-info/requires.txt
+neural_body.egg-info/top_level.txt
+neural_body/img/sun.png
+neural_body/nn/MARS-Predict-NN-Deploy-V1.02-LargeDataset_2-layer_selu_lecun-normal_mae_Adam_lr-1e-5_bs-128_epoch-350.h5
+neural_body/nn/Predict-NN-Deploy-V1.02-LargeDataset_2-layer_selu_lecun-normal_mae_Adam_lr-1e-6_bs-128_epoch-250.h5
+neural_body/sim_configs/mars_sim_config.csv
+neural_body/sim_configs/pluto_sim_config.csv
