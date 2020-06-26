@@ -1,16 +1,11 @@
 import pygame
-import math
 import sys
 import pandas as pd
 from neural_body.BenrulesRealTimeSim import BenrulesRealTimeSim
-# neural_body.BenrulesRealTimeSim import BenrulesRealTimeSim
 import os
 
 # Set audio driver to avoid ALSA errors
 os.environ['SDL_AUDIODRIVER'] = 'dsp'
-
-# Grab the current working to use for referencing data files
-
 
 # Check if DISPLAY has been detected.  If not, assume WSL with pycharm and grab
 # display connection.
@@ -34,9 +29,10 @@ pygame.init()
 
 def main():
     """
-        Main function of the program, where all of the fun begins. Basic enviroment attributes are set such as the screen
-        dimensions, number of planets (total on screen, main view plus inner planet view), the planet tail length,
-        and the program clock
+        Main function of the program, where all of the fun begins. Basic
+        environment attributes are set such as the screen dimensions, number
+        of planets (total on screen, main view plus inner planet view), the
+        planet tail length, and the program clock
     """
     # Set screen size and launch window
     scr_width = 1000
@@ -51,20 +47,24 @@ def main():
     clock = pygame.time.Clock()
 
     # trackers for the planet trails
-    num_planets = 13  # TODO: Initialize the number of bodies from the config file.  Are we just adding inner view as other planets?
+    num_planets = 13
     tail_length = 150
     orbits(screen, num_planets, tail_length, clock, scr_width, scr_height)
 
 
-# simple function for putting the sun on the screen at a given coordinate. In the future, this style will be used for
+# simple function for putting the sun on the screen at a given coordinate.
+# In the future, this style will be used for
 # the planets and the png that keeps their dark side shadowed
 def sun(screen, x, y):
     """
-    A simple function for loading the sun image and placing it on the screen at a given coordinate.
+    A simple function for loading the sun image and placing it on the screen at
+    a given coordinate.
 
     :param screen: window created by pygame used to display application
-    :param x: the integer x-coordinate pixel value where the sun should be placed
-    :param y: the integer y-coordinate pixel value where the sun should be placed
+    :param x: the integer x-coordinate pixel value where the sun should be
+    placed
+    :param y: the integer y-coordinate pixel value where the sun should be
+    placed
     """
     current_working_directory = os.path.dirname(os.path.realpath(__file__))
     sun_img = pygame.image.load(current_working_directory + '/img/sun.png')
@@ -74,29 +74,34 @@ def sun(screen, x, y):
 
 def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
     """
-          Function that runs the simulation. Handles function calls to display all visual elements and determine orbital locations.
+          Function that runs the simulation. Handles function calls to display
+          all visual elements and determine orbital locations.
 
-          This class operates as the master of the program, containing the infnite loop that the program relies on in
-          order to function. All important interactions between the various components of the program are routed through
-          this class, and many vital mathematic operations reside within it. Because global variables are not used, this class
-          acts as an intermediate to pass variables as parameters and recieve them back as returned values.
+          This class operates as the master of the program, containing the
+          infnite loop that the program relies on in order to function. All
+          important interactions between the various components of the program
+          are routed through this class, and many vital mathematic operations
+          reside within it. Because global variables are not used, this class
+          acts as an intermediate to pass variables as parameters and receive
+          them back as returned values.
 
-          Methods used: pygame.draw.circle - replicates the planets drawn on the screen
-                        text_handler - names each of the replicated planets
-                        BenrulesRealTimeSim - creates a real time simulator of the sun, planets, and pluto.
-                        pygame.image.load - loads an image from a file
-                        pygame.transform.scale - scales an image to a specified width and height
-                        get_next_sim_state - updates the dictionary of current simulation data to the next time_step
-                        screen.fill - changes the color of the entire pygame canvas
-                        screen.blit - method to display a supplied image on the scren as output
-                        pygame.draw.line - pygame method used to draw a line, here is used to draw the trails
-                        pygame.draw.circle - pygame method used to draw circles, here used to represent the planets
-                        current_time_step - Setter function used to change the point in time of the simulation
-                        pygame.event.get() - method to handle a user interaction event
-                        pygame.quit() - Pygame method used to quit running pygame
-                        sys.exit() - Method used to exit the program
-                        pygame.display.flip() - method to refresh the pygame display
-                        clock.tick(60) - method used to set a frame rate of 60 frames per second
+          Methods used:
+            * pygame.draw.circle - replicates the planets drawn on the screen
+            * text_handler - names each of the replicated planets
+            * BenrulesRealTimeSim - creates a real time simulator of the sun, planets, and pluto.
+            * pygame.image.load - loads an image from a file
+            * pygame.transform.scale - scales an image to a specified width and height
+            * get_next_sim_state - updates the dictionary of current simulation data to the next time_step
+            * screen.fill - changes the color of the entire pygame canvas
+            * screen.blit - method to display a supplied image on the scren as output
+            * pygame.draw.line - pygame method used to draw a line, here is used to draw the trails
+            * pygame.draw.circle - pygame method used to draw circles, here used to represent the planets
+            * current_time_step - Setter function used to change the point in time of the simulation
+            * pygame.event.get() - method to handle a user interaction event
+            * pygame.quit() - Pygame method used to quit running pygame
+            * sys.exit() - Method used to exit the program
+            * pygame.display.flip() - method to refresh the pygame display
+            * clock.tick(60) - method used to set a frame rate of 60 frames per second
 
             Input Parameters:
                 :param num_planets: Int representing the number of planet bodies on the entire screen, inner planets view + solar system view
@@ -195,7 +200,6 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
             # Set time step and speed factor.
             # 1 is about a 35 second year (earth)
             speed = 1
-            # TODO: Figure out time step
             # time_step = 750000 * speed
             time_step = 86400 * speed
             # Keep track of how many simulation time steps have passed.
@@ -203,9 +207,6 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
 
             # Create simulation object that keeps track of simultion state and predicts
             # position of satellite specified in config file.
-            # TODO: Get CSV location from prompt and load CSV file to pandas dataframe.
-            # TODO: Add error handling for file opening.
-            # TODO: Add error handling that check to make sure pluto or mars are the only "satellites" selected.  Make sure it is a valid config file.
             current_working_directory = os.path.dirname(os.path.realpath(__file__))
             start_string = current_working_directory + "/sim_configs/mars_sim_config.csv"
             if past_input != "":
@@ -573,44 +574,70 @@ def printKey(screen):  # scr_width, scr_height
 
 def menu(screen, states, scr_width, scr_height, numDays):
     """
-        Method that will display main menu, as well as handles actions to the menu. If mouse is hovering over menu item
-        the text for that menu item will change from grey to white. If clicked on or hovered over, menu item will activate.
+        Method that will display main menu, as well as handles actions to the
+        menu. If mouse is hovering over menu item the text for that menu item
+        will change from grey to white. If clicked on or hovered over, menu
+        item will activate.
 
-        Methods used: text_handler - displays text on the screen
-                      pygame.draw - draws rectangles on the screen to separate parts of the application.
+        **Methods used:**
 
-        List of input parameters:
+        - text_handler - displays text on the screen
+        - pygame.draw - draws rectangles on the screen to separate parts of
+          the application.
+
+        **List of input parameters:**
 
         :param screen: window created by pygame used to display application
-        :param states: A list of the current states of the system, see list of states below
+        :param states: A list of the current states of the system, see list
+            of states below
         :param scr_width: An in that represents the width of the screen
         :param scr_height: An int that represents the height of the screen
-        :param numDays: An int that represents how many Earth days have passed in the simulation
+        :param numDays: An int that represents how many Earth days have passed
+            in the simulation
 
-        List of Menu Selection Areas:
+        **List of Menu Selection Areas:**
 
-        :param play_pause: List that contains the length and width parameters for the play/pause menu option
-        :param toggle: List that contains the length and width parameters for the view toggle menu option
-        :param adjust: List that contains the length and width parameters for the speed adjustment menu option
-        :param upload: List that contains the length and width parameters for the file upload menu option
-        :param nasa_right: List that contains the length and width parameters for the display pluto menu option
-        :param key_menu_option: List that contains the length and width parameters for the display key menu option
-        :param day_select: List that contains the length and width parameters for the point in time selection menu option
+        :param play_pause: List that contains the length and width parameters
+            for the play/pause menu option
+        :param toggle: List that contains the length and width parameters for
+            the view toggle menu option
+        :param adjust: List that contains the length and width parameters for
+            the speed adjustment menu option
+        :param upload: List that contains the length and width parameters for
+            the file upload menu option
+        :param nasa_right: List that contains the length and width parameters
+            for the display pluto menu option
+        :param key_menu_option: List that contains the length and width
+            parameters for the display key menu option
+        :param day_select: List that contains the length and width parameters
+            for the point in time selection menu option
 
-        List of states of the application:
+        **List of states of the application:**
 
-        :param pause: An int that specifies whether or not the simulation runs, 0 means it's running, 1 means it is paused
-        :param view: An int that determines what view is displayed, 0 for overhead view, 1 for side view
-        :param speed: An int that determines the speed of the simulation, 1x, 2x, 4x, etc
-        :param rev: An int that would determine if the simulation is running in reverse or not, not currently implemented
-        :param click_now: An int that determines whether the mouse is being clicked, 0 means no click, 1 means click
-        :param input_active: An int that determines whether the file input text box shows, 0, means no show, 1 means it will show
-        :param nasa: String that activates pluto, Yes, means NASA is correct, and pluto is not a planet, No means NASA is incorrect and pluto is a planet
-        :param input2_active: An int that displays the travel to a day textbox, 0 means no show, 1 means it shows
-        :param textbox2_active: An int that determines whether the travel to textbox is showing, 0 means no, 1 means yes
-        :param input2_text: String that determines what day will be traveled to after the travel to day is determined
+        :param pause: An int that specifies whether or not the simulation runs,
+            0 means it's running, 1 means it is paused
+        :param view: An int that determines what view is displayed, 0 for
+            overhead view, 1 for side view
+        :param speed: An int that determines the speed of the simulation,
+            1x, 2x, 4x, etc
+        :param rev: An int that would determine if the simulation is running
+            in reverse or not, not currently implemented
+        :param click_now: An int that determines whether the mouse is being
+            clicked, 0 means no click, 1 means click
+        :param input_active: An int that determines whether the file input
+            text box shows, 0, means no show, 1 means it will show
+        :param nasa: String that activates pluto, Yes, means NASA is correct,
+            and pluto is not a planet, No means NASA is incorrect and pluto
+            is a planet
+        :param input2_active: An int that displays the travel to a day
+            textbox, 0 means no show, 1 means it shows
+        :param textbox2_active: An int that determines whether the travel to
+            textbox is showing, 0 means no, 1 means yes
+        :param input2_text: String that determines what day will be traveled
+            to after the travel to day is determined
 
-        :return: returns the above list of states to feed information to the program for control of specific features
+        :return: returns the above list of states to feed information to the
+            program for control of specific features
     """
     play_pause = [int(scr_width / 33), int(scr_height / 15 * 1.9)]
     toggle = [int(scr_width / 33), int(scr_height / 15 * 2.7)]
@@ -883,14 +910,13 @@ def click_handler(click_now):
         Function to easily capture mouse location and actions. click_now is used to prevent clicks from being repeated
         each time the simulation screen is re-rendered.
 
-        :param click_now: contains an integer of either 0 or 1 that denotes whether or not the mouse was pressed down duing the
-        previous program cycle in order to handle sustained presses
+        :param click_now: contains an integer of either 0 or 1 that denotes whether or not the mouse was pressed down during the previous program cycle in order to handle sustained presses
 
         :returns:
-        action_flag- Flag is set to 0 if the click is a continued press, 1 if the click is new
-        click_now- Set to 0 if the left mouse button is released, 1 if pressed
-        click_x- The inetger x-coordinate of the mouse
-        click_y- The integer y-coordinate of the mouse
+        * action_flag- Flag is set to 0 if the click is a continued press, 1 if the click is new
+        * click_now- Set to 0 if the left mouse button is released, 1 if pressed
+        * click_x- The inetger x-coordinate of the mouse
+        * click_y- The integer y-coordinate of the mouse
     """
     mouse = pygame.mouse.get_pos()
     click = pygame.mouse.get_pressed()
@@ -905,8 +931,9 @@ def click_handler(click_now):
 
 def text_handler(screen, text, scr_x, scr_y, size, color):
     """
-        Function to place custom text on the screen at any desired location. The color of the text is currently restricted to
-        shades of grey and white to match the visual theme we are pursuing.
+        Function to place custom text on the screen at any desired location.
+        The color of the text is currently restricted to shades of grey and
+        white to match the visual theme we are pursuing.
 
         :param screen: the usable area for drawing within the application window
         :param text: string of text to be displayed on the screen. One line only.
