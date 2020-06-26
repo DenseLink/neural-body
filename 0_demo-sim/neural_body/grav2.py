@@ -840,6 +840,7 @@ def menu(screen, states, scr_width, scr_height, numDays):
 
     if input2_active == 1:
         pause = 1
+
         prompt = "Please type the time travel day #:"
         pygame.draw.rect(screen,
                          (0, 0, 0),
@@ -881,6 +882,17 @@ def menu(screen, states, scr_width, scr_height, numDays):
             pygame.draw.rect(screen, (100, 100, 100),
                              pygame.Rect(int(scr_width / 2.51) + 1, int(scr_height / 2.2) + 1, int(scr_width / 1.9) - 1,
                                          int(scr_height / 15) - 1))
+        if input2_text != "":
+            try:
+                temp_num = int(input2_text)
+            except:
+                valid_File = 2
+                text_handler(screen,
+                             "Invalid number, please try again!",
+                             int(scr_width / 2.6) + 10,
+                             int(scr_height / 1.9) + 10,
+                             12,
+                             255)
         if textbox2_active == 1:
             pygame.draw.rect(screen, (100, 100, 100),
                              pygame.Rect(int(scr_width / 2.51) + 1, int(scr_height / 2.2) + 1, int(scr_width / 1.9) - 1,
@@ -890,9 +902,22 @@ def menu(screen, states, scr_width, scr_height, numDays):
                 if event.type == pygame.KEYDOWN:
                     if input2_active == 1:
                         if event.key == pygame.K_RETURN:
-                            input2_active = 0
-                            textbox2_active = 0
-                            pause = 0
+                            try:
+                                temp_num = int(input2_text)
+                            except:
+                                valid_File = 2
+                                print("An error is thrown, v = 2")
+                                text_handler(screen,
+                                             "Invalid number, please try again!",
+                                             int(scr_width / 2.6) + 10,
+                                             int(scr_height / 1.9) + 10,
+                                             12,
+                                             255)
+                            else:
+                                input2_active = 0
+                                textbox2_active = 0
+                                pause = 0
+
                         elif event.key == pygame.K_BACKSPACE:
                             input2_text = input_text[:-1]
                         else:
