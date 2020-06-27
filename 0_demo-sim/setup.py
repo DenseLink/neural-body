@@ -8,7 +8,10 @@ https://github.com/pypa/sampleproject
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
 from os import path
-
+#This block of code builds the Sphinx html files
+from sphinx.setup_command import BuildDoc
+cmdclass = {'build_sphinx': BuildDoc}
+#This block of code builds the Sphinx html files
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
@@ -19,6 +22,21 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 # Fields marked as "Optional" may be commented out.
 
 setup(
+    #This is the code that will allow you to autogenerate your html files
+    #from the command line at the top of the tree (so in the 0_dem-sim folder directory)
+    #you need to type sphinx-quickstart. Most of the options are going to be default.
+    #You need to input the project name, Author names, and project release information when that appears.
+    #When the option 'Name of your master document (without suffix) [index]: pops up you must type contents
+    #The option under this you must type y. THis is to automatically instert docstrings from modules.
+    #Everything else is default. When this is done you must then drop the contents.rst file into the docs folder.
+    #then run python3 setup.py build_sphinx on the command line from the same directory.
+    command_options={
+        'build_sphinx': {
+            'project': ('setup.py', 'neural-body'),
+            'version': ('setup.py', '1.0'),
+            'release': ('setup.py', '1.0'),
+            'source_dir': ('setup.py', 'docs')}},
+
     # This is the name of your project. The first time you publish this
     # package, this name will be registered for you. It will determine how
     # users can install this project, e.g.:
