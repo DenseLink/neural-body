@@ -29,12 +29,14 @@ class BenrulesRealTimeSim:
     interacts with the NNModelLoader class to load a neural network that
     predicts the motion of one of the bodies in the next time step.
 
-
     Instance Variables:
     :ivar _bodies: Current physical state of each body at the current time step
-    :ivar _body_locations_hist: Pandas dataframe containing the positional history of all bodies in the simulation.
-    :ivar _time_step: The amount of time the simulation uses between time steps.  The amount of "simulation time" that passes.
-    :ivar _nn: NNModelLoader object instance that contains the neural network loaded in Tensorflow.
+    :ivar _body_locations_hist: Pandas dataframe containing the positional
+        history of all bodies in the simulation.
+    :ivar _time_step: The amount of time the simulation uses between time
+        steps.  The amount of "simulation time" that passes.
+    :ivar _nn: NNModelLoader object instance that contains the neural network
+        loaded in Tensorflow.
     """
     # Nested Classes
     class _Point:
