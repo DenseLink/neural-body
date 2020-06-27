@@ -11,9 +11,8 @@ from os import path
 #This block of code builds the Sphinx html files
 from sphinx.setup_command import BuildDoc
 cmdclass = {'build_sphinx': BuildDoc}
-#This block of code builds the Sphinx html files
-here = path.abspath(path.dirname(__file__))
 
+here = path.abspath(path.dirname(__file__))
 # Get the long description from the README file
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
@@ -21,22 +20,12 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 # Arguments marked as "Required" below must be included for upload to PyPI.
 # Fields marked as "Optional" may be commented out.
 
-setup(
-    #This is the code that will allow you to autogenerate your html files
-    #from the command line at the top of the tree (so in the 0_dem-sim folder directory)
-    #you need to type sphinx-quickstart. Most of the options are going to be default.
-    #You need to input the project name, Author names, and project release information when that appears.
-    #When the option 'Name of your master document (without suffix) [index]: pops up you must type contents
-    #The option under this you must type y. THis is to automatically instert docstrings from modules.
-    #Everything else is default. When this is done you must then drop the contents.rst file into the docs folder.
-    #then run python3 setup.py build_sphinx on the command line from the same directory.
-    command_options={
-        'build_sphinx': {
-            'project': ('setup.py', 'neural-body'),
-            'version': ('setup.py', '1.0'),
-            'release': ('setup.py', '1.0'),
-            'source_dir': ('setup.py', 'docs')}},
+# Global arguments for both the setup config and the sphinx config.
+name='neural_body'
+version='1.0.0'
+release='0.1.0'
 
+setup(
     # This is the name of your project. The first time you publish this
     # package, this name will be registered for you. It will determine how
     # users can install this project, e.g.:
@@ -48,7 +37,7 @@ setup(
     # There are some restrictions on what makes a valid project name
     # specification here:
     # https://packaging.python.org/specifications/core-metadata/#name
-    name='neural_body',  # Required
+    name=name,  # Required
 
     # Versions should comply with PEP 440:
     # https://www.python.org/dev/peps/pep-0440/
@@ -56,7 +45,23 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.1.0',  # Required
+    version=release,  # Required
+
+    # This is the code that will allow you to autogenerate your html files   
+    # from the command line at the top of the tree (so in the 0_dem-sim folder directory)
+    # you need to type sphinx-quickstart. Most of the options are going to be default.
+    # You need to input the project name, Author names, and project release information when that appears.
+    # When the option 'Name of your master document (without suffix) [index]: pops up you must type contents
+    # The option under this you must type y. THis is to automatically instert docstrings from modules.
+    # Everything else is default. When this is done you must then drop the contents.rst file into the docs folder.
+    # then run python3 setup.py build_sphinx on the command line from the same directory.
+    command_options={
+        'build_sphinx': {
+            'project': ('setup.py', name),
+            'version': ('setup.py', version),
+            'release': ('setup.py', release),
+            'source_dir': ('setup.py', 'docs'),
+            'build_dir': ('setup.py', 'docs')}},
 
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:

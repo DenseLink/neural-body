@@ -60,13 +60,13 @@ This selection includes an overview of all menu buttons and functionality of the
 
 ### Pause / Play
 The simulation can be paused at any point.
-![Setup Overview GIF](readme_resources/play_pause.GIF)
+![Setup Overview GIF](https://github.com/nedgar76/neural-body/blob/demo-sim/0_demo-sim/readme_resources/play_pause.GIF?raw=true)
 ### Toggle View
 The simulation view can be toggled from overhead to side view.
-![Setup Overview GIF](readme_resources/toggle_view.GIF)
+![Setup Overview GIF](https://github.com/nedgar76/neural-body/blob/demo-sim/0_demo-sim/readme_resources/toggle_view.GIF?raw=true)
 ### Adjust Speed
 The simulation can be sped up or slowed down.
-![Setup Overview GIF](readme_resources/adjust_speed.GIF)
+![Setup Overview GIF](https://github.com/nedgar76/neural-body/blob/demo-sim/0_demo-sim/readme_resources/adjust_speed.GIF?raw=true)
 ### New Simulation
 The initial state of all bodies in the system are contained in CSV files packaged
 with the simulator.  Whichever planet is designated as the "satellite" tells the 
@@ -79,21 +79,21 @@ Current Config File Options:
 - mars_sim_config.csv
 - pluto_sim_config.csv
 
-![Config File Overview](readme_resources/config_overview.png)
-![Setup Overview GIF](readme_resources/new_simulation.GIF)
+![Config File Overview](https://github.com/nedgar76/neural-body/blob/demo-sim/0_demo-sim/readme_resources/config_overview.png?raw=true)
+![Setup Overview GIF](https://github.com/nedgar76/neural-body/blob/demo-sim/0_demo-sim/readme_resources/new_simulation.GIF?raw=true)
 ### Is NASA Right?
 If you disagree with NASA, you can bring Pluto back as a planet.  
-![Setup Overview GIF](readme_resources/is_nasa_right.GIF)
+![Setup Overview GIF](https://github.com/nedgar76/neural-body/blob/demo-sim/0_demo-sim/readme_resources/is_nasa_right.GIF?raw=true)
 ### Show Planet Key
 Hovering over this option displays a color coded key of all planets in the system.
-![Setup Overview GIF](readme_resources/show_planet_key.GIF)
+![Setup Overview GIF](https://github.com/nedgar76/neural-body/blob/demo-sim/0_demo-sim/readme_resources/show_planet_key.GIF?raw=true)
 ### Travel to a Day
 Selecting this option allows the user to rewind or fast forward the simulation by 
 entering the day they would like to jump to.  There is a heavy delay for fast forwarding
 as the simulator right now must inefficiently calculate every frame between the current
 day and the day you entered.  Negative time values will be treated as reverting 
 back to 0 day.
-![Setup Overview GIF](readme_resources/travel_to_a_day.GIF)
+![Setup Overview GIF](https://github.com/nedgar76/neural-body/blob/demo-sim/0_demo-sim/readme_resources/travel_to_a_day.GIF?raw=true)
 
 
 ## Documentation

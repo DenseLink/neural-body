@@ -1,5 +1,5 @@
 .. Neural Body documentation master file, created by
-   sphinx-quickstart on Fri Jun 26 22:29:17 2020.
+   sphinx-quickstart on Sat Jun 27 12:45:22 2020.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
