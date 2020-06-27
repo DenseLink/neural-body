@@ -30,8 +30,8 @@ The link is purely to view code, learning curves, and results.
 ## Table of Contents
 - [Installation](#installation)
 - [Usage](#usage)
+- [Documentation](#documentation)
 - [Team](#team)
-- [FAQ](#faq)
 - [License](#license)
 
 [![Game Overview Image](https://raw.githubusercontent.com/nedgar76/neural-body/demo-sim/0_demo-sim/readme_resources/overview_screenshot.png?token=ALC2NMM5G56RZFD237TQX32677FSA)]()
@@ -97,6 +97,9 @@ back to 0 day.
 
 
 ## Documentation
+To view the documentation online, go to the following URL: \
+<a href="https://nedgar76.github.io/neural-body/" target="_blank"> Neural Body Sphinx Documentation </a>
+
 Documentation for the source compiled with Sphinx is included in the `neural-body/0_demo-sim/docs/_build/html/`
 folder.  You will need to download and host yourself by running `python3 -m http.server --directory _build/html`
 ---
