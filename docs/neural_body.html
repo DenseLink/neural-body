@@ -1,0 +1,679 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>neural_body package &#8212; Neural Body 0.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="neural_body" href="modules.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="neural-body-package">
+<h1>neural_body package<a class="headerlink" href="#neural-body-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-neural_body.BenrulesRealTimeSim">
+<span id="neural-body-benrulesrealtimesim-module"></span><h2>neural_body.BenrulesRealTimeSim module<a class="headerlink" href="#module-neural_body.BenrulesRealTimeSim" title="Permalink to this headline">¶</a></h2>
+<p>Real-Time basic simulator for planetary motions with neural network
+inference for prediction of pluto’s position.</p>
+<p>This module contains the BenrulesRealTimeSim class, which creates a real time
+simulator of the sun, planets, and pluto.  The non-real-time version was
+forked from GitHub user benrules2 at the below repo:
+<a class="reference external" href="https://gist.github.com/benrules2/220d56ea6fe9a85a4d762128b11adfba">https://gist.github.com/benrules2/220d56ea6fe9a85a4d762128b11adfba</a>
+The simulator originally would simulate a fixed number of time steps and
+then output a record of the past simulation.  The code was repackaged into a
+class and methods added to allow querying and advancing of the simulator
+in real-time at a fixed time step.
+Further additions were made to then integrate a class for loading a neural
+network (NeuralNet) that would load a Tensorflow model, take a vector
+containing all other planetary positions (X, Y, Z) and output the predicted
+position of Pluto in the next time step.</p>
+<dl class="py class">
+<dt id="neural_body.BenrulesRealTimeSim.BenrulesRealTimeSim">
+<em class="property">class </em><code class="sig-prename descclassname">neural_body.BenrulesRealTimeSim.</code><code class="sig-name descname">BenrulesRealTimeSim</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">in_config_df</span></em>, <em class="sig-param"><span class="n">time_step</span><span class="o">=</span><span class="default_value">100</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_body/BenrulesRealTimeSim.html#BenrulesRealTimeSim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#neural_body.BenrulesRealTimeSim.BenrulesRealTimeSim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class containing a basic, real-time simulator for planet motions that also
+interacts with the NNModelLoader class to load a neural network that
+predicts the motion of one of the bodies in the next time step.</p>
+<p>Instance Variables:
+:ivar _bodies: Current physical state of each body at the current time step
+:ivar _body_locations_hist: Pandas dataframe containing the positional</p>
+<blockquote>
+<div><p>history of all bodies in the simulation.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Variables</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>_time_step</strong> – The amount of time the simulation uses between time
+steps.  The amount of “simulation time” that passes.</p></li>
+<li><p><strong>_nn</strong> – NNModelLoader object instance that contains the neural network
+loaded in Tensorflow.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="neural_body.BenrulesRealTimeSim.BenrulesRealTimeSim.bodies">
+<em class="property">property </em><code class="sig-name descname">bodies</code><a class="headerlink" href="#neural_body.BenrulesRealTimeSim.BenrulesRealTimeSim.bodies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Getter that retrieves the current state of the entire system in the
+simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return bodies</dt>
+<dd class="field-odd"><p>Returns the list of bodies.  Each item in the list
+is a Body object containing the physical state of the body.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="neural_body.BenrulesRealTimeSim.BenrulesRealTimeSim.body_locations_hist">
+<em class="property">property </em><code class="sig-name descname">body_locations_hist</code><a class="headerlink" href="#neural_body.BenrulesRealTimeSim.BenrulesRealTimeSim.body_locations_hist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Getter that returns a Pandas dataframe with the entire simulation
+history.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return body_locations_hist</dt>
+<dd class="field-odd"><p>Pandas dataframe containing the entire
+history of the simulation.  The positional data of all bodies
+over all time steps.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="neural_body.BenrulesRealTimeSim.BenrulesRealTimeSim.current_time_step">
+<em class="property">property </em><code class="sig-name descname">current_time_step</code><a class="headerlink" href="#neural_body.BenrulesRealTimeSim.BenrulesRealTimeSim.current_time_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Getter that retrieves the current time step the simulator is at.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return current_time_step</dt>
+<dd class="field-odd"><p>Current time step the simulator is at.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="neural_body.BenrulesRealTimeSim.BenrulesRealTimeSim.get_next_sim_state">
+<code class="sig-name descname">get_next_sim_state</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_body/BenrulesRealTimeSim.html#BenrulesRealTimeSim.get_next_sim_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#neural_body.BenrulesRealTimeSim.BenrulesRealTimeSim.get_next_sim_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to calculate the position of all system bodies in the next
+time step.</p>
+<p>When this method is called, the current system state is passed to the
+neural network to calculate the position of a certain body in the next
+time step.  After the neural network completes, the simulation then
+advances all bodies ahead using “physics”.  The positions of all
+bodies resulting from the “physics” are then packaged into a dictionary
+with the body name as key and a list containing the x,y,z coordinates
+of the body as the value attached to that key.  The predicted position
+from the neural network is also packaged as a dictionary with the name
+as key and predicted coordinates as the value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p>simulation_positions - Dictionary containing all body positions
+in the next time step calculated with “physics”.</p></li>
+<li><p>pred_pos - Dictionary containing the predicted position of a
+body using the neural network.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="neural_body.BenrulesRealTimeSim.BenrulesRealTimeSim.max_time_step_reached">
+<em class="property">property </em><code class="sig-name descname">max_time_step_reached</code><a class="headerlink" href="#neural_body.BenrulesRealTimeSim.BenrulesRealTimeSim.max_time_step_reached" title="Permalink to this definition">¶</a></dt>
+<dd><p>Getter that retrieves the maximum time step the simulation has reached.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return max_time_step_reached</dt>
+<dd class="field-odd"><p>Max time step the simulation has
+reached.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="neural_body.BenrulesRealTimeSim.BenrulesRealTimeSim.satellite_predicting_name">
+<em class="property">property </em><code class="sig-name descname">satellite_predicting_name</code><a class="headerlink" href="#neural_body.BenrulesRealTimeSim.BenrulesRealTimeSim.satellite_predicting_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Getter that retrieves the name of the planet the neural network is
+trying to predict the position of.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return planet_predicting_name</dt>
+<dd class="field-odd"><p>Name of the planet the neural
+network is trying to predict.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-neural_body.grav2">
+<span id="neural-body-grav2-module"></span><h2>neural_body.grav2 module<a class="headerlink" href="#module-neural_body.grav2" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="neural_body.grav2.boxes">
+<code class="sig-prename descclassname">neural_body.grav2.</code><code class="sig-name descname">boxes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">screen</span></em>, <em class="sig-param"><span class="n">scr_width</span></em>, <em class="sig-param"><span class="n">scr_height</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_body/grav2.html#boxes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#neural_body.grav2.boxes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that places UI divider boxes on the screen</p>
+<p>Function to draw the boundries of the three areas of the application.
+These being the menu, solar system view, and inner planet view. These
+views are static and rendered first, putting them at the bottom of the
+visual instnaces</p>
+<p><strong>List of input parameters:</strong></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>screen</strong> – the usable area for drawing within the application
+window</p></li>
+<li><p><strong>scr_width</strong> – the width of the screen in pixels. This will always
+be an integer used for object placement math.</p></li>
+<li><p><strong>scr_height</strong> – the height of the screen in pixels. This will always
+be an integer used for object placement math.</p></li>
+<li><p><strong>scr_height</strong> – the height of the screen in pixels. This will always
+be an integer used for object placement math.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="neural_body.grav2.click_handler">
+<code class="sig-prename descclassname">neural_body.grav2.</code><code class="sig-name descname">click_handler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">click_now</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_body/grav2.html#click_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#neural_body.grav2.click_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to capture characteristics of user clicks</p>
+<p>Function to easily capture mouse location and actions. click_now is
+used to prevent clicks from being repeated each time the simulation
+screen is re-rendered.</p>
+<p><strong>List of input parameters:</strong></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>click_now</strong> – contains an integer of either 0 or 1 that denotes
+whether or not the mouse was pressed down during the previous
+program cycle in order to handle sustained presses</p>
+</dd>
+</dl>
+<p><strong>List of returned values:</strong></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+<ul class="simple">
+<li><p>action_flag - Flag is set to 0 if the click is a continued press,
+1 if the click is new</p></li>
+<li><p>click_now - Set to 0 if the left mouse button is released, 1 if
+pressed</p></li>
+<li><p>click_x - The inetger x-coordinate of the mouse</p></li>
+<li><p>click_y - The integer y-coordinate of the mouse</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt id="neural_body.grav2.main">
+<code class="sig-prename descclassname">neural_body.grav2.</code><code class="sig-name descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_body/grav2.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#neural_body.grav2.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main function of the program, where all of the fun begins. Basic
+environment attributes are set such as the screen dimensions, number
+of planets (total on screen, main view plus inner planet view), the
+planet tail length, and the program clock</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="neural_body.grav2.menu">
+<code class="sig-prename descclassname">neural_body.grav2.</code><code class="sig-name descname">menu</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">screen</span></em>, <em class="sig-param"><span class="n">states</span></em>, <em class="sig-param"><span class="n">scr_width</span></em>, <em class="sig-param"><span class="n">scr_height</span></em>, <em class="sig-param"><span class="n">numDays</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_body/grav2.html#menu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#neural_body.grav2.menu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that will display main menu, as well as handles actions to the
+menu. If mouse is hovering over menu item the text for that menu item
+will change from grey to white. If clicked on or hovered over, menu
+item will activate.</p>
+<p><strong>Methods used:</strong></p>
+<ul class="simple">
+<li><p>text_handler - displays text on the screen</p></li>
+<li><p>pygame.draw - draws rectangles on the screen to separate parts of
+the application.</p></li>
+</ul>
+<p><strong>List of input parameters:</strong></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>screen</strong> – window created by pygame used to display application</p></li>
+<li><p><strong>states</strong> – A list of the current states of the system, see list
+of states below</p></li>
+<li><p><strong>scr_width</strong> – An in that represents the width of the screen</p></li>
+<li><p><strong>scr_height</strong> – An int that represents the height of the screen</p></li>
+<li><p><strong>numDays</strong> – An int that represents how many Earth days have passed
+in the simulation</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>List of Menu Selection Areas:</strong></p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>play_pause - List that contains the length and width parameters</dt><dd><p>for the play/pause menu option</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>toggle - List that contains the length and width parameters for</dt><dd><p>the view toggle menu option</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>adjust - List that contains the length and width parameters for</dt><dd><p>the speed adjustment menu option</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>upload - List that contains the length and width parameters for</dt><dd><p>the file upload menu option</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>nasa_right - List that contains the length and width parameters</dt><dd><p>for the display pluto menu option</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>key_menu_option - List that contains the length and width</dt><dd><p>parameters for the display key menu option</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>day_select - List that contains the length and width parameters</dt><dd><p>for the point in time selection menu option</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p><strong>List of states of the application:</strong></p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>pause - An int that specifies whether or not the simulation runs,</dt><dd><p>0 means it’s running, 1 means it is paused</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>view - An int that determines what view is displayed, 0 for</dt><dd><p>overhead view, 1 for side view</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>speed - An int that determines the speed of the simulation,</dt><dd><p>1x, 2x, 4x, etc</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>rev - An int that would determine if the simulation is running</dt><dd><p>in reverse or not, not currently implemented</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>click_now - An int that determines whether the mouse is being</dt><dd><p>clicked, 0 means no click, 1 means click</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>input_active - An int that determines whether the file input</dt><dd><p>text box shows, 0, means no show, 1 means it will show</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>nasa - String that activates pluto, Yes, means NASA is correct,</dt><dd><p>and pluto is not a planet, No means NASA is incorrect and pluto
+is a planet</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>input2_active - An int that displays the travel to a day</dt><dd><p>textbox, 0 means no show, 1 means it shows</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>textbox2_active - An int that determines whether the travel to</dt><dd><p>textbox is showing, 0 means no, 1 means yes</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>input2_text - String that determines what day will be traveled</dt><dd><p>to after the travel to day is determined</p>
+</dd>
+</dl>
+</li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>returns the above list of states to feed information to the
+program for control of specific features</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="neural_body.grav2.menu_text">
+<code class="sig-prename descclassname">neural_body.grav2.</code><code class="sig-name descname">menu_text</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">screen</span></em>, <em class="sig-param"><span class="n">scr_width</span></em>, <em class="sig-param"><span class="n">scr_height</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_body/grav2.html#menu_text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#neural_body.grav2.menu_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to place menu option text on the screen</p>
+<p>Function to display the base text of the menu on the screen. All
+values start out as light grey but are overlaid with
+white text by another method when moused over</p>
+<p><strong>List of input parameters:</strong></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>screen</strong> – the usable area for drawing within the application
+window</p></li>
+<li><p><strong>scr_width</strong> – the width of the screen in pixels. This will always
+be an integer used for object placement math.</p></li>
+<li><p><strong>scr_height</strong> – the height of the screen in pixels. This will
+always be an integer used for object placement math.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="neural_body.grav2.orbits">
+<code class="sig-prename descclassname">neural_body.grav2.</code><code class="sig-name descname">orbits</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">screen</span></em>, <em class="sig-param"><span class="n">num_planets</span></em>, <em class="sig-param"><span class="n">tail_length</span></em>, <em class="sig-param"><span class="n">clock</span></em>, <em class="sig-param"><span class="n">scr_width</span></em>, <em class="sig-param"><span class="n">scr_height</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_body/grav2.html#orbits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#neural_body.grav2.orbits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that runs the simulation. Handles function calls to display
+all visual elements and determine orbital locations.</p>
+<p>This class operates as the master of the program, containing the
+infinite loop that the program relies on in order to function. All
+important interactions between the various components of the program
+are routed through this class, and many vital mathematic operations
+reside within it. Because global variables are not used, this class
+acts as an intermediate to pass variables as parameters and receive
+them back as returned values.</p>
+<p>Methods used:
+- pygame.draw.circle - replicates the planets drawn on the screen
+- text_handler - names each of the replicated planets
+- BenrulesRealTimeSim - creates a real time simulator of the sun,</p>
+<blockquote>
+<div><p>planets, and pluto.</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>pygame.image.load - loads an image from a file</p></li>
+<li><p>pygame.transform.scale - scales an image to a specified width and
+height</p></li>
+<li><p>get_next_sim_state - updates the dictionary of current simulation
+data to the next time_step</p></li>
+<li><p>screen.fill - changes the color of the entire pygame canvas</p></li>
+<li><p>screen.blit - method to display a supplied image on the scren as
+output</p></li>
+<li><p>pygame.draw.line - pygame method used to draw a line, here is used to
+draw the trails</p></li>
+<li><p>pygame.draw.circle - pygame method used to draw circles, here used to
+represent the planets</p></li>
+<li><p>current_time_step - Setter function used to change the point in time
+of the simulation</p></li>
+<li><p>pygame.event.get() - method to handle a user interaction event</p></li>
+<li><p>pygame.quit() - Pygame method used to quit running pygame</p></li>
+<li><p>sys.exit() - Method used to exit the program</p></li>
+<li><p>pygame.display.flip() - method to refresh the pygame display</p></li>
+<li><p>clock.tick(60) - method used to set a frame rate of 60 frames per
+second</p></li>
+</ul>
+<p><strong>List of input parameters:</strong></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_planets</strong> – Int representing the number of planet bodies on the
+entire screen, inner planets view + solar system view</p></li>
+<li><p><strong>tail_length</strong> – Int representing the length of the tail to follow
+behind the orbiting planets</p></li>
+<li><p><strong>clock</strong> – a local variable storing a copy of the pygame clock time</p></li>
+<li><p><strong>screen</strong> – window created by pygame used to display application</p></li>
+<li><p><strong>scr_width</strong> – An in that represents the width of the screen</p></li>
+<li><p><strong>scr_height</strong> – An int that represents the height of the screen</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>List of internal variables:</strong></p>
+<ul class="simple">
+<li><p>input_text - string containing user-entered filepath for a new init
+file</p></li>
+<li><p>past_input - string used to store input_text between when it is reset
+and when it needs to be used to call a file</p></li>
+<li><p>textbox_active - Int that determines whether the input textbox is to
+be displayed, 0 if no, 1 if yes</p></li>
+<li><p>pause - An int that specifies whether or not the simulation runs, 0
+means it’s running, 1 means it is paused</p></li>
+<li><p>view - An int that determines what view is displayed, 0 for overhead
+view, 1 for side view</p></li>
+<li><p>speed - An int that determines the speed of the simulation, 1x, 2x,
+4x, etc</p></li>
+<li><p>click_now - An int that determines whether the mouse is being clicked
+, 0 means no click, 1 means click</p></li>
+<li><p>input_active - An int that determines whether the file input text box
+shows, 0, means no show, 1 means it will show</p></li>
+<li><p>nasa - String that activates pluto, Yes, means NASA is correct, and
+pluto is not a planet, No means NASA is incorrect and pluto is a
+planet</p></li>
+<li><p>input2_active - An int that displays the travel to a day textbox, 0
+means no show, 1 means it shows</p></li>
+<li><p>textbox2_active - An int that determines whether the travel to
+textbox is showing, 0 means no, 1 means yes</p></li>
+<li><p>input2_text - String that determines what day will be traveled to
+after the travel to day is determined</p></li>
+<li><p>zoom - Int used to scaled the planets to fit on the screen</p></li>
+<li><p>zoom_factor - Int used to scale the zoom to give varying views of the
+solar system if changed</p></li>
+<li><p>zoom_i - Int used to scale the inner planets coordinates to fit on
+the screen</p></li>
+<li><p>num_planets - Number of total bodies being displayed on the screen,
+whole solar system view + inner planets view</p></li>
+<li><p>time_step - Int used to determine length of time between</p></li>
+<li><p>curr_time_step - Int that represents how many time steps have passed
+in the simulation</p></li>
+<li><p>start_string - String containing the default path for an init file</p></li>
+<li><p>simulation -  An object encompassing an n-body simulation that
+predicts a single body dependent on the state of all other simulated
+bodies in the system.</p></li>
+<li><p>sunx - Int representing the x coordinate of the sun image</p></li>
+<li><p>suny - Int representing the y coordinate of the sun image</p></li>
+<li><p>sun_i_x - Int representing the x coordinate of the sun image for the
+inner planets view</p></li>
+<li><p>sun_i_y - Int representing the x coordinate of the sun image for the
+inner planets view</p></li>
+<li><p>sun_img - Object used to hold the image of the sun that is printed to
+the screen</p></li>
+<li><p>current_positions - Dictionary that contains the name and a list of
+x, y coordinates for each non-predicted planet</p></li>
+<li><p>predicted_positions - Dictionary that contains the name and list of
+x, y coordinates for the predicted planet(s)</p></li>
+<li><p>x1 - X coordinate relative to the printed sun image for Mercury</p></li>
+<li><p>xi1 - X coordinate relative to the printed sun image for Mercury for
+the inner planets view</p></li>
+<li><p>y1 - Y coordinate relative to the printed sun image for Mercury</p></li>
+<li><p>yi1 - Y coordinate relative to the printed sun image for Mercury for
+the inner planets view</p></li>
+<li><p>x2 - X coordinate relative to the printed sun image for Venus</p></li>
+<li><p>xi2 - X coordinate relative to the printed sun image for Venus for
+the inner planets view</p></li>
+<li><p>y2 - Y coordinate relative to the printed sun image for Venus</p></li>
+<li><p>yi2 - Y coordinate relative to the printed sun image for Venus for
+the inner planets view</p></li>
+<li><p>x3 - X coordinate relative to the printed sun image for Earth</p></li>
+<li><p>xi3 - X coordinate relative to the printed sun image for Earth for
+the inner planets view</p></li>
+<li><p>y3 - Y coordinate relative to the printed sun image for Earth</p></li>
+<li><p>yi3 - Y coordinate relative to the printed sun image for Earth for
+the inner planets view</p></li>
+<li><p>x4 - X coordinate relative to the printed sun image for Mars</p></li>
+<li><p>xi4 - X coordinate relative to the printed sun image for Mars for
+the inner planets view</p></li>
+<li><p>y4 - Y coordinate relative to the printed sun image for Mars</p></li>
+<li><p>yi4 - X coordinate relative to the printed sun image for Mars for
+the inner planets view</p></li>
+<li><p>x5 - X coordinate relative to the printed sun image for Jupiter</p></li>
+<li><p>y5 - Y coordinate relative to the printed sun image for Jupiter</p></li>
+<li><p>x6 - X coordinate relative to the printed sun image for Saturn</p></li>
+<li><p>y6 - Y coordinate relative to the printed sun image for Saturn</p></li>
+<li><p>x7 - X coordinate relative to the printed sun image for Uranus</p></li>
+<li><p>y7 - Y coordinate relative to the printed sun image for Uranus</p></li>
+<li><p>x8 - X coordinate relative to the printed sun image for Pluto</p></li>
+<li><p>y8 - Y coordinate relative to the printed sun image for Pluto</p></li>
+<li><p>x9 - X coordinate relative to the printed sun image for Neptune</p></li>
+<li><p>y9 - Y coordinate relative to the printed sun image for Neptune</p></li>
+<li><p>x_track[] - List that contains the x coordinates for the planets to
+print the trails</p></li>
+<li><p>y_track[] - List that contains the y coordinates fot the planets to
+print the trails</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt id="neural_body.grav2.print_key">
+<code class="sig-prename descclassname">neural_body.grav2.</code><code class="sig-name descname">print_key</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">screen</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_body/grav2.html#print_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#neural_body.grav2.print_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to display a planet key</p>
+<p>Method that displays a key of planet colors and names when selected in
+order to aid in user planet idenntification</p>
+<p><strong>List of input parameters:</strong></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>screen</strong> – window created by pygame used to display application</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="neural_body.grav2.sun">
+<code class="sig-prename descclassname">neural_body.grav2.</code><code class="sig-name descname">sun</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">screen</span></em>, <em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_body/grav2.html#sun"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#neural_body.grav2.sun" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to place the sun image on the screen</p>
+<p>A simple function for loading the sun image and placing it on the
+screen at a given coordinate. The size is static</p>
+<p><strong>List of input parameters:</strong></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>screen</strong> – window created by pygame used to display application</p></li>
+<li><p><strong>x</strong> – the integer x-coordinate pixel value where the sun should be
+placed</p></li>
+<li><p><strong>y</strong> – the integer y-coordinate pixel value where the sun should be
+placed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="neural_body.grav2.text_handler">
+<code class="sig-prename descclassname">neural_body.grav2.</code><code class="sig-name descname">text_handler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">screen</span></em>, <em class="sig-param"><span class="n">text</span></em>, <em class="sig-param"><span class="n">scr_x</span></em>, <em class="sig-param"><span class="n">scr_y</span></em>, <em class="sig-param"><span class="n">size</span></em>, <em class="sig-param"><span class="n">color</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_body/grav2.html#text_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#neural_body.grav2.text_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to place text on the screen at a desired location</p>
+<p>Function to place custom text on the screen at any desired location.
+The color of the text is currently restricted to shades of grey and
+white to match the visual theme we are pursuing.</p>
+<p><strong>List of input parameters:</strong></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>screen</strong> – the usable area for drawing within the application
+window</p></li>
+<li><p><strong>text</strong> – string of text to be displayed on the screen. One line
+only.</p></li>
+<li><p><strong>scr_x</strong> – the x coordinate for the text to be located at. Must be
+an integer</p></li>
+<li><p><strong>scr_y</strong> – the y coordinate for the text to be located at. Must be
+an integer</p></li>
+<li><p><strong>size</strong> – the size of the text to be displayed, in pixels (height).
+Must be an integer</p></li>
+<li><p><strong>color</strong> – grey shade of the output. Must be an integer between 0
+and 255.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-neural_body">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-neural_body" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Neural Body</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">neural_body</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">neural_body package</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">neural_body</a><ul>
+      <li>Previous: <a href="modules.html" title="previous chapter">neural_body</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Craig Boger, Nathaniel Edgar, Gary Jones, Cory Robertson, Andrew Sowinski.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.1.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/neural_body.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

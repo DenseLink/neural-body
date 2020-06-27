@@ -1,0 +1,605 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>neural_body.BenrulesRealTimeSim &#8212; Neural Body 0.1.0 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for neural_body.BenrulesRealTimeSim</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Real-Time basic simulator for planetary motions with neural network</span>
+<span class="sd">inference for prediction of pluto&#39;s position.</span>
+
+<span class="sd">This module contains the BenrulesRealTimeSim class, which creates a real time</span>
+<span class="sd">simulator of the sun, planets, and pluto.  The non-real-time version was</span>
+<span class="sd">forked from GitHub user benrules2 at the below repo:</span>
+<span class="sd">https://gist.github.com/benrules2/220d56ea6fe9a85a4d762128b11adfba</span>
+<span class="sd">The simulator originally would simulate a fixed number of time steps and</span>
+<span class="sd">then output a record of the past simulation.  The code was repackaged into a</span>
+<span class="sd">class and methods added to allow querying and advancing of the simulator</span>
+<span class="sd">in real-time at a fixed time step.</span>
+<span class="sd">Further additions were made to then integrate a class for loading a neural</span>
+<span class="sd">network (NeuralNet) that would load a Tensorflow model, take a vector</span>
+<span class="sd">containing all other planetary positions (X, Y, Z) and output the predicted</span>
+<span class="sd">position of Pluto in the next time step.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Imports</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+
+<div class="viewcode-block" id="BenrulesRealTimeSim"><a class="viewcode-back" href="../../neural_body.html#neural_body.BenrulesRealTimeSim.BenrulesRealTimeSim">[docs]</a><span class="k">class</span> <span class="nc">BenrulesRealTimeSim</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class containing a basic, real-time simulator for planet motions that also</span>
+<span class="sd">    interacts with the NNModelLoader class to load a neural network that</span>
+<span class="sd">    predicts the motion of one of the bodies in the next time step.</span>
+
+<span class="sd">    Instance Variables:</span>
+<span class="sd">    :ivar _bodies: Current physical state of each body at the current time step</span>
+<span class="sd">    :ivar _body_locations_hist: Pandas dataframe containing the positional</span>
+<span class="sd">        history of all bodies in the simulation.</span>
+<span class="sd">    :ivar _time_step: The amount of time the simulation uses between time</span>
+<span class="sd">        steps.  The amount of &quot;simulation time&quot; that passes.</span>
+<span class="sd">    :ivar _nn: NNModelLoader object instance that contains the neural network</span>
+<span class="sd">        loaded in Tensorflow.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Nested Classes</span>
+    <span class="k">class</span> <span class="nc">_Point</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Class to represent a 3D point in space in a location list.</span>
+
+<span class="sd">        The class can be used to represent a fixed point in 3D space or the</span>
+<span class="sd">        magnitude and direction of a velocity or acceleration vector in 3D</span>
+<span class="sd">        space.</span>
+
+<span class="sd">        :param x: x position of object in simulation space relative to sun</span>
+<span class="sd">            at time step 0.</span>
+<span class="sd">        :param y: y position of object in simulation space relative to sun</span>
+<span class="sd">            at time step 0.</span>
+<span class="sd">        :param z: z position of object in simulation space relative to sun</span>
+<span class="sd">            at time step 0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">z</span>
+
+    <span class="k">class</span> <span class="nc">_Body</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Class to represent physical attributes of a body.</span>
+
+<span class="sd">        This class stores the location (from the point class), mass, velocity,</span>
+<span class="sd">        and name associated with a body in simulation space.</span>
+
+<span class="sd">        :param location: 3D location of body in simulation space represented</span>
+<span class="sd">            by the _Point class.</span>
+<span class="sd">        :param mass: Mass in kg of the body.</span>
+<span class="sd">        :param velocity: Initial velocity magnitude and direction of the body</span>
+<span class="sd">            at time step 0 in simulation space.  Represented by the</span>
+<span class="sd">            _Point class.</span>
+<span class="sd">        :param name: Name of the body being stored.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="n">mass</span><span class="p">,</span> <span class="n">velocity</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">location</span> <span class="o">=</span> <span class="n">location</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mass</span> <span class="o">=</span> <span class="n">mass</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">velocity</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+    <span class="k">class</span> <span class="nc">_NeuralNet</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Class to load Tensorflow model stored in .h5 file and run</span>
+<span class="sd">        inference with it. &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_path</span><span class="p">,</span> <span class="n">planet_predicting</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Constructor for model class.  Loads the model into a private</span>
+<span class="sd">                instance</span>
+<span class="sd">            variable that can then be called on to make predictions on the</span>
+<span class="sd">            position of planet the network was trained on.</span>
+
+<span class="sd">            :param model_path: Path, including name, to the .h5 file storing</span>
+<span class="sd">                the neural net.</span>
+<span class="sd">            :param planet_predicting: Name of planet the model is predicting.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_model</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">planet_predicting</span> <span class="o">=</span> <span class="n">planet_predicting</span>
+
+        <span class="k">def</span> <span class="nf">make_prediction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_vector</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Function to take a vector of all other planet positions and output</span>
+<span class="sd">            the XYZ position of the planet being predicted for the current time</span>
+<span class="sd">            step.</span>
+
+<span class="sd">            :param input_vector: Numpy array of all other planets and stars</span>
+<span class="sd">                in the system.</span>
+<span class="sd">            :return: Dictionary of X,Y,Z positions of planet we are predicting.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="n">x_pred</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">z_pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">input_vector</span><span class="p">)</span>
+            <span class="c1"># Process the predicted values to output a single numpy array rather</span>
+            <span class="c1"># than three 2D arrays with a single value each.</span>
+            <span class="k">return</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">planet_predicting</span><span class="p">:</span> <span class="p">[</span><span class="n">x_pred</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                                             <span class="n">y_pred</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                                             <span class="n">z_pred</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]}</span>
+
+    <span class="c1"># Class Variables</span>
+
+    <span class="c1"># Planet data units: (location (m), mass (kg), velocity (m/s)</span>
+
+    <span class="c1"># Dictionary containing the neural network file names.  Each neural network</span>
+    <span class="c1"># is specially trained at predicting the position of that satellite in the</span>
+    <span class="c1"># sol system.  Will expand neural network later to more situations.</span>
+    <span class="n">_neural_networks</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;mars&quot;</span><span class="p">:</span><span class="s2">&quot;MARS-Predict-NN-Deploy-V1.02-LargeDataset_&quot;</span>
+                               <span class="s2">&quot;2-layer_selu_lecun-normal_mae_Adam_lr-1e-&quot;</span>
+                               <span class="s2">&quot;5_bs-128_epoch-350.h5&quot;</span><span class="p">,</span>
+                       <span class="s2">&quot;pluto&quot;</span><span class="p">:</span><span class="s2">&quot;Predict-NN-Deploy-V1.02-LargeDataset_2-layer&quot;</span>
+                               <span class="s2">&quot;_selu_lecun-normal_mae_Adam_lr-1e-6_bs-&quot;</span>
+                               <span class="s2">&quot;128_epoch-250.h5&quot;</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_initialize_history</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to create the initial structure of a Pandas dataframe for</span>
+<span class="sd">        recording the position of every body in simulation space at each time</span>
+<span class="sd">        step.</span>
+
+<span class="sd">        :return: Pandas dataframe containing the structure for recording</span>
+<span class="sd">            entire history of the simulation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Create list of columns</span>
+        <span class="n">history_columns</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">current_body</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bodies</span><span class="p">:</span>
+            <span class="n">history_columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_body</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_x&quot;</span><span class="p">)</span>
+            <span class="n">history_columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_body</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_y&quot;</span><span class="p">)</span>
+            <span class="n">history_columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_body</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_z&quot;</span><span class="p">)</span>
+        <span class="c1"># Create dataframe with above column names for tracking history.</span>
+        <span class="n">initial_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">history_columns</span><span class="p">)</span>
+        <span class="c1"># Return the empty structure of the dataframe.</span>
+        <span class="k">return</span> <span class="n">initial_df</span>
+
+    <span class="k">def</span> <span class="nf">_parse_sim_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_df</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to convert Pandas dataframe containing simulator configuration</span>
+<span class="sd">        to a list of Body objects that are digestible by the simulator.</span>
+
+<span class="sd">        :param in_df: Dataframe containing the simulation configuration.</span>
+<span class="sd">        :return: list of Body objects with name, mass, location, and initial</span>
+<span class="sd">            velocity set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Using iterrows() to go over each row in dataframe and extract info</span>
+        <span class="c1"># from each row.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bodies</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">in_df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="c1"># Check if satellite or other.</span>
+            <span class="c1"># If satellite, then set predicting name to choose the right</span>
+            <span class="c1"># neural network.</span>
+            <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;satellite?&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;yes&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_satellite_predicting_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;body_name&quot;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_bodies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_Body</span><span class="p">(</span>
+                    <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Point</span><span class="p">(</span>
+                        <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;location_x&quot;</span><span class="p">]),</span>
+                        <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;location_y&quot;</span><span class="p">]),</span>
+                        <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;location_z&quot;</span><span class="p">])</span>
+                    <span class="p">),</span>
+                    <span class="n">mass</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;body_mass&quot;</span><span class="p">]),</span>
+                    <span class="n">velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Point</span><span class="p">(</span>
+                        <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;velocity_x&quot;</span><span class="p">]),</span>
+                        <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;velocity_y&quot;</span><span class="p">]),</span>
+                        <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;velocity_z&quot;</span><span class="p">])</span>
+                    <span class="p">),</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;body_name&quot;</span><span class="p">])</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_config_df</span><span class="p">,</span> <span class="n">time_step</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Simulation initialization function.</span>
+
+<span class="sd">        :param time_step: Time is seconds between simulation steps.  Used to</span>
+<span class="sd">            calculate displacement over that time.</span>
+<span class="sd">        :param planet_predicting: Name of the planet being predicted by the</span>
+<span class="sd">            neural network.</span>
+<span class="sd">        :param nn_path: File path to the location of the .h5 file storing the</span>
+<span class="sd">            neural network that will be loaded with Tensorflow in the</span>
+<span class="sd">            NeuralNet class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Setup the initial set of bodies in the simulation by parsing from</span>
+        <span class="c1"># config dataframe.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_satellite_predicting_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bodies</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parse_sim_config</span><span class="p">(</span><span class="n">in_config_df</span><span class="p">)</span>
+
+        <span class="c1"># Setup pandas dataframe to keep track of simulation history.</span>
+        <span class="c1">#</span>
+        <span class="c1"># Pandas dataframe is easy to convert to any data file format</span>
+        <span class="c1"># and has plotting shortcuts for easier end-of-simulation plotting.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_body_locations_hist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_history</span><span class="p">()</span>
+        <span class="c1"># Amount of time that has passed in a single time step in seconds.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time_step</span> <span class="o">=</span> <span class="n">time_step</span>
+        <span class="c1"># Grab the current working to use for referencing data files</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_working_directory</span> <span class="o">=</span> \
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+        <span class="c1"># Create neural network object that lets us run neural network</span>
+        <span class="c1"># predictions as well.</span>
+        <span class="c1"># Default to mars model if key in dictionary not found.</span>
+        <span class="n">nn_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_working_directory</span> <span class="o">+</span> <span class="s2">&quot;/nn/&quot;</span> \
+                  <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_neural_networks</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_satellite_predicting_name</span><span class="p">),</span>
+            <span class="s2">&quot;mars&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NeuralNet</span><span class="p">(</span>
+            <span class="n">model_path</span><span class="o">=</span><span class="n">nn_path</span><span class="p">,</span>
+            <span class="n">planet_predicting</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_satellite_predicting_name</span>
+        <span class="p">)</span>
+        <span class="c1"># Add current system state to the history tracking.</span>
+        <span class="n">coordinate_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">target_body</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bodies</span><span class="p">:</span>
+            <span class="n">coordinate_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">target_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">coordinate_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">target_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+            <span class="n">coordinate_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">target_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+        <span class="c1"># Store coordinates to dataframe tracking simulation history</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_body_locations_hist</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_body_locations_hist</span><span class="p">)]</span> \
+            <span class="o">=</span> <span class="n">coordinate_list</span>
+        <span class="c1"># Set counters to track the current time step of the simulator and</span>
+        <span class="c1"># maximum time step the simulator has reached.  This will allow us</span>
+        <span class="c1"># to rewind the simulator to a previous state and grab coordinates</span>
+        <span class="c1"># from the dataframe tracking simulation history or to continue</span>
+        <span class="c1"># simulating time steps that have not been reached yet.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_time_step</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_time_step_reached</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">_calculate_single_body_acceleration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">body_index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to calculate the acceleration forces on a given body.</span>
+
+<span class="sd">        This function takes in the index of a particular body in the class&#39;</span>
+<span class="sd">        bodies list and calculates the resulting acceleration vector on that</span>
+<span class="sd">        body given the physical state of all other bodies.</span>
+
+<span class="sd">        :param body_index: Index of body in class&#39; body list on which the</span>
+<span class="sd">            resulting acceleration will be calculated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">G_const</span> <span class="o">=</span> <span class="mf">6.67408e-11</span>  <span class="c1"># m3 kg-1 s-2</span>
+        <span class="n">acceleration</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Point</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">target_body</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bodies</span><span class="p">[</span><span class="n">body_index</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">external_body</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bodies</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="o">!=</span> <span class="n">body_index</span><span class="p">:</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="p">(</span><span class="n">target_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">external_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> \
+                    <span class="o">+</span> <span class="p">(</span><span class="n">target_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">external_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> \
+                    <span class="o">+</span> <span class="p">(</span><span class="n">target_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">z</span> <span class="o">-</span> <span class="n">external_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+                <span class="n">tmp</span> <span class="o">=</span> <span class="n">G_const</span> <span class="o">*</span> <span class="n">external_body</span><span class="o">.</span><span class="n">mass</span> <span class="o">/</span> <span class="n">r</span> <span class="o">**</span> <span class="mi">3</span>
+                <span class="n">acceleration</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="n">tmp</span> <span class="o">*</span> <span class="p">(</span><span class="n">external_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">x</span>
+                                         <span class="o">-</span> <span class="n">target_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">acceleration</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">tmp</span> <span class="o">*</span> <span class="p">(</span><span class="n">external_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">y</span>
+                                         <span class="o">-</span> <span class="n">target_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+                <span class="n">acceleration</span><span class="o">.</span><span class="n">z</span> <span class="o">+=</span> <span class="n">tmp</span> <span class="o">*</span> <span class="p">(</span><span class="n">external_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">z</span>
+                                         <span class="o">-</span> <span class="n">target_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">acceleration</span>
+
+    <span class="k">def</span> <span class="nf">_compute_velocity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates the velocity vector for each body in the class&#39; bodies list.</span>
+
+<span class="sd">        Given the physical state of each body in the system, this function</span>
+<span class="sd">        calls the _calculate_single_body_acceleration on each body in the</span>
+<span class="sd">        system and uses the resulting acceleration vector along with the</span>
+<span class="sd">        defined simulation time step to calculate the resulting velocity</span>
+<span class="sd">        vector for each body.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">body_index</span><span class="p">,</span> <span class="n">target_body</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bodies</span><span class="p">):</span>
+            <span class="n">acceleration</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_single_body_acceleration</span><span class="p">(</span><span class="n">body_index</span><span class="p">)</span>
+            <span class="n">target_body</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="n">acceleration</span><span class="o">.</span><span class="n">x</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time_step</span>
+            <span class="n">target_body</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">acceleration</span><span class="o">.</span><span class="n">y</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time_step</span>
+            <span class="n">target_body</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">z</span> <span class="o">+=</span> <span class="n">acceleration</span><span class="o">.</span><span class="n">z</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time_step</span>
+
+    <span class="k">def</span> <span class="nf">_update_location</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates next location of each body in the system.</span>
+
+<span class="sd">        This method, assuming the _compute_velocity method was already called,</span>
+<span class="sd">        takes the new velocities of all bodies and uses the defined time step</span>
+<span class="sd">        to calculate the resulting displacement for each body over that time</span>
+<span class="sd">        step.  The displacement is then added to the current positions in order</span>
+<span class="sd">        to get the body&#39;s new location.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">target_body</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bodies</span><span class="p">:</span>
+            <span class="n">target_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="n">target_body</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time_step</span>
+            <span class="n">target_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">target_body</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time_step</span>
+            <span class="n">target_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">z</span> <span class="o">+=</span> <span class="n">target_body</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">z</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time_step</span>
+
+    <span class="k">def</span> <span class="nf">_compute_gravity_step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calls the _compute_velocity and _update_location methods in order to</span>
+<span class="sd">        update the system state by one time step.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_compute_velocity</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_location</span><span class="p">()</span>
+
+<div class="viewcode-block" id="BenrulesRealTimeSim.get_next_sim_state"><a class="viewcode-back" href="../../neural_body.html#neural_body.BenrulesRealTimeSim.BenrulesRealTimeSim.get_next_sim_state">[docs]</a>    <span class="k">def</span> <span class="nf">get_next_sim_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to calculate the position of all system bodies in the next</span>
+<span class="sd">        time step.</span>
+
+<span class="sd">        When this method is called, the current system state is passed to the</span>
+<span class="sd">        neural network to calculate the position of a certain body in the next</span>
+<span class="sd">        time step.  After the neural network completes, the simulation then</span>
+<span class="sd">        advances all bodies ahead using &quot;physics&quot;.  The positions of all</span>
+<span class="sd">        bodies resulting from the &quot;physics&quot; are then packaged into a dictionary</span>
+<span class="sd">        with the body name as key and a list containing the x,y,z coordinates</span>
+<span class="sd">        of the body as the value attached to that key.  The predicted position</span>
+<span class="sd">        from the neural network is also packaged as a dictionary with the name</span>
+<span class="sd">        as key and predicted coordinates as the value.</span>
+
+<span class="sd">        :returns:</span>
+<span class="sd">            - simulation_positions - Dictionary containing all body positions</span>
+<span class="sd">              in the next time step calculated with &quot;physics&quot;.</span>
+<span class="sd">            - pred_pos - Dictionary containing the predicted position of a</span>
+<span class="sd">              body using the neural network.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Depending on the current time step and max time step reached, figure</span>
+        <span class="c1"># out where to pull data from to make prediction with neural network</span>
+        <span class="c1"># and how to create the next time step of the simulation.  If the</span>
+        <span class="c1"># current time step is less than the max time step, then pull sim</span>
+        <span class="c1"># data from the history dataframe.  If current time step is equal to</span>
+        <span class="c1"># the max time step, then continue calculating positions with the</span>
+        <span class="c1"># simulator.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_time_step</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_time_step_reached</span><span class="p">:</span>
+            <span class="c1"># Extract last row of dataframe recording simulator history, remove</span>
+            <span class="c1"># the planet we are trying to predict from the columns, and convert</span>
+            <span class="c1"># to numpy array as the input vector to the neural network.</span>
+            <span class="n">prediction_data_row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_body_locations_hist</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="c1"># Compute the next time step and update positions of all bodies</span>
+            <span class="c1"># in self_bodies.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_compute_gravity_step</span><span class="p">()</span>
+            <span class="c1"># Format position data for each planet into simple lists.</span>
+            <span class="c1"># Dictionary key is the name of the planet.</span>
+            <span class="n">simulation_positions</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="c1"># Also create a coordinate list that can be added as row to the</span>
+            <span class="c1"># history dataframe</span>
+            <span class="n">coordinate_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">target_body</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bodies</span><span class="p">:</span>
+                <span class="n">simulation_positions</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                    <span class="p">{</span><span class="n">target_body</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="p">[</span><span class="n">target_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+                                        <span class="n">target_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+                                        <span class="n">target_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">z</span><span class="p">]})</span>
+                <span class="n">coordinate_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">target_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">coordinate_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">target_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+                <span class="n">coordinate_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">target_body</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+            <span class="c1"># Store coordinates to dataframe tracking simulation history</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_body_locations_hist</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_body_locations_hist</span><span class="p">)]</span> <span class="o">=</span> <span class="n">coordinate_list</span>
+            <span class="c1"># Push time step counters forward</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_current_time_step</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_max_time_step_reached</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Extract row of previous time step to current time step for</span>
+            <span class="c1"># constructing input vector to neural network.</span>
+            <span class="n">prediction_data_row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_body_locations_hist</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_current_time_step</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">coordinate_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_body_locations_hist</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_current_time_step</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="c1"># Format position data for each planet into simple lists.</span>
+            <span class="c1"># Dictionary key is the name of the planet.</span>
+            <span class="n">simulation_positions</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="c1"># Iterate over all columns in the extracted row and extract the</span>
+            <span class="c1"># planet name along with the planet name.</span>
+            <span class="n">col_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_body_locations_hist</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">col_names</span><span class="p">):</span>
+                <span class="c1"># Extract body name from columns</span>
+                <span class="n">body_name</span> <span class="o">=</span> <span class="n">col_names</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">simulation_positions</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                    <span class="p">{</span><span class="n">body_name</span><span class="p">:</span> <span class="p">[</span><span class="n">coordinate_list</span><span class="p">[</span><span class="n">index</span><span class="p">],</span>
+                                 <span class="n">coordinate_list</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+                                 <span class="n">coordinate_list</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]]}</span>
+                <span class="p">)</span>
+                <span class="c1"># Advance index by 3 columns to skip x, y, and z columns.</span>
+                <span class="n">index</span> <span class="o">+=</span> <span class="mi">3</span>
+            <span class="c1"># Push current time step forward 1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_current_time_step</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Predict planet location using neural network.</span>
+        <span class="c1"># Need to use the name of the planet to find which one to extract from</span>
+        <span class="c1"># the input vector.</span>
+        <span class="c1"># Drop columns from dataframe for the planet we are trying to predict.</span>
+        <span class="n">prediction_data_row</span> <span class="o">=</span> <span class="n">prediction_data_row</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_satellite_predicting_name</span> <span class="o">+</span> <span class="s2">&quot;_x&quot;</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">_satellite_predicting_name</span> <span class="o">+</span> <span class="s2">&quot;_y&quot;</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">_satellite_predicting_name</span> <span class="o">+</span> <span class="s2">&quot;_z&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">input_vector</span> <span class="o">=</span> <span class="n">prediction_data_row</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># Predict position of satellite</span>
+        <span class="n">pred_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nn</span><span class="o">.</span><span class="n">make_prediction</span><span class="p">(</span><span class="n">input_vector</span><span class="p">)</span>
+
+        <span class="c1"># Return dictionary with planet name as key and a list with each planet</span>
+        <span class="c1"># name containing the coordinates</span>
+        <span class="k">return</span> <span class="n">simulation_positions</span><span class="p">,</span> <span class="n">pred_pos</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">body_locations_hist</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter that returns a Pandas dataframe with the entire simulation</span>
+<span class="sd">        history.</span>
+
+<span class="sd">        :return body_locations_hist: Pandas dataframe containing the entire</span>
+<span class="sd">            history of the simulation.  The positional data of all bodies</span>
+<span class="sd">            over all time steps.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_body_locations_hist</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bodies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter that retrieves the current state of the entire system in the</span>
+<span class="sd">        simulation.</span>
+
+<span class="sd">        :return bodies:  Returns the list of bodies.  Each item in the list</span>
+<span class="sd">            is a Body object containing the physical state of the body.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bodies</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">satellite_predicting_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter that retrieves the name of the planet the neural network is</span>
+<span class="sd">        trying to predict the position of.</span>
+
+<span class="sd">        :return planet_predicting_name:  Name of the planet the neural</span>
+<span class="sd">            network is trying to predict.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_satellite_predicting_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">current_time_step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter that retrieves the current time step the simulator is at.</span>
+
+<span class="sd">        :return current_time_step: Current time step the simulator is at.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_time_step</span>
+
+    <span class="nd">@current_time_step</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">current_time_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_time_step</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Setter to change the current time step of the simulator.  Essentially</span>
+<span class="sd">        rewinding the simulation back to a point in its history.</span>
+
+<span class="sd">        If negative time entered, default to 0 time.  If time entered past the</span>
+<span class="sd">        maximum time reached, the simulator will &quot;fast-forward&quot; to that time</span>
+<span class="sd">        step.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Make sure we can&#39;t go back before the big bang.</span>
+        <span class="k">if</span> <span class="n">in_time_step</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">in_time_step</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># If time goes beyond the max time the simulator has reached, advance</span>
+        <span class="c1"># the simulator to that time.</span>
+        <span class="k">if</span> <span class="n">in_time_step</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_time_step_reached</span><span class="p">:</span>
+            <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_time_step_reached</span> <span class="o">&lt;</span> <span class="n">in_time_step</span><span class="p">:</span>
+                <span class="n">current_positions</span><span class="p">,</span> <span class="n">predicted_position</span> \
+                    <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_next_sim_state</span><span class="p">()</span>
+        <span class="c1"># If the time is between 0 and the max, set the current time step to </span>
+        <span class="c1"># the given time step.</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">in_time_step</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> \
+                <span class="p">(</span><span class="n">in_time_step</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_time_step_reached</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_current_time_step</span> <span class="o">=</span> <span class="n">in_time_step</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">max_time_step_reached</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Getter that retrieves the maximum time step the simulation has reached.</span>
+
+<span class="sd">        :return max_time_step_reached: Max time step the simulation has</span>
+<span class="sd">            reached.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_time_step_reached</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">Neural Body</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">neural_body</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Craig Boger, Nathaniel Edgar, Gary Jones, Cory Robertson, Andrew Sowinski.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.1.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
