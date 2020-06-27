@@ -5,29 +5,18 @@
 
 An n-body simulator powered by a neural network.
 
-## Test Embedding Image
-[alt text](https://github.com/nedgar76/neural-body/tree/demo-sim/0_demo-sim/readme_resources/image.jpg?raw=true)
+Neural Body is an n-body simulator currently as an alpha demonstration of substituting 
+calculations for planetary motion with a neural network.  Currently, the neural 
+networks can predict the position of Mars or Pluto given the rest of the positions
+in the planetary system.  
 
-**Badges will go here**
+The eventual goal is to replace the physics simulator that calculates the positions
+of other bodies to feed the neural network completely with neural networks that 
+take in an acceleration vector on each body along with a desired simulation time 
+step and perform the integration necessary to calculate the displacement of the body.
 
-- build status
-- issues (waffle.io maybe)
-- devDependencies
-- npm package
-- coverage
-- slack
-- downloads
-- gitter chat
-- license
-- etc.
+[![Game Overview Image](https://raw.githubusercontent.com/nedgar76/neural-body/demo-sim/0_demo-sim/readme_resources/overview_screenshot.png?token=ALC2NMM5G56RZFD237TQX32677FSA)]()
 
-[![Build Status](http://img.shields.io/travis/badges/badgerbadgerbadger.svg?style=flat-square)](https://travis-ci.org/badges/badgerbadgerbadger) [![Dependency Status](http://img.shields.io/gemnasium/badges/badgerbadgerbadger.svg?style=flat-square)](https://gemnasium.com/badges/badgerbadgerbadger) [![Coverage Status](http://img.shields.io/coveralls/badges/badgerbadgerbadger.svg?style=flat-square)](https://coveralls.io/r/badges/badgerbadgerbadger) [![Code Climate](http://img.shields.io/codeclimate/github/badges/badgerbadgerbadger.svg?style=flat-square)](https://codeclimate.com/github/badges/badgerbadgerbadger) [![Github Issues](http://githubbadges.herokuapp.com/badges/badgerbadgerbadger/issues.svg?style=flat-square)](https://github.com/badges/badgerbadgerbadger/issues) [![Pending Pull-Requests](http://githubbadges.herokuapp.com/badges/badgerbadgerbadger/pulls.svg?style=flat-square)](https://github.com/badges/badgerbadgerbadger/pulls) [![Gem Version](http://img.shields.io/gem/v/badgerbadgerbadger.svg?style=flat-square)](https://rubygems.org/gems/badgerbadgerbadger) [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org) [![Badges](http://img.shields.io/:badges-9/9-ff6799.svg?style=flat-square)](https://github.com/badges/badgerbadgerbadger)
-
-- For more on these wonderful ~~badgers~~ badges, refer to <a href="http://badges.github.io/badgerbadgerbadger/" target="_blank">`badgerbadgerbadger`</a>.
-
-***INSERT ANOTHER GRAPHIC HERE***
-
-[![INSERT YOUR GRAPHIC HERE](http://i.imgur.com/dt8AUb6.png)]()
 
 - Most people will glance at your `README`, *maybe* star it, and leave
 - Ergo, people should understand instantly what your project is about based on your repo
@@ -57,12 +46,11 @@ An n-body simulator powered by a neural network.
 
 > If your `README` has a lot of info, section headers might be nice.
 
+- [Requirements](#requirements)
 - [Installation](#installation)
 - [Features](#features)
-- [Contributing](#contributing)
 - [Team](#team)
 - [FAQ](#faq)
-- [Support](#support)
 - [License](#license)
 
 
@@ -82,71 +70,49 @@ let generateProject = project => {
 ```
 
 ---
-
 ## Installation
-
-- All the `code` required to get started
-- Images of what it should look like
-
-### Clone
-
-- Clone this repo to your local machine using `https://github.com/fvcproductions/SOMEREPO`
+### Requirements
+- Compatible debian-based Linux distro.  Ubuntu 20.04 Preferred.
+- Python 3.8 or higher.
+- PyGame 2.0.0.dev10 or higher.
+- TensorFlow 2.2.0
+- Pandas 1.0.5
+- Numpy 1.19.0
+All dependencies above except for Python 3.8 should install when `pip install` is run.
 
 ### Setup
+- Download `neural_body-0.1.0.tar.gz` from the `dist` directory.
+- Navigate to local folder where download is located.
+- Use `pip install neural_body`
+- Use the `neural_body` command to run the simulator.
 
-- If you want more syntax highlighting, format your code like this:
-
-> update and install this package first
-
-```shell
-$ brew update
-$ brew install fvcproductions
-```
-
-> now install npm and bower packages
-
-```shell
-$ npm install
-$ bower install
-```
-
-- For all the possible languages that support syntax highlithing on GitHub (which is basically all of them), refer <a href="https://github.com/github/linguist/blob/master/lib/linguist/languages.yml" target="_blank">here</a>.
+[![Game Overview Image](https://raw.githubusercontent.com/nedgar76/neural-body/demo-sim/0_demo-sim/readme_resources/overview_screenshot.png?token=ALC2NMM5G56RZFD237TQX32677FSA)]()
 
 ---
 
+## Usage
 ## Features
-## Usage (Optional)
-## Documentation (Optional)
+## Documentation
+Documentation compiled with Sphinx is included in the 
 ## Tests (Optional)
 
 - Going into more detail on code and technologies used
 - I utilized this nifty <a href="https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet" target="_blank">Markdown Cheatsheet</a> for this sample `README`.
 
 ---
-
-## Contributing
-
-> To get started...
-
-### Step 1
-
-- **Option 1**
-    - 🍴 Fork this repo!
-
-- **Option 2**
-    - 👯 Clone this repo to your local machine using `https://github.com/joanaz/HireDot2.git`
-
-### Step 2
-
-- **HACK AWAY!** 🔨🔨🔨
-
-### Step 3
-
-- 🔃 Create a new pull request using <a href="https://github.com/joanaz/HireDot2/compare/" target="_blank">`https://github.com/joanaz/HireDot2/compare/`</a>.
-
----
-
 ## Team
+The AstroGators formed as a result of the "CIS4930 - Performant Python Programming" 
+course at the University of Florida.
+
+Team members include:
+- Nathaniel Edgar
+- Craig Boger
+- Gary Jones
+- Cory Robertson
+- Andrew Sowinski
+ 
+The Github repo for this initial demonstration is located at: 
+<a href="https://github.com/nedgar76/neural-body/tree/demo-sim/0_demo-sim" target="_blank"> https://github.com/nedgar76/neural-body/tree/demo-sim/0_demo-sim </a>
 
 > Or Contributors/People
 
@@ -164,16 +130,6 @@ $ bower install
 
 - **How do I do *specifically* so and so?**
     - No problem! Just do this.
-
----
-
-## Support
-
-Reach out to me at one of the following places!
-
-- Website at <a href="http://fvcproductions.com" target="_blank">`fvcproductions.com`</a>
-- Twitter at <a href="http://twitter.com/fvcproductions" target="_blank">`@fvcproductions`</a>
-- Insert more social links here.
 
 ---
 
