@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>neural_body package &#8212; neural_body 0.1.0 documentation</title>
+    <title>neural_body package &#8212; Neural Body 0.1.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -62,9 +62,20 @@ interacts with the NNModelLoader class to load a neural network that
 predicts the motion of one of the bodies in the next time step.</p>
 <p>Instance Variables:
 :ivar _bodies: Current physical state of each body at the current time step
-:ivar _body_locations_hist: Pandas dataframe containing the positional history of all bodies in the simulation.
-:ivar _time_step: The amount of time the simulation uses between time steps.  The amount of “simulation time” that passes.
-:ivar _nn: NNModelLoader object instance that contains the neural network loaded in Tensorflow.</p>
+:ivar _body_locations_hist: Pandas dataframe containing the positional</p>
+<blockquote>
+<div><p>history of all bodies in the simulation.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Variables</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>_time_step</strong> – The amount of time the simulation uses between time
+steps.  The amount of “simulation time” that passes.</p></li>
+<li><p><strong>_nn</strong> – NNModelLoader object instance that contains the neural network
+loaded in Tensorflow.</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt id="neural_body.BenrulesRealTimeSim.BenrulesRealTimeSim.bodies">
 <em class="property">property </em><code class="sig-name descname">bodies</code><a class="headerlink" href="#neural_body.BenrulesRealTimeSim.BenrulesRealTimeSim.bodies" title="Permalink to this definition">¶</a></dt>
@@ -72,7 +83,8 @@ predicts the motion of one of the bodies in the next time step.</p>
 simulation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return bodies</dt>
-<dd class="field-odd"><p>Returns the list of bodies.  Each item in the list is a Body object containing the physical state of the body.</p>
+<dd class="field-odd"><p>Returns the list of bodies.  Each item in the list
+is a Body object containing the physical state of the body.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -84,7 +96,9 @@ simulation.</p>
 history.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return body_locations_hist</dt>
-<dd class="field-odd"><p>Pandas dataframe containing the entire history of the simulation.  The positional data of all bodies over all time steps.</p>
+<dd class="field-odd"><p>Pandas dataframe containing the entire
+history of the simulation.  The positional data of all bodies
+over all time steps.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -117,8 +131,10 @@ as key and predicted coordinates as the value.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p><ul class="simple">
-<li><p>simulation_positions - Dictionary containing all body positions in the next time step calculated with “physics”.</p></li>
-<li><p>pred_pos - Dictionary containing the predicted position of a body using the neural network.</p></li>
+<li><p>simulation_positions - Dictionary containing all body positions
+in the next time step calculated with “physics”.</p></li>
+<li><p>pred_pos - Dictionary containing the predicted position of a
+body using the neural network.</p></li>
 </ul>
 </p>
 </dd>
@@ -131,7 +147,8 @@ as key and predicted coordinates as the value.</p>
 <dd><p>Getter that retrieves the maximum time step the simulation has reached.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return max_time_step_reached</dt>
-<dd class="field-odd"><p>Max time step the simulation has reached.</p>
+<dd class="field-odd"><p>Max time step the simulation has
+reached.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -143,7 +160,8 @@ as key and predicted coordinates as the value.</p>
 trying to predict the position of.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return planet_predicting_name</dt>
-<dd class="field-odd"><p>Name of the planet the neural network is trying to predict.</p>
+<dd class="field-odd"><p>Name of the planet the neural
+network is trying to predict.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -156,15 +174,23 @@ trying to predict the position of.</p>
 <dl class="py function">
 <dt id="neural_body.grav2.boxes">
 <code class="sig-prename descclassname">neural_body.grav2.</code><code class="sig-name descname">boxes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">screen</span></em>, <em class="sig-param"><span class="n">scr_width</span></em>, <em class="sig-param"><span class="n">scr_height</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_body/grav2.html#boxes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#neural_body.grav2.boxes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function to draw the boundries of the three areas of the application. These being the menu, solar system view, and
-inner planet view. These views are static and rendered first, putting them at the bottom of the visual instnaces</p>
+<dd><p>Function that places UI divider boxes on the screen</p>
+<p>Function to draw the boundries of the three areas of the application.
+These being the menu, solar system view, and inner planet view. These
+views are static and rendered first, putting them at the bottom of the
+visual instnaces</p>
+<p><strong>List of input parameters:</strong></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>screen</strong> – the usable area for drawing within the application window</p></li>
-<li><p><strong>scr_width</strong> – the width of the screen in pixels. This will always be an integer used for object placement math.</p></li>
-<li><p><strong>scr_height</strong> – the height of the screen in pixels. This will always be an integer used for object placement math.</p></li>
-<li><p><strong>scr_height</strong> – the height of the screen in pixels. This will always be an integer used for object placement math.</p></li>
+<li><p><strong>screen</strong> – the usable area for drawing within the application
+window</p></li>
+<li><p><strong>scr_width</strong> – the width of the screen in pixels. This will always
+be an integer used for object placement math.</p></li>
+<li><p><strong>scr_height</strong> – the height of the screen in pixels. This will always
+be an integer used for object placement math.</p></li>
+<li><p><strong>scr_height</strong> – the height of the screen in pixels. This will always
+be an integer used for object placement math.</p></li>
 </ul>
 </dd>
 </dl>
@@ -173,21 +199,31 @@ inner planet view. These views are static and rendered first, putting them at th
 <dl class="py function">
 <dt id="neural_body.grav2.click_handler">
 <code class="sig-prename descclassname">neural_body.grav2.</code><code class="sig-name descname">click_handler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">click_now</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_body/grav2.html#click_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#neural_body.grav2.click_handler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function to easily capture mouse location and actions. click_now is used to prevent clicks from being repeated
-each time the simulation screen is re-rendered.</p>
+<dd><p>Function to capture characteristics of user clicks</p>
+<p>Function to easily capture mouse location and actions. click_now is
+used to prevent clicks from being repeated each time the simulation
+screen is re-rendered.</p>
+<p><strong>List of input parameters:</strong></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>click_now</strong> – contains an integer of either 0 or 1 that denotes whether or not the mouse was pressed down during the previous program cycle in order to handle sustained presses</p>
+<dd class="field-odd"><p><strong>click_now</strong> – contains an integer of either 0 or 1 that denotes
+whether or not the mouse was pressed down during the previous
+program cycle in order to handle sustained presses</p>
 </dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p></p>
+</dl>
+<p><strong>List of returned values:</strong></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
 </dd>
 </dl>
 <ul class="simple">
-<li><p>action_flag- Flag is set to 0 if the click is a continued press, 1 if the click is new</p></li>
-<li><p>click_now- Set to 0 if the left mouse button is released, 1 if pressed</p></li>
-<li><p>click_x- The inetger x-coordinate of the mouse</p></li>
-<li><p>click_y- The integer y-coordinate of the mouse</p></li>
+<li><p>action_flag - Flag is set to 0 if the click is a continued press,
+1 if the click is new</p></li>
+<li><p>click_now - Set to 0 if the left mouse button is released, 1 if
+pressed</p></li>
+<li><p>click_x - The inetger x-coordinate of the mouse</p></li>
+<li><p>click_y - The integer y-coordinate of the mouse</p></li>
 </ul>
 </dd></dl>
 
@@ -228,55 +264,100 @@ in the simulation</p></li>
 </dd>
 </dl>
 <p><strong>List of Menu Selection Areas:</strong></p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>play_pause</strong> – List that contains the length and width parameters
-for the play/pause menu option</p></li>
-<li><p><strong>toggle</strong> – List that contains the length and width parameters for
-the view toggle menu option</p></li>
-<li><p><strong>adjust</strong> – List that contains the length and width parameters for
-the speed adjustment menu option</p></li>
-<li><p><strong>upload</strong> – List that contains the length and width parameters for
-the file upload menu option</p></li>
-<li><p><strong>nasa_right</strong> – List that contains the length and width parameters
-for the display pluto menu option</p></li>
-<li><p><strong>key_menu_option</strong> – List that contains the length and width
-parameters for the display key menu option</p></li>
-<li><p><strong>day_select</strong> – List that contains the length and width parameters
-for the point in time selection menu option</p></li>
-</ul>
+<ul class="simple">
+<li><dl class="simple">
+<dt>play_pause - List that contains the length and width parameters</dt><dd><p>for the play/pause menu option</p>
 </dd>
 </dl>
-<p><strong>List of states of the application:</strong></p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>pause</strong> – An int that specifies whether or not the simulation runs,
-0 means it’s running, 1 means it is paused</p></li>
-<li><p><strong>view</strong> – An int that determines what view is displayed, 0 for
-overhead view, 1 for side view</p></li>
-<li><p><strong>speed</strong> – An int that determines the speed of the simulation,
-1x, 2x, 4x, etc</p></li>
-<li><p><strong>rev</strong> – An int that would determine if the simulation is running
-in reverse or not, not currently implemented</p></li>
-<li><p><strong>click_now</strong> – An int that determines whether the mouse is being
-clicked, 0 means no click, 1 means click</p></li>
-<li><p><strong>input_active</strong> – An int that determines whether the file input
-text box shows, 0, means no show, 1 means it will show</p></li>
-<li><p><strong>nasa</strong> – String that activates pluto, Yes, means NASA is correct,
-and pluto is not a planet, No means NASA is incorrect and pluto
-is a planet</p></li>
-<li><p><strong>input2_active</strong> – An int that displays the travel to a day
-textbox, 0 means no show, 1 means it shows</p></li>
-<li><p><strong>textbox2_active</strong> – An int that determines whether the travel to
-textbox is showing, 0 means no, 1 means yes</p></li>
-<li><p><strong>input2_text</strong> – String that determines what day will be traveled
-to after the travel to day is determined</p></li>
-</ul>
+</li>
+<li><dl class="simple">
+<dt>toggle - List that contains the length and width parameters for</dt><dd><p>the view toggle menu option</p>
 </dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>returns the above list of states to feed information to the
+</dl>
+</li>
+<li><dl class="simple">
+<dt>adjust - List that contains the length and width parameters for</dt><dd><p>the speed adjustment menu option</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>upload - List that contains the length and width parameters for</dt><dd><p>the file upload menu option</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>nasa_right - List that contains the length and width parameters</dt><dd><p>for the display pluto menu option</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>key_menu_option - List that contains the length and width</dt><dd><p>parameters for the display key menu option</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>day_select - List that contains the length and width parameters</dt><dd><p>for the point in time selection menu option</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p><strong>List of states of the application:</strong></p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>pause - An int that specifies whether or not the simulation runs,</dt><dd><p>0 means it’s running, 1 means it is paused</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>view - An int that determines what view is displayed, 0 for</dt><dd><p>overhead view, 1 for side view</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>speed - An int that determines the speed of the simulation,</dt><dd><p>1x, 2x, 4x, etc</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>rev - An int that would determine if the simulation is running</dt><dd><p>in reverse or not, not currently implemented</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>click_now - An int that determines whether the mouse is being</dt><dd><p>clicked, 0 means no click, 1 means click</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>input_active - An int that determines whether the file input</dt><dd><p>text box shows, 0, means no show, 1 means it will show</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>nasa - String that activates pluto, Yes, means NASA is correct,</dt><dd><p>and pluto is not a planet, No means NASA is incorrect and pluto
+is a planet</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>input2_active - An int that displays the travel to a day</dt><dd><p>textbox, 0 means no show, 1 means it shows</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>textbox2_active - An int that determines whether the travel to</dt><dd><p>textbox is showing, 0 means no, 1 means yes</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>input2_text - String that determines what day will be traveled</dt><dd><p>to after the travel to day is determined</p>
+</dd>
+</dl>
+</li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>returns the above list of states to feed information to the
 program for control of specific features</p>
 </dd>
 </dl>
@@ -285,14 +366,20 @@ program for control of specific features</p>
 <dl class="py function">
 <dt id="neural_body.grav2.menu_text">
 <code class="sig-prename descclassname">neural_body.grav2.</code><code class="sig-name descname">menu_text</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">screen</span></em>, <em class="sig-param"><span class="n">scr_width</span></em>, <em class="sig-param"><span class="n">scr_height</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_body/grav2.html#menu_text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#neural_body.grav2.menu_text" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function to display the base text of the menu on the screen. All values start out as light grey but are overlaid with
+<dd><p>Function to place menu option text on the screen</p>
+<p>Function to display the base text of the menu on the screen. All
+values start out as light grey but are overlaid with
 white text by another method when moused over</p>
+<p><strong>List of input parameters:</strong></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>screen</strong> – the usable area for drawing within the application window</p></li>
-<li><p><strong>scr_width</strong> – the width of the screen in pixels. This will always be an integer used for object placement math.</p></li>
-<li><p><strong>scr_height</strong> – the height of the screen in pixels. This will always be an integer used for object placement math.</p></li>
+<li><p><strong>screen</strong> – the usable area for drawing within the application
+window</p></li>
+<li><p><strong>scr_width</strong> – the width of the screen in pixels. This will always
+be an integer used for object placement math.</p></li>
+<li><p><strong>scr_height</strong> – the height of the screen in pixels. This will
+always be an integer used for object placement math.</p></li>
 </ul>
 </dd>
 </dl>
@@ -304,234 +391,157 @@ white text by another method when moused over</p>
 <dd><p>Function that runs the simulation. Handles function calls to display
 all visual elements and determine orbital locations.</p>
 <p>This class operates as the master of the program, containing the
-infnite loop that the program relies on in order to function. All
+infinite loop that the program relies on in order to function. All
 important interactions between the various components of the program
 are routed through this class, and many vital mathematic operations
 reside within it. Because global variables are not used, this class
 acts as an intermediate to pass variables as parameters and receive
 them back as returned values.</p>
-<dl>
-<dt>Methods used:</dt><dd><ul class="simple">
-<li><p>pygame.draw.circle - replicates the planets drawn on the screen</p></li>
-<li><p>text_handler - names each of the replicated planets</p></li>
-<li><p>BenrulesRealTimeSim - creates a real time simulator of the sun, planets, and pluto.</p></li>
+<p>Methods used:
+- pygame.draw.circle - replicates the planets drawn on the screen
+- text_handler - names each of the replicated planets
+- BenrulesRealTimeSim - creates a real time simulator of the sun,</p>
+<blockquote>
+<div><p>planets, and pluto.</p>
+</div></blockquote>
+<ul class="simple">
 <li><p>pygame.image.load - loads an image from a file</p></li>
-<li><p>pygame.transform.scale - scales an image to a specified width and height</p></li>
-<li><p>get_next_sim_state - updates the dictionary of current simulation data to the next time_step</p></li>
+<li><p>pygame.transform.scale - scales an image to a specified width and
+height</p></li>
+<li><p>get_next_sim_state - updates the dictionary of current simulation
+data to the next time_step</p></li>
 <li><p>screen.fill - changes the color of the entire pygame canvas</p></li>
-<li><p>screen.blit - method to display a supplied image on the scren as output</p></li>
-<li><p>pygame.draw.line - pygame method used to draw a line, here is used to draw the trails</p></li>
-<li><p>pygame.draw.circle - pygame method used to draw circles, here used to represent the planets</p></li>
-<li><p>current_time_step - Setter function used to change the point in time of the simulation</p></li>
+<li><p>screen.blit - method to display a supplied image on the scren as
+output</p></li>
+<li><p>pygame.draw.line - pygame method used to draw a line, here is used to
+draw the trails</p></li>
+<li><p>pygame.draw.circle - pygame method used to draw circles, here used to
+represent the planets</p></li>
+<li><p>current_time_step - Setter function used to change the point in time
+of the simulation</p></li>
 <li><p>pygame.event.get() - method to handle a user interaction event</p></li>
 <li><p>pygame.quit() - Pygame method used to quit running pygame</p></li>
 <li><p>sys.exit() - Method used to exit the program</p></li>
 <li><p>pygame.display.flip() - method to refresh the pygame display</p></li>
-<li><p>clock.tick(60) - method used to set a frame rate of 60 frames per second</p></li>
+<li><p>clock.tick(60) - method used to set a frame rate of 60 frames per
+second</p></li>
 </ul>
-<dl class="simple">
-<dt>Input Parameters:</dt><dd><dl class="field-list simple">
-<dt class="field-odd">param num_planets</dt>
-<dd class="field-odd"><p>Int representing the number of planet bodies on the entire screen, inner planets view + solar system view</p>
-</dd>
-<dt class="field-even">param tail_length</dt>
-<dd class="field-even"><p>Int representing the length of the tail to follow behind the orbiting planets</p>
-</dd>
-<dt class="field-odd">param clock</dt>
-<dd class="field-odd"><p>a local variable storing a copy of the pygame clock time</p>
-</dd>
-<dt class="field-even">param screen</dt>
-<dd class="field-even"><p>window created by pygame used to display application</p>
-</dd>
-<dt class="field-odd">param scr_width</dt>
-<dd class="field-odd"><p>An in that represents the width of the screen</p>
-</dd>
-<dt class="field-even">param scr_height</dt>
-<dd class="field-even"><p>An int that represents the height of the screen</p>
+<p><strong>List of input parameters:</strong></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_planets</strong> – Int representing the number of planet bodies on the
+entire screen, inner planets view + solar system view</p></li>
+<li><p><strong>tail_length</strong> – Int representing the length of the tail to follow
+behind the orbiting planets</p></li>
+<li><p><strong>clock</strong> – a local variable storing a copy of the pygame clock time</p></li>
+<li><p><strong>screen</strong> – window created by pygame used to display application</p></li>
+<li><p><strong>scr_width</strong> – An in that represents the width of the screen</p></li>
+<li><p><strong>scr_height</strong> – An int that represents the height of the screen</p></li>
+</ul>
 </dd>
 </dl>
-</dd>
-<dt>Used Parameters:</dt><dd><dl class="field-list simple">
-<dt class="field-odd">param input_text</dt>
-<dd class="field-odd"><p>string containing user-entered filepath for a new init file</p>
-</dd>
-<dt class="field-even">param past_input</dt>
-<dd class="field-even"><p>string used to store input_text between when it is reset and when it needs to be used to call a file</p>
-</dd>
-<dt class="field-odd">param textbox_active</dt>
-<dd class="field-odd"><p>Int that determines whether the input textbox is to be displayed, 0 if no, 1 if yes</p>
-</dd>
-<dt class="field-even">param pause</dt>
-<dd class="field-even"><p>An int that specifies whether or not the simulation runs, 0 means it’s running, 1 means it is paused</p>
-</dd>
-<dt class="field-odd">param view</dt>
-<dd class="field-odd"><p>An int that determines what view is displayed, 0 for overhead view, 1 for side view</p>
-</dd>
-<dt class="field-even">param speed</dt>
-<dd class="field-even"><p>An int that determines the speed of the simulation, 1x, 2x, 4x, etc</p>
-</dd>
-<dt class="field-odd">param click_now</dt>
-<dd class="field-odd"><p>An int that determines whether the mouse is being clicked, 0 means no click, 1 means click</p>
-</dd>
-<dt class="field-even">param input_active</dt>
-<dd class="field-even"><p>An int that determines whether the file input text box shows, 0, means no show, 1 means it will show</p>
-</dd>
-<dt class="field-odd">param nasa</dt>
-<dd class="field-odd"><p>String that activates pluto, Yes, means NASA is correct, and pluto is not a planet, No means NASA is incorrect and pluto is a planet</p>
-</dd>
-<dt class="field-even">param input2_active</dt>
-<dd class="field-even"><p>An int that displays the travel to a day textbox, 0 means no show, 1 means it shows</p>
-</dd>
-<dt class="field-odd">param textbox2_active</dt>
-<dd class="field-odd"><p>An int that determines whether the travel to textbox is showing, 0 means no, 1 means yes</p>
-</dd>
-<dt class="field-even">param input2_text</dt>
-<dd class="field-even"><p>String that determines what day will be traveled to after the travel to day is determined</p>
-</dd>
-<dt class="field-odd">param zoom</dt>
-<dd class="field-odd"><p>Int used to scaled the planets to fit on the screen</p>
-</dd>
-<dt class="field-even">param zoom_factor</dt>
-<dd class="field-even"><p>Int used to scale the zoom to give varying views of the solar system if changed</p>
-</dd>
-<dt class="field-odd">param zoom_i</dt>
-<dd class="field-odd"><p>Int used to scale the inner planets coordinates to fit on the screen</p>
-</dd>
-<dt class="field-even">param num_planets</dt>
-<dd class="field-even"><p>Number of total bodies being displayed on the screen, whole solar system view + inner planets view</p>
-</dd>
-<dt class="field-odd">param time_step</dt>
-<dd class="field-odd"><p>Int used to determine length of time between</p>
-</dd>
-<dt class="field-even">param curr_time_step</dt>
-<dd class="field-even"><p>Int that represents how many time steps have passed in the simulation</p>
-</dd>
-<dt class="field-odd">param start_string</dt>
-<dd class="field-odd"><p>String containing the default path for an init file</p>
-</dd>
-<dt class="field-even">param simulation</dt>
-<dd class="field-even"><p>An object encompassing an n-body simulation that predicts a single body dependent on the state of all other simulated bodies in the system.</p>
-</dd>
-<dt class="field-odd">param sunx</dt>
-<dd class="field-odd"><p>Int representing the x coordinate of the sun image</p>
-</dd>
-<dt class="field-even">param suny</dt>
-<dd class="field-even"><p>Int representing the y coordinate of the sun image</p>
-</dd>
-<dt class="field-odd">param sun_i_x</dt>
-<dd class="field-odd"><p>Int representing the x coordinate of the sun image for the inner planets view</p>
-</dd>
-<dt class="field-even">param sun_i_y</dt>
-<dd class="field-even"><p>Int representing the x coordinate of the sun image for the inner planets view</p>
-</dd>
-<dt class="field-odd">param sun_img</dt>
-<dd class="field-odd"><p>Object used to hold the image of the sun that is printed to the screen</p>
-</dd>
-<dt class="field-even">param current_positions</dt>
-<dd class="field-even"><p>Dictionary that contains the name and a list of x, y coordinates for each non-predicted planet</p>
-</dd>
-<dt class="field-odd">param predicted_positions</dt>
-<dd class="field-odd"><p>Dictionary that contains the name and list of x, y coordinates for the predicted planet(s)</p>
-</dd>
-<dt class="field-even">param x1</dt>
-<dd class="field-even"><p>X coordinate relative to the printed sun image for Mercury</p>
-</dd>
-<dt class="field-odd">param xi1</dt>
-<dd class="field-odd"><p>X coordinate relative to the printed sun image for Mercury for the inner planets view</p>
-</dd>
-<dt class="field-even">param y1</dt>
-<dd class="field-even"><p>Y coordinate relative to the printed sun image for Mercury</p>
-</dd>
-<dt class="field-odd">param yi1</dt>
-<dd class="field-odd"><p>Y coordinate relative to the printed sun image for Mercury for the inner planets view</p>
-</dd>
-<dt class="field-even">param x2</dt>
-<dd class="field-even"><p>X coordinate relative to the printed sun image for Venus</p>
-</dd>
-<dt class="field-odd">param xi2</dt>
-<dd class="field-odd"><p>X coordinate relative to the printed sun image for Venus for the inner planets view</p>
-</dd>
-<dt class="field-even">param y2</dt>
-<dd class="field-even"><p>Y coordinate relative to the printed sun image for Venus</p>
-</dd>
-<dt class="field-odd">param yi2</dt>
-<dd class="field-odd"><p>Y coordinate relative to the printed sun image for Venus for the inner planets view</p>
-</dd>
-<dt class="field-even">param x3</dt>
-<dd class="field-even"><p>X coordinate relative to the printed sun image for Earth</p>
-</dd>
-<dt class="field-odd">param xi3</dt>
-<dd class="field-odd"><p>X coordinate relative to the printed sun image for Earth for the inner planets view</p>
-</dd>
-<dt class="field-even">param y3</dt>
-<dd class="field-even"><p>Y coordinate relative to the printed sun image for Earth</p>
-</dd>
-<dt class="field-odd">param yi3</dt>
-<dd class="field-odd"><p>Y coordinate relative to the printed sun image for Earth for the inner planets view</p>
-</dd>
-<dt class="field-even">param x4</dt>
-<dd class="field-even"><p>X coordinate relative to the printed sun image for Mars</p>
-</dd>
-<dt class="field-odd">param xi4</dt>
-<dd class="field-odd"><p>X coordinate relative to the printed sun image for Mars for the inner planets view</p>
-</dd>
-<dt class="field-even">param y4</dt>
-<dd class="field-even"><p>Y coordinate relative to the printed sun image for Mars</p>
-</dd>
-<dt class="field-odd">param yi4</dt>
-<dd class="field-odd"><p>X coordinate relative to the printed sun image for Mars for the inner planets view</p>
-</dd>
-<dt class="field-even">param x5</dt>
-<dd class="field-even"><p>X coordinate relative to the printed sun image for Jupiter</p>
-</dd>
-<dt class="field-odd">param y5</dt>
-<dd class="field-odd"><p>Y coordinate relative to the printed sun image for Jupiter</p>
-</dd>
-<dt class="field-even">param x6</dt>
-<dd class="field-even"><p>X coordinate relative to the printed sun image for Saturn</p>
-</dd>
-<dt class="field-odd">param y6</dt>
-<dd class="field-odd"><p>Y coordinate relative to the printed sun image for Saturn</p>
-</dd>
-<dt class="field-even">param x7</dt>
-<dd class="field-even"><p>X coordinate relative to the printed sun image for Uranus</p>
-</dd>
-<dt class="field-odd">param y7</dt>
-<dd class="field-odd"><p>Y coordinate relative to the printed sun image for Uranus</p>
-</dd>
-<dt class="field-even">param x8</dt>
-<dd class="field-even"><p>X coordinate relative to the printed sun image for Pluto</p>
-</dd>
-<dt class="field-odd">param y8</dt>
-<dd class="field-odd"><p>Y coordinate relative to the printed sun image for Pluto</p>
-</dd>
-<dt class="field-even">param x9</dt>
-<dd class="field-even"><p>X coordinate relative to the printed sun image for Neptune</p>
-</dd>
-<dt class="field-odd">param y9</dt>
-<dd class="field-odd"><p>Y coordinate relative to the printed sun image for Neptune</p>
-</dd>
-<dt class="field-even">param x_track[]</dt>
-<dd class="field-even"><p>List that contains the x coordinates for the planets to print the trails</p>
-</dd>
-<dt class="field-odd">param y_track[]</dt>
-<dd class="field-odd"><p>List that contains the y coordinates fot the planets to print the trails</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd>
-</dl>
+<p><strong>List of internal variables:</strong></p>
+<ul class="simple">
+<li><p>input_text - string containing user-entered filepath for a new init
+file</p></li>
+<li><p>past_input - string used to store input_text between when it is reset
+and when it needs to be used to call a file</p></li>
+<li><p>textbox_active - Int that determines whether the input textbox is to
+be displayed, 0 if no, 1 if yes</p></li>
+<li><p>pause - An int that specifies whether or not the simulation runs, 0
+means it’s running, 1 means it is paused</p></li>
+<li><p>view - An int that determines what view is displayed, 0 for overhead
+view, 1 for side view</p></li>
+<li><p>speed - An int that determines the speed of the simulation, 1x, 2x,
+4x, etc</p></li>
+<li><p>click_now - An int that determines whether the mouse is being clicked
+, 0 means no click, 1 means click</p></li>
+<li><p>input_active - An int that determines whether the file input text box
+shows, 0, means no show, 1 means it will show</p></li>
+<li><p>nasa - String that activates pluto, Yes, means NASA is correct, and
+pluto is not a planet, No means NASA is incorrect and pluto is a
+planet</p></li>
+<li><p>input2_active - An int that displays the travel to a day textbox, 0
+means no show, 1 means it shows</p></li>
+<li><p>textbox2_active - An int that determines whether the travel to
+textbox is showing, 0 means no, 1 means yes</p></li>
+<li><p>input2_text - String that determines what day will be traveled to
+after the travel to day is determined</p></li>
+<li><p>zoom - Int used to scaled the planets to fit on the screen</p></li>
+<li><p>zoom_factor - Int used to scale the zoom to give varying views of the
+solar system if changed</p></li>
+<li><p>zoom_i - Int used to scale the inner planets coordinates to fit on
+the screen</p></li>
+<li><p>num_planets - Number of total bodies being displayed on the screen,
+whole solar system view + inner planets view</p></li>
+<li><p>time_step - Int used to determine length of time between</p></li>
+<li><p>curr_time_step - Int that represents how many time steps have passed
+in the simulation</p></li>
+<li><p>start_string - String containing the default path for an init file</p></li>
+<li><p>simulation -  An object encompassing an n-body simulation that
+predicts a single body dependent on the state of all other simulated
+bodies in the system.</p></li>
+<li><p>sunx - Int representing the x coordinate of the sun image</p></li>
+<li><p>suny - Int representing the y coordinate of the sun image</p></li>
+<li><p>sun_i_x - Int representing the x coordinate of the sun image for the
+inner planets view</p></li>
+<li><p>sun_i_y - Int representing the x coordinate of the sun image for the
+inner planets view</p></li>
+<li><p>sun_img - Object used to hold the image of the sun that is printed to
+the screen</p></li>
+<li><p>current_positions - Dictionary that contains the name and a list of
+x, y coordinates for each non-predicted planet</p></li>
+<li><p>predicted_positions - Dictionary that contains the name and list of
+x, y coordinates for the predicted planet(s)</p></li>
+<li><p>x1 - X coordinate relative to the printed sun image for Mercury</p></li>
+<li><p>xi1 - X coordinate relative to the printed sun image for Mercury for
+the inner planets view</p></li>
+<li><p>y1 - Y coordinate relative to the printed sun image for Mercury</p></li>
+<li><p>yi1 - Y coordinate relative to the printed sun image for Mercury for
+the inner planets view</p></li>
+<li><p>x2 - X coordinate relative to the printed sun image for Venus</p></li>
+<li><p>xi2 - X coordinate relative to the printed sun image for Venus for
+the inner planets view</p></li>
+<li><p>y2 - Y coordinate relative to the printed sun image for Venus</p></li>
+<li><p>yi2 - Y coordinate relative to the printed sun image for Venus for
+the inner planets view</p></li>
+<li><p>x3 - X coordinate relative to the printed sun image for Earth</p></li>
+<li><p>xi3 - X coordinate relative to the printed sun image for Earth for
+the inner planets view</p></li>
+<li><p>y3 - Y coordinate relative to the printed sun image for Earth</p></li>
+<li><p>yi3 - Y coordinate relative to the printed sun image for Earth for
+the inner planets view</p></li>
+<li><p>x4 - X coordinate relative to the printed sun image for Mars</p></li>
+<li><p>xi4 - X coordinate relative to the printed sun image for Mars for
+the inner planets view</p></li>
+<li><p>y4 - Y coordinate relative to the printed sun image for Mars</p></li>
+<li><p>yi4 - X coordinate relative to the printed sun image for Mars for
+the inner planets view</p></li>
+<li><p>x5 - X coordinate relative to the printed sun image for Jupiter</p></li>
+<li><p>y5 - Y coordinate relative to the printed sun image for Jupiter</p></li>
+<li><p>x6 - X coordinate relative to the printed sun image for Saturn</p></li>
+<li><p>y6 - Y coordinate relative to the printed sun image for Saturn</p></li>
+<li><p>x7 - X coordinate relative to the printed sun image for Uranus</p></li>
+<li><p>y7 - Y coordinate relative to the printed sun image for Uranus</p></li>
+<li><p>x8 - X coordinate relative to the printed sun image for Pluto</p></li>
+<li><p>y8 - Y coordinate relative to the printed sun image for Pluto</p></li>
+<li><p>x9 - X coordinate relative to the printed sun image for Neptune</p></li>
+<li><p>y9 - Y coordinate relative to the printed sun image for Neptune</p></li>
+<li><p>x_track[] - List that contains the x coordinates for the planets to
+print the trails</p></li>
+<li><p>y_track[] - List that contains the y coordinates fot the planets to
+print the trails</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py function">
-<dt id="neural_body.grav2.printKey">
-<code class="sig-prename descclassname">neural_body.grav2.</code><code class="sig-name descname">printKey</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">screen</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_body/grav2.html#printKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#neural_body.grav2.printKey" title="Permalink to this definition">¶</a></dt>
-<dd><p>Method that will display the key for the planets drawn on the screen when activated.</p>
-<dl class="simple">
-<dt>Methods used: pygame.draw.circle - replicates the planets drawn on the screen</dt><dd><p>text_handler - names each of the replicated planets</p>
-</dd>
-</dl>
+<dt id="neural_body.grav2.print_key">
+<code class="sig-prename descclassname">neural_body.grav2.</code><code class="sig-name descname">print_key</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">screen</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_body/grav2.html#print_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#neural_body.grav2.print_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to display a planet key</p>
+<p>Method that displays a key of planet colors and names when selected in
+order to aid in user planet idenntification</p>
+<p><strong>List of input parameters:</strong></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>screen</strong> – window created by pygame used to display application</p>
@@ -542,36 +552,46 @@ them back as returned values.</p>
 <dl class="py function">
 <dt id="neural_body.grav2.sun">
 <code class="sig-prename descclassname">neural_body.grav2.</code><code class="sig-name descname">sun</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">screen</span></em>, <em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_body/grav2.html#sun"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#neural_body.grav2.sun" title="Permalink to this definition">¶</a></dt>
-<dd><p>A simple function for loading the sun image and placing it on the screen at
-a given coordinate.</p>
+<dd><p>Function to place the sun image on the screen</p>
+<p>A simple function for loading the sun image and placing it on the
+screen at a given coordinate. The size is static</p>
+<p><strong>List of input parameters:</strong></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>screen</strong> – window created by pygame used to display application</p></li>
-<li><p><strong>x</strong> – the integer x-coordinate pixel value where the sun should be</p></li>
+<li><p><strong>x</strong> – the integer x-coordinate pixel value where the sun should be
+placed</p></li>
+<li><p><strong>y</strong> – the integer y-coordinate pixel value where the sun should be
+placed</p></li>
 </ul>
 </dd>
 </dl>
-<p>placed
-:param y: the integer y-coordinate pixel value where the sun should be
-placed</p>
 </dd></dl>
 
 <dl class="py function">
 <dt id="neural_body.grav2.text_handler">
 <code class="sig-prename descclassname">neural_body.grav2.</code><code class="sig-name descname">text_handler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">screen</span></em>, <em class="sig-param"><span class="n">text</span></em>, <em class="sig-param"><span class="n">scr_x</span></em>, <em class="sig-param"><span class="n">scr_y</span></em>, <em class="sig-param"><span class="n">size</span></em>, <em class="sig-param"><span class="n">color</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_body/grav2.html#text_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#neural_body.grav2.text_handler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function to place custom text on the screen at any desired location.
+<dd><p>Function to place text on the screen at a desired location</p>
+<p>Function to place custom text on the screen at any desired location.
 The color of the text is currently restricted to shades of grey and
 white to match the visual theme we are pursuing.</p>
+<p><strong>List of input parameters:</strong></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>screen</strong> – the usable area for drawing within the application window</p></li>
-<li><p><strong>text</strong> – string of text to be displayed on the screen. One line only.</p></li>
-<li><p><strong>scr_x</strong> – the x coordinate for the text to be located at. Must be an integer</p></li>
-<li><p><strong>scr_y</strong> – the y coordinate for the text to be located at. Must be an integer</p></li>
-<li><p><strong>size</strong> – the size of the text to be displayed, in pixels (height). Must be an integer</p></li>
-<li><p><strong>color</strong> – grey shade of the output. Must be an integer between 0 and 255.</p></li>
+<li><p><strong>screen</strong> – the usable area for drawing within the application
+window</p></li>
+<li><p><strong>text</strong> – string of text to be displayed on the screen. One line
+only.</p></li>
+<li><p><strong>scr_x</strong> – the x coordinate for the text to be located at. Must be
+an integer</p></li>
+<li><p><strong>scr_y</strong> – the y coordinate for the text to be located at. Must be
+an integer</p></li>
+<li><p><strong>size</strong> – the size of the text to be displayed, in pixels (height).
+Must be an integer</p></li>
+<li><p><strong>color</strong> – grey shade of the output. Must be an integer between 0
+and 255.</p></li>
 </ul>
 </dd>
 </dl>
@@ -590,7 +610,7 @@ white to match the visual theme we are pursuing.</p>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="index.html">neural_body</a></h1>
+<h1 class="logo"><a href="index.html">Neural Body</a></h1>
 
 
 
@@ -641,7 +661,7 @@ white to match the visual theme we are pursuing.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, AstroGators.
+      &copy;2020, Craig Boger, Nathaniel Edgar, Gary Jones, Cory Robertson, Andrew Sowinski.
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 3.1.1</a>

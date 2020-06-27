@@ -17,9 +17,9 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'neural_body'
-copyright = '2020, AstroGators'
-author = 'AstroGators'
+project = 'Neural Body'
+copyright = '2020, Craig Boger, Nathaniel Edgar, Gary Jones, Cory Robertson, Andrew Sowinski'
+author = 'Craig Boger, Nathaniel Edgar, Gary Jones, Cory Robertson, Andrew Sowinski'
 
 # The full version, including alpha/beta/rc tags
 release = '0.1.0'

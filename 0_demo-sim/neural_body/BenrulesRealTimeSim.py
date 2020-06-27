@@ -47,9 +47,12 @@ class BenrulesRealTimeSim:
         magnitude and direction of a velocity or acceleration vector in 3D
         space.
 
-        :param x: x position of object in simulation space relative to sun at time step 0.
-        :param y: y position of object in simulation space relative to sun at time step 0.
-        :param z: z position of object in simulation space relative to sun at time step 0.
+        :param x: x position of object in simulation space relative to sun
+            at time step 0.
+        :param y: y position of object in simulation space relative to sun
+            at time step 0.
+        :param z: z position of object in simulation space relative to sun
+            at time step 0.
         """
 
         def __init__(self, x, y, z):
@@ -64,9 +67,12 @@ class BenrulesRealTimeSim:
         This class stores the location (from the point class), mass, velocity,
         and name associated with a body in simulation space.
 
-        :param location: 3D location of body in simulation space represented by the _Point class.
+        :param location: 3D location of body in simulation space represented
+            by the _Point class.
         :param mass: Mass in kg of the body.
-        :param velocity: Initial velocity magnitude and direction of the body at time step 0 in simulation space.  Represented by the _Point class.
+        :param velocity: Initial velocity magnitude and direction of the body
+            at time step 0 in simulation space.  Represented by the
+            _Point class.
         :param name: Name of the body being stored.
         """
 
@@ -82,11 +88,13 @@ class BenrulesRealTimeSim:
 
         def __init__(self, model_path, planet_predicting):
             """
-            Constructor for model class.  Loads the model into a private instance
+            Constructor for model class.  Loads the model into a private
+                instance
             variable that can then be called on to make predictions on the
             position of planet the network was trained on.
 
-            :param model_path: Path, including name, to the .h5 file storing the neural net.
+            :param model_path: Path, including name, to the .h5 file storing
+                the neural net.
             :param planet_predicting: Name of planet the model is predicting.
             """
 
@@ -99,7 +107,8 @@ class BenrulesRealTimeSim:
             the XYZ position of the planet being predicted for the current time
             step.
 
-            :param input_vector: Numpy array of all other planets and stars in the system.
+            :param input_vector: Numpy array of all other planets and stars
+                in the system.
             :return: Dictionary of X,Y,Z positions of planet we are predicting.
             """
 
@@ -130,7 +139,8 @@ class BenrulesRealTimeSim:
         recording the position of every body in simulation space at each time
         step.
 
-        :return: Pandas dataframe containing the structure for recording entire history of the simulation.
+        :return: Pandas dataframe containing the structure for recording
+            entire history of the simulation.
         """
 
         # Create list of columns
@@ -150,7 +160,8 @@ class BenrulesRealTimeSim:
         to a list of Body objects that are digestible by the simulator.
 
         :param in_df: Dataframe containing the simulation configuration.
-        :return: list of Body objects with name, mass, location, and initial velocity set.
+        :return: list of Body objects with name, mass, location, and initial
+            velocity set.
         """
 
         # Using iterrows() to go over each row in dataframe and extract info
@@ -184,11 +195,13 @@ class BenrulesRealTimeSim:
         """
         Simulation initialization function.
 
-        :param time_step: Time is seconds between simulation steps.  Used to displacement over that time.
-        :param planet_predicting: Name of the planet being predicted by the neural network.
-        :param nn_path: File path to the location of the .h5 file storing the neural network that will be loaded with Tensorflow in the NeuralNet class.
-
-        # TODO: Add additional parameters to docstring for time step tracking.
+        :param time_step: Time is seconds between simulation steps.  Used to
+            calculate displacement over that time.
+        :param planet_predicting: Name of the planet being predicted by the
+            neural network.
+        :param nn_path: File path to the location of the .h5 file storing the
+            neural network that will be loaded with Tensorflow in the
+            NeuralNet class.
         """
 
         # Setup the initial set of bodies in the simulation by parsing from
@@ -205,7 +218,8 @@ class BenrulesRealTimeSim:
         # Amount of time that has passed in a single time step in seconds.
         self._time_step = time_step
         # Grab the current working to use for referencing data files
-        self._current_working_directory = os.path.dirname(os.path.realpath(__file__))
+        self._current_working_directory = \
+            os.path.dirname(os.path.realpath(__file__))
         # Create neural network object that lets us run neural network
         # predictions as well.
         # Default to mars model if key in dictionary not found.
@@ -243,7 +257,8 @@ class BenrulesRealTimeSim:
         bodies list and calculates the resulting acceleration vector on that
         body given the physical state of all other bodies.
 
-        :param body_index: Index of body in class' body list on which the resulting acceleration will be calculated.
+        :param body_index: Index of body in class' body list on which the
+            resulting acceleration will be calculated.
         """
 
         G_const = 6.67408e-11  # m3 kg-1 s-2
@@ -323,8 +338,10 @@ class BenrulesRealTimeSim:
         as key and predicted coordinates as the value.
 
         :returns:
-            * simulation_positions - Dictionary containing all body positions in the next time step calculated with "physics".
-            * pred_pos - Dictionary containing the predicted position of a body using the neural network.
+            - simulation_positions - Dictionary containing all body positions
+              in the next time step calculated with "physics".
+            - pred_pos - Dictionary containing the predicted position of a
+              body using the neural network.
         """
 
         # Depending on the current time step and max time step reached, figure
@@ -412,7 +429,9 @@ class BenrulesRealTimeSim:
         Getter that returns a Pandas dataframe with the entire simulation
         history.
 
-        :return body_locations_hist: Pandas dataframe containing the entire history of the simulation.  The positional data of all bodies over all time steps.
+        :return body_locations_hist: Pandas dataframe containing the entire
+            history of the simulation.  The positional data of all bodies
+            over all time steps.
         """
         return self._body_locations_hist
 
@@ -422,7 +441,8 @@ class BenrulesRealTimeSim:
         Getter that retrieves the current state of the entire system in the
         simulation.
 
-        :return bodies:  Returns the list of bodies.  Each item in the list is a Body object containing the physical state of the body.
+        :return bodies:  Returns the list of bodies.  Each item in the list
+            is a Body object containing the physical state of the body.
         """
         return self._bodies
 
@@ -432,7 +452,8 @@ class BenrulesRealTimeSim:
         Getter that retrieves the name of the planet the neural network is
         trying to predict the position of.
 
-        :return planet_predicting_name:  Name of the planet the neural network is trying to predict.
+        :return planet_predicting_name:  Name of the planet the neural
+            network is trying to predict.
         """
         return self._satellite_predicting_name
 
@@ -471,12 +492,12 @@ class BenrulesRealTimeSim:
                 (in_time_step <= self._max_time_step_reached):
             self._current_time_step = in_time_step
 
-
     @property
     def max_time_step_reached(self):
         """
         Getter that retrieves the maximum time step the simulation has reached.
 
-        :return max_time_step_reached: Max time step the simulation has reached.
+        :return max_time_step_reached: Max time step the simulation has
+            reached.
         """
         return self._max_time_step_reached

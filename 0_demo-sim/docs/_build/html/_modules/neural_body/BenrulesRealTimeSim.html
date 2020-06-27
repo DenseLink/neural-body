@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>neural_body.BenrulesRealTimeSim &#8212; neural_body 0.1.0 documentation</title>
+    <title>neural_body.BenrulesRealTimeSim &#8212; Neural Body 0.1.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -63,12 +63,14 @@
 <span class="sd">    interacts with the NNModelLoader class to load a neural network that</span>
 <span class="sd">    predicts the motion of one of the bodies in the next time step.</span>
 
-
 <span class="sd">    Instance Variables:</span>
 <span class="sd">    :ivar _bodies: Current physical state of each body at the current time step</span>
-<span class="sd">    :ivar _body_locations_hist: Pandas dataframe containing the positional history of all bodies in the simulation.</span>
-<span class="sd">    :ivar _time_step: The amount of time the simulation uses between time steps.  The amount of &quot;simulation time&quot; that passes.</span>
-<span class="sd">    :ivar _nn: NNModelLoader object instance that contains the neural network loaded in Tensorflow.</span>
+<span class="sd">    :ivar _body_locations_hist: Pandas dataframe containing the positional</span>
+<span class="sd">        history of all bodies in the simulation.</span>
+<span class="sd">    :ivar _time_step: The amount of time the simulation uses between time</span>
+<span class="sd">        steps.  The amount of &quot;simulation time&quot; that passes.</span>
+<span class="sd">    :ivar _nn: NNModelLoader object instance that contains the neural network</span>
+<span class="sd">        loaded in Tensorflow.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Nested Classes</span>
     <span class="k">class</span> <span class="nc">_Point</span><span class="p">:</span>
@@ -79,9 +81,12 @@
 <span class="sd">        magnitude and direction of a velocity or acceleration vector in 3D</span>
 <span class="sd">        space.</span>
 
-<span class="sd">        :param x: x position of object in simulation space relative to sun at time step 0.</span>
-<span class="sd">        :param y: y position of object in simulation space relative to sun at time step 0.</span>
-<span class="sd">        :param z: z position of object in simulation space relative to sun at time step 0.</span>
+<span class="sd">        :param x: x position of object in simulation space relative to sun</span>
+<span class="sd">            at time step 0.</span>
+<span class="sd">        :param y: y position of object in simulation space relative to sun</span>
+<span class="sd">            at time step 0.</span>
+<span class="sd">        :param z: z position of object in simulation space relative to sun</span>
+<span class="sd">            at time step 0.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
@@ -96,9 +101,12 @@
 <span class="sd">        This class stores the location (from the point class), mass, velocity,</span>
 <span class="sd">        and name associated with a body in simulation space.</span>
 
-<span class="sd">        :param location: 3D location of body in simulation space represented by the _Point class.</span>
+<span class="sd">        :param location: 3D location of body in simulation space represented</span>
+<span class="sd">            by the _Point class.</span>
 <span class="sd">        :param mass: Mass in kg of the body.</span>
-<span class="sd">        :param velocity: Initial velocity magnitude and direction of the body at time step 0 in simulation space.  Represented by the _Point class.</span>
+<span class="sd">        :param velocity: Initial velocity magnitude and direction of the body</span>
+<span class="sd">            at time step 0 in simulation space.  Represented by the</span>
+<span class="sd">            _Point class.</span>
 <span class="sd">        :param name: Name of the body being stored.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -114,11 +122,13 @@
 
         <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_path</span><span class="p">,</span> <span class="n">planet_predicting</span><span class="p">):</span>
             <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            Constructor for model class.  Loads the model into a private instance</span>
+<span class="sd">            Constructor for model class.  Loads the model into a private</span>
+<span class="sd">                instance</span>
 <span class="sd">            variable that can then be called on to make predictions on the</span>
 <span class="sd">            position of planet the network was trained on.</span>
 
-<span class="sd">            :param model_path: Path, including name, to the .h5 file storing the neural net.</span>
+<span class="sd">            :param model_path: Path, including name, to the .h5 file storing</span>
+<span class="sd">                the neural net.</span>
 <span class="sd">            :param planet_predicting: Name of planet the model is predicting.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
 
@@ -131,7 +141,8 @@
 <span class="sd">            the XYZ position of the planet being predicted for the current time</span>
 <span class="sd">            step.</span>
 
-<span class="sd">            :param input_vector: Numpy array of all other planets and stars in the system.</span>
+<span class="sd">            :param input_vector: Numpy array of all other planets and stars</span>
+<span class="sd">                in the system.</span>
 <span class="sd">            :return: Dictionary of X,Y,Z positions of planet we are predicting.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
 
@@ -162,7 +173,8 @@
 <span class="sd">        recording the position of every body in simulation space at each time</span>
 <span class="sd">        step.</span>
 
-<span class="sd">        :return: Pandas dataframe containing the structure for recording entire history of the simulation.</span>
+<span class="sd">        :return: Pandas dataframe containing the structure for recording</span>
+<span class="sd">            entire history of the simulation.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Create list of columns</span>
@@ -182,7 +194,8 @@
 <span class="sd">        to a list of Body objects that are digestible by the simulator.</span>
 
 <span class="sd">        :param in_df: Dataframe containing the simulation configuration.</span>
-<span class="sd">        :return: list of Body objects with name, mass, location, and initial velocity set.</span>
+<span class="sd">        :return: list of Body objects with name, mass, location, and initial</span>
+<span class="sd">            velocity set.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Using iterrows() to go over each row in dataframe and extract info</span>
@@ -216,11 +229,13 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Simulation initialization function.</span>
 
-<span class="sd">        :param time_step: Time is seconds between simulation steps.  Used to displacement over that time.</span>
-<span class="sd">        :param planet_predicting: Name of the planet being predicted by the neural network.</span>
-<span class="sd">        :param nn_path: File path to the location of the .h5 file storing the neural network that will be loaded with Tensorflow in the NeuralNet class.</span>
-
-<span class="sd">        # TODO: Add additional parameters to docstring for time step tracking.</span>
+<span class="sd">        :param time_step: Time is seconds between simulation steps.  Used to</span>
+<span class="sd">            calculate displacement over that time.</span>
+<span class="sd">        :param planet_predicting: Name of the planet being predicted by the</span>
+<span class="sd">            neural network.</span>
+<span class="sd">        :param nn_path: File path to the location of the .h5 file storing the</span>
+<span class="sd">            neural network that will be loaded with Tensorflow in the</span>
+<span class="sd">            NeuralNet class.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Setup the initial set of bodies in the simulation by parsing from</span>
@@ -237,7 +252,8 @@
         <span class="c1"># Amount of time that has passed in a single time step in seconds.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_time_step</span> <span class="o">=</span> <span class="n">time_step</span>
         <span class="c1"># Grab the current working to use for referencing data files</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_current_working_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_working_directory</span> <span class="o">=</span> \
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
         <span class="c1"># Create neural network object that lets us run neural network</span>
         <span class="c1"># predictions as well.</span>
         <span class="c1"># Default to mars model if key in dictionary not found.</span>
@@ -275,7 +291,8 @@
 <span class="sd">        bodies list and calculates the resulting acceleration vector on that</span>
 <span class="sd">        body given the physical state of all other bodies.</span>
 
-<span class="sd">        :param body_index: Index of body in class&#39; body list on which the resulting acceleration will be calculated.</span>
+<span class="sd">        :param body_index: Index of body in class&#39; body list on which the</span>
+<span class="sd">            resulting acceleration will be calculated.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">G_const</span> <span class="o">=</span> <span class="mf">6.67408e-11</span>  <span class="c1"># m3 kg-1 s-2</span>
@@ -355,8 +372,10 @@
 <span class="sd">        as key and predicted coordinates as the value.</span>
 
 <span class="sd">        :returns:</span>
-<span class="sd">            * simulation_positions - Dictionary containing all body positions in the next time step calculated with &quot;physics&quot;.</span>
-<span class="sd">            * pred_pos - Dictionary containing the predicted position of a body using the neural network.</span>
+<span class="sd">            - simulation_positions - Dictionary containing all body positions</span>
+<span class="sd">              in the next time step calculated with &quot;physics&quot;.</span>
+<span class="sd">            - pred_pos - Dictionary containing the predicted position of a</span>
+<span class="sd">              body using the neural network.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Depending on the current time step and max time step reached, figure</span>
@@ -444,7 +463,9 @@
 <span class="sd">        Getter that returns a Pandas dataframe with the entire simulation</span>
 <span class="sd">        history.</span>
 
-<span class="sd">        :return body_locations_hist: Pandas dataframe containing the entire history of the simulation.  The positional data of all bodies over all time steps.</span>
+<span class="sd">        :return body_locations_hist: Pandas dataframe containing the entire</span>
+<span class="sd">            history of the simulation.  The positional data of all bodies</span>
+<span class="sd">            over all time steps.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_body_locations_hist</span>
 
@@ -454,7 +475,8 @@
 <span class="sd">        Getter that retrieves the current state of the entire system in the</span>
 <span class="sd">        simulation.</span>
 
-<span class="sd">        :return bodies:  Returns the list of bodies.  Each item in the list is a Body object containing the physical state of the body.</span>
+<span class="sd">        :return bodies:  Returns the list of bodies.  Each item in the list</span>
+<span class="sd">            is a Body object containing the physical state of the body.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bodies</span>
 
@@ -464,7 +486,8 @@
 <span class="sd">        Getter that retrieves the name of the planet the neural network is</span>
 <span class="sd">        trying to predict the position of.</span>
 
-<span class="sd">        :return planet_predicting_name:  Name of the planet the neural network is trying to predict.</span>
+<span class="sd">        :return planet_predicting_name:  Name of the planet the neural</span>
+<span class="sd">            network is trying to predict.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_satellite_predicting_name</span>
 
@@ -503,13 +526,13 @@
                 <span class="p">(</span><span class="n">in_time_step</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_time_step_reached</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_current_time_step</span> <span class="o">=</span> <span class="n">in_time_step</span>
 
-
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">max_time_step_reached</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Getter that retrieves the maximum time step the simulation has reached.</span>
 
-<span class="sd">        :return max_time_step_reached: Max time step the simulation has reached.</span>
+<span class="sd">        :return max_time_step_reached: Max time step the simulation has</span>
+<span class="sd">            reached.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_time_step_reached</span></div>
 </pre></div>
@@ -520,7 +543,7 @@
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="../../index.html">neural_body</a></h1>
+<h1 class="logo"><a href="../../index.html">Neural Body</a></h1>
 
 
 
@@ -567,7 +590,7 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, AstroGators.
+      &copy;2020, Craig Boger, Nathaniel Edgar, Gary Jones, Cory Robertson, Andrew Sowinski.
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 3.1.1</a>
