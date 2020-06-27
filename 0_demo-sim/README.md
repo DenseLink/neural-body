@@ -1,7 +1,4 @@
-***INSERT GRAPHIC HERE (include hyperlink in image)***
-
 # Neural Body N-Body Simulator
-> By The AstroGators
 
 An n-body simulator powered by a neural network.
 
@@ -15,60 +12,29 @@ of other bodies to feed the neural network completely with neural networks that
 take in an acceleration vector on each body along with a desired simulation time 
 step and perform the integration necessary to calculate the displacement of the body.
 
-[![Game Overview Image](https://raw.githubusercontent.com/nedgar76/neural-body/demo-sim/0_demo-sim/readme_resources/overview_screenshot.png?token=ALC2NMM5G56RZFD237TQX32677FSA)]()
+Considerable time was put into training the first version of the neural network 
+which was a simple, 2 layer, feedforward neural network with 300 nodes per layer
+that performed multiple-output regression on the x, y, z coordinates of the body
+being predicted.  Input to the network was the position of every other body in the 
+system at each time step of a previously run simulation.
 
+Below is a Google Colab notebook that shows the output of a training run for the 
+neural network that predicts Mars' position.  Code that generated the training 
+data and performed preprocessing is not included.  Data file is also not included.
+The link is purely to view code, learning curves, and results.
 
-- Most people will glance at your `README`, *maybe* star it, and leave
-- Ergo, people should understand instantly what your project is about based on your repo
-
-> Tips
-
-- HAVE WHITE SPACE
-- MAKE IT PRETTY
-- GIFS ARE REALLY COOL
-
-> GIF Tools
-
-- Use <a href="http://recordit.co/" target="_blank">**Recordit**</a> to create quicks screencasts of your desktop and export them as `GIF`s.
-- For terminal sessions, there's <a href="https://github.com/chjj/ttystudio" target="_blank">**ttystudio**</a> which also supports exporting `GIF`s.
-
-**Recordit**
-
-![Recordit GIF](http://g.recordit.co/iLN6A0vSD8.gif)
-
-**ttystudio**
-
-![ttystudio GIF](https://raw.githubusercontent.com/chjj/ttystudio/master/img/example.gif)
+<a href="https://colab.research.google.com/drive/19-pUEmro6ajxLlUAPunM66i42gAaqrPz?usp=sharing" target="_blank"> Mars Neural Network Training </a>
+<br>
 
 ---
-
-## Table of Contents (Optional)
-
-> If your `README` has a lot of info, section headers might be nice.
-
-- [Requirements](#requirements)
+## Table of Contents
 - [Installation](#installation)
-- [Features](#features)
+- [Usage](#usage)
 - [Team](#team)
 - [FAQ](#faq)
 - [License](#license)
 
-
----
-
-## Example (Optional)
-
-```javascript
-// code away!
-
-let generateProject = project => {
-  let code = [];
-  for (let js = 0; js < project.length; js++) {
-    code.push(js);
-  }
-};
-```
-
+[![Game Overview Image](https://raw.githubusercontent.com/nedgar76/neural-body/demo-sim/0_demo-sim/readme_resources/overview_screenshot.png?token=ALC2NMM5G56RZFD237TQX32677FSA)]()
 ---
 ## Installation
 ### Requirements
@@ -86,19 +52,53 @@ All dependencies above except for Python 3.8 should install when `pip install` i
 - Use `pip install neural_body`
 - Use the `neural_body` command to run the simulator.
 
-[![Game Overview Image](https://raw.githubusercontent.com/nedgar76/neural-body/demo-sim/0_demo-sim/readme_resources/overview_screenshot.png?token=ALC2NMM5G56RZFD237TQX32677FSA)]()
+![Setup Overview GIF](readme_resources/installation_vid.GIF)
 
 ---
-
 ## Usage
-## Features
+This selection includes an overview of all menu buttons and functionality of the simulator.
+
+### Pause / Play
+The simulation can be paused at any point.
+![Setup Overview GIF](readme_resources/play_pause.GIF)
+### Toggle View
+The simulation view can be toggled from overhead to side view.
+![Setup Overview GIF](readme_resources/toggle_view.GIF)
+### Adjust Speed
+The simulation can be sped up or slowed down.
+![Setup Overview GIF](readme_resources/adjust_speed.GIF)
+### New Simulation
+The initial state of all bodies in the system are contained in CSV files packaged
+with the simulator.  Whichever planet is designated as the "satellite" tells the 
+simulator which neural network to use for planetary motion prediction.  This early 
+demo can only predict the motion of Mars or Pluto given the positions of the other
+planets in the system.  In later releases, the neural network will be updated to 
+accommodate predicting the motion of any body.
+
+Current Config File Options:
+- mars_sim_config.csv
+- pluto_sim_config.csv
+
+![Config File Overview](readme_resources/config_overview.png)
+![Setup Overview GIF](readme_resources/new_simulation.GIF)
+### Is NASA Right?
+If you disagree with NASA, you can bring Pluto back as a planet.  
+![Setup Overview GIF](readme_resources/is_nasa_right.GIF)
+### Show Planet Key
+Hovering over this option displays a color coded key of all planets in the system.
+![Setup Overview GIF](readme_resources/show_planet_key.GIF)
+### Travel to a Day
+Selecting this option allows the user to rewind or fast forward the simulation by 
+entering the day they would like to jump to.  There is a heavy delay for fast forwarding
+as the simulator right now must inefficiently calculate every frame between the current
+day and the day you entered.  Negative time values will be treated as reverting 
+back to 0 day.
+![Setup Overview GIF](readme_resources/travel_to_a_day.GIF)
+
+
 ## Documentation
-Documentation compiled with Sphinx is included in the 
-## Tests (Optional)
-
-- Going into more detail on code and technologies used
-- I utilized this nifty <a href="https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet" target="_blank">Markdown Cheatsheet</a> for this sample `README`.
-
+Documentation for the source compiled with Sphinx is included in the `neural-body/0_demo-sim/docs/_build/html/`
+folder.  You will need to download and host yourself by running `python3 -m http.server --directory _build/html`
 ---
 ## Team
 The AstroGators formed as a result of the "CIS4930 - Performant Python Programming" 
@@ -114,37 +114,9 @@ Team members include:
 The Github repo for this initial demonstration is located at: 
 <a href="https://github.com/nedgar76/neural-body/tree/demo-sim/0_demo-sim" target="_blank"> https://github.com/nedgar76/neural-body/tree/demo-sim/0_demo-sim </a>
 
-> Or Contributors/People
-
-| <a href="http://fvcproductions.com" target="_blank">**FVCproductions**</a> | <a href="http://fvcproductions.com" target="_blank">**FVCproductions**</a> | <a href="http://fvcproductions.com" target="_blank">**FVCproductions**</a> |
-| :---: |:---:| :---:|
-| [![FVCproductions](https://avatars1.githubusercontent.com/u/4284691?v=3&s=200)](http://fvcproductions.com)    | [![FVCproductions](https://avatars1.githubusercontent.com/u/4284691?v=3&s=200)](http://fvcproductions.com) | [![FVCproductions](https://avatars1.githubusercontent.com/u/4284691?v=3&s=200)](http://fvcproductions.com)  |
-| <a href="http://github.com/fvcproductions" target="_blank">`github.com/fvcproductions`</a> | <a href="http://github.com/fvcproductions" target="_blank">`github.com/fvcproductions`</a> | <a href="http://github.com/fvcproductions" target="_blank">`github.com/fvcproductions`</a> |
-
-- You can just grab their GitHub profile image URL
-- You should probably resize their picture using `?s=200` at the end of the image URL.
-
----
-
-## FAQ
-
-- **How do I do *specifically* so and so?**
-    - No problem! Just do this.
-
----
-
-## Donations (Optional)
-
-- You could include a <a href="https://cdn.rawgit.com/gratipay/gratipay-badge/2.3.0/dist/gratipay.png" target="_blank">Gratipay</a> link as well.
-
-[![Support via Gratipay](https://cdn.rawgit.com/gratipay/gratipay-badge/2.3.0/dist/gratipay.png)](https://gratipay.com/fvcproductions/)
-
-
----
-
 ## License
 
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org)
 
 - **[MIT license](http://opensource.org/licenses/mit-license.php)**
-- Copyright 2015 © <a href="http://fvcproductions.com" target="_blank">FVCproductions</a>.
+- Copyright 2020 ©
