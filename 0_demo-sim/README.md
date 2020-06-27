@@ -5,6 +5,9 @@
 
 An n-body simulator powered by a neural network.
 
+## Test Embedding Image
+[alt text](https://github.com/nedgar76/neural-body/tree/demo-sim/0_demo-sim/readme_resources/image.jpg?raw=true)
+
 **Badges will go here**
 
 - build status
