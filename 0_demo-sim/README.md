@@ -52,7 +52,7 @@ All dependencies above except for Python 3.8 should install when `pip install` i
 - Use `pip install neural_body`
 - Use the `neural_body` command to run the simulator.
 
-![Setup Overview GIF](readme_resources/installation_vid.GIF)
+![Setup Overview GIF](https://github.com/nedgar76/neural-body/blob/demo-sim/0_demo-sim/readme_resources/installation_vid.GIF?raw=true)
 
 ---
 ## Usage
