@@ -9,8 +9,8 @@ https://github.com/pypa/sampleproject
 from setuptools import setup, find_packages
 from os import path
 #This block of code builds the Sphinx html files
-from sphinx.setup_command import BuildDoc
-cmdclass = {'build_sphinx': BuildDoc}
+#from sphinx.setup_command import BuildDoc
+#cmdclass = {'build_sphinx': BuildDoc}
 
 here = path.abspath(path.dirname(__file__))
 # Get the long description from the README file
@@ -55,13 +55,13 @@ setup(
     # The option under this you must type y. THis is to automatically instert docstrings from modules.
     # Everything else is default. When this is done you must then drop the contents.rst file into the docs folder.
     # then run python3 setup.py build_sphinx on the command line from the same directory.
-    command_options={
-        'build_sphinx': {
-            'project': ('setup.py', name),
-            'version': ('setup.py', version),
-            'release': ('setup.py', release),
-            'source_dir': ('setup.py', 'docs'),
-            'build_dir': ('setup.py', 'docs')}},
+#    command_options={
+#        'build_sphinx': {
+#           'project': ('setup.py', name),
+#            'version': ('setup.py', version),
+#            'release': ('setup.py', release),
+#            'source_dir': ('setup.py', 'docs'),
+#            'build_dir': ('setup.py', 'docs')}},
 
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
