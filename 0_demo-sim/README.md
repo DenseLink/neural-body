@@ -28,11 +28,11 @@ The link is purely to view code, learning curves, and results.
 
 ---
 ## Table of Contents
-- [Installation](#installation)
-- [Usage](#usage)
-- [Documentation](#documentation)
-- [Team](#team)
-- [License](#license)
+- Installation
+- Usage
+- Documentation
+- Team
+- License
 
 [![Game Overview Image](https://raw.githubusercontent.com/nedgar76/neural-body/demo-sim/0_demo-sim/readme_resources/overview_screenshot.png?token=ALC2NMM5G56RZFD237TQX32677FSA)]()
 ---
@@ -47,12 +47,17 @@ The link is purely to view code, learning curves, and results.
 All dependencies above except for Python 3.8 should install when `pip install` is run.
 
 ### Setup
+
+Installing from .tar.gz:
 - Download `neural_body-0.1.0.tar.gz` from the `dist` directory.
 - Navigate to local folder where download is located.
 - Use `pip install neural_body`
 - Use the `neural_body` command to run the simulator.
 
-![Setup Overview GIF](https://github.com/nedgar76/neural-body/blob/demo-sim/0_demo-sim/readme_resources/installation_vid.GIF?raw=true)
+Installing from PyPi:
+- PyPi project page is located <a href="https://pypi.org/project/neural-body/" target="_blank"> here </a>
+- Use `pip install neural-body`
+- Use the `neural_body` command to run the simulator.
 
 ---
 ## Usage
