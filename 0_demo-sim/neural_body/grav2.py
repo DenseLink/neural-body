@@ -611,7 +611,38 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 if (input2_text != "" and input2_active == 0):
                     x_track = [[0] * tail_length for i in range(num_planets)]
                     y_track = [[0] * tail_length for i in range(num_planets)]
+                    print("beginning processing")
+                    pygame.draw.rect(screen,
+                                     (0, 0, 0),
+                                     pygame.Rect(
+                                         int(scr_width / 2.6),
+                                         int(scr_height / 2.7),
+                                         int(scr_width / 1.8),
+                                         int(scr_height / 5)
+                                     ))
+                    pygame.draw.rect(screen,
+                                     (255, 255, 255),
+                                     pygame.Rect(
+                                         int(scr_width / 2.6),
+                                         int(scr_height / 2.7),
+                                         int(scr_width / 1.8),
+                                         int(scr_height / 5)
+                                     ),
+                                     2)
+                    text_handler(screen,
+                                 'Processing, Please wait',
+                                 int(scr_width / 2.2),
+                                 int(scr_height / 2.2),
+                                 35,
+                                 255)
+                    pygame.display.update(pygame.Rect(
+                        int(scr_width / 2.6),
+                        int(scr_height / 2.7),
+                        int(scr_width / 1.8),
+                        int(scr_height / 5)
+                    ))
                     simulation.current_time_step = int(input2_text)
+                    print("processing finished")
                     numDays = int(input2_text)
                     input2_text = ""
 
@@ -760,57 +791,58 @@ def menu(screen, states, scr_width, scr_height, numDays):
         text_handler(screen, str(numDays), 402, 51, 14, 255)  # done
     elif numDays > 999:
         text_handler(screen, str(numDays), 398, 51, 14, 255)
+    if input_active != 1 and input2_active != 1:
+        if play_pause[0] + 200 > click_x > play_pause[0] and play_pause[1] + 30 > \
+                click_y > play_pause[1]:
+            text_handler(screen, 'Pause/ Play', play_pause[0], play_pause[1], 30,
+                         255)
+            if action_flag == 1:
+                pause = abs(pause - 1)
 
-    if play_pause[0] + 200 > click_x > play_pause[0] and play_pause[1] + 30 > \
-            click_y > play_pause[1]:
-        text_handler(screen, 'Pause/ Play', play_pause[0], play_pause[1], 30,
-                     255)
-        if action_flag == 1:
-            pause = abs(pause - 1)
+        elif toggle[0] + 200 > click_x > toggle[0] and toggle[1] + 30 > click_y > \
+                toggle[1]:
+            text_handler(screen, 'Toggle View', toggle[0], toggle[1], 30, 255)
+            if action_flag == 1:
+                view = abs(view - 1)
 
-    elif toggle[0] + 200 > click_x > toggle[0] and toggle[1] + 30 > click_y > \
-            toggle[1]:
-        text_handler(screen, 'Toggle View', toggle[0], toggle[1], 30, 255)
-        if action_flag == 1:
-            view = abs(view - 1)
-
-    elif adjust[0] + 260 > click_x > adjust[0] and adjust[1] + 30 > click_y > \
-            adjust[1]:
-        text_handler(screen, 'Adjust Speed', adjust[0], adjust[1], 30, 255)
-        text_handler(screen, "(" + str(speed) + "x)", int(scr_width / 4.3),
-                     adjust[1], 30, 255)
-        if action_flag == 1:
-            speed = speed * 2
-            if speed > 4:
-                speed = 0.5
-    elif upload[0] + 250 > click_x > upload[0] and upload[1] + 30 > click_y > \
-            upload[1]:
-        text_handler(screen, 'New Simulation', upload[0], upload[1], 30, 255)
-        if action_flag == 1:
-            input_active = 1
-    elif nasa_right[0] + 310 > click_x > nasa_right[0] and nasa_right[1] + 30 \
-            > click_y > nasa_right[1]:
-        text_handler(screen, 'Is NASA Right?', nasa_right[0], nasa_right[1],
-                     30, 255)
-        text_handler(screen, "(" + nasa + ")", int(scr_width / 3.85),
-                     nasa_right[1], 30, 255)
-        if action_flag == 1:
-            if nasa == "Yes":
-                nasa = "No"
-            else:
-                nasa = "Yes"
-    elif key_menu_option[0] + 250 > click_x > key_menu_option[0] and \
-            key_menu_option[1] + 30 > click_y > \
-            key_menu_option[1]:
-        text_handler(screen, 'Show Planet Key', key_menu_option[0],
-                     key_menu_option[1], 30, 255)
-        print_key(screen)
-    elif day_select[0] + 250 > click_x > day_select[0] and day_select[1] + 30 \
-            > click_y > day_select[1]:
-        text_handler(screen, 'Travel to A Day', day_select[0], day_select[1],
-                     30, 255)
-        if action_flag == 1:
-            input2_active = 1
+        elif adjust[0] + 260 > click_x > adjust[0] and adjust[1] + 30 > click_y > \
+                adjust[1]:
+            text_handler(screen, 'Adjust Speed', adjust[0], adjust[1], 30, 255)
+            text_handler(screen, "(" + str(speed) + "x)", int(scr_width / 4.3),
+                         adjust[1], 30, 255)
+            if action_flag == 1:
+                speed = speed * 2
+                if speed > 4:
+                    speed = 0.5
+        elif upload[0] + 250 > click_x > upload[0] and upload[1] + 30 > click_y > \
+                upload[1]:
+            text_handler(screen, 'New Simulation', upload[0], upload[1], 30, 255)
+            if action_flag == 1:
+                input_active = 1
+                action_flag = 0
+        elif nasa_right[0] + 310 > click_x > nasa_right[0] and nasa_right[1] + 30 \
+                > click_y > nasa_right[1]:
+            text_handler(screen, 'Is NASA Right?', nasa_right[0], nasa_right[1],
+                         30, 255)
+            text_handler(screen, "(" + nasa + ")", int(scr_width / 3.85),
+                         nasa_right[1], 30, 255)
+            if action_flag == 1:
+                if nasa == "Yes":
+                    nasa = "No"
+                else:
+                    nasa = "Yes"
+        elif key_menu_option[0] + 250 > click_x > key_menu_option[0] and \
+                key_menu_option[1] + 30 > click_y > \
+                key_menu_option[1]:
+            text_handler(screen, 'Show Planet Key', key_menu_option[0],
+                         key_menu_option[1], 30, 255)
+            print_key(screen)
+        elif day_select[0] + 250 > click_x > day_select[0] and day_select[1] + 30 \
+                > click_y > day_select[1]:
+            text_handler(screen, 'Travel to A Day', day_select[0], day_select[1],
+                         30, 255)
+            if action_flag == 1:
+                input2_active = 1
 
     if input_active == 1:
         current_working_directory = os.path.dirname(
@@ -836,6 +868,42 @@ def menu(screen, states, scr_width, scr_height, numDays):
                              int(scr_height / 5)
                          ),
                          2)
+        # start close
+        pygame.draw.rect(screen,
+                         (200, 0, 0),
+                         pygame.Rect(
+                             int(scr_width / 1.124),
+                             int(scr_height / 2.7),
+                             int(scr_width / 20),
+                             int(scr_height / 26)
+                         )
+                         )
+        pygame.draw.rect(screen,
+                         (255, 255, 255),
+                         pygame.Rect(
+                             int(scr_width / 1.124),
+                             int(scr_height / 2.7),
+                             int(scr_width / 20),
+                             int(scr_height / 26)
+                         ),
+                         2)
+        text_handler(screen,
+                     "X",
+                     int(scr_width / 1.101),
+                     int(scr_height / 2.65),
+                     18,
+                     255)
+        if (int(scr_width / 1.124) < click_x < int(scr_width / 1.124) +
+            int(scr_width / 20)) and (int(scr_height / 2.7) < click_y <
+                                      int(scr_height / 2.7) + int(
+                    scr_height / 26)) and action_flag == 1:
+            print("clicked x")
+            input_text = ""
+            input_active = 0
+            textbox_active = 0
+            pause = 0
+            valid_File = 1
+        # stop close
         pygame.draw.rect(screen,
                          (255, 255, 255),
                          pygame.Rect(
@@ -862,6 +930,7 @@ def menu(screen, states, scr_width, scr_height, numDays):
                 int(scr_height / 15) > click_y > int(scr_height / 2.2):
             if action_flag == 1:
                 textbox_active = 1
+                action_flag = 0
             pygame.draw.rect(screen, (100, 100, 100),
                              pygame.Rect(int(scr_width / 2.51) + 1,
                                          int(scr_height / 2.2) + 1,
@@ -885,6 +954,16 @@ def menu(screen, states, scr_width, scr_height, numDays):
             while valid_File == 0 or valid_File == 2:
                 action_flag, click_now, click_x, click_y = click_handler(
                     click_now)
+                if (int(scr_width / 1.124) < click_x < int(scr_width / 1.124) +
+                    int(scr_width / 20)) and (int(scr_height / 2.7) < click_y <
+                                              int(scr_height / 2.7) + int(
+                            scr_height / 26)) and action_flag == 1:
+                    print("clicked x")
+                    input_text = ""
+                    input_active = 0
+                    textbox_active = 0
+                    pause = 0
+                    valid_File = 1
                 pygame.display.update(pygame.Rect(
                     int(scr_width / 2.6),
                     int(scr_height / 2.7),
@@ -897,18 +976,6 @@ def menu(screen, states, scr_width, scr_height, numDays):
                                              int(scr_width / 1.9) - 1,
                                              int(scr_height / 15) - 1))
                 events = pygame.event.get()
-
-                if (int(scr_width / 2.6) > click_x or click_x > int(
-                        scr_width / 2.6) + int(scr_width / 1.8)) or (int(
-                    scr_height / 2.7) > click_y or click_y > int(
-                    scr_height / 2.7) + int(scr_height / 5)):
-                    if action_flag == 1:
-                        print("clicked outside")
-                        input_text = ""
-                        input_active = 0
-                        textbox_active = 0
-                        valid_File = 1
-                        pause = 0
 
                 for event in events:
                     if event.type == pygame.KEYDOWN:
@@ -984,6 +1051,39 @@ def menu(screen, states, scr_width, scr_height, numDays):
                              int(scr_height / 15)
                          ),
                          2)
+        pygame.draw.rect(screen,
+                         (200, 0, 0),
+                         pygame.Rect(
+                             int(scr_width / 1.124),
+                             int(scr_height / 2.7),
+                             int(scr_width / 20),
+                             int(scr_height / 26)
+                         )
+                         )
+        pygame.draw.rect(screen,
+                         (255, 255, 255),
+                         pygame.Rect(
+                             int(scr_width / 1.124),
+                             int(scr_height / 2.7),
+                             int(scr_width / 20),
+                             int(scr_height / 26)
+                         ),
+                         2)
+        text_handler(screen,
+                     "X",
+                     int(scr_width / 1.101),
+                     int(scr_height / 2.65),
+                     18,
+                     255)
+        if (int(scr_width / 1.124) < click_x < int(scr_width / 1.124) +
+            int(scr_width / 20)) and (int(scr_height / 2.7) < click_y <
+                                      int(scr_height / 2.7) + int(
+                    scr_height / 26)) and action_flag == 1:
+            print("clicked x")
+            input2_text = ""
+            input2_active = 0
+            textbox2_active = 0
+            pause = 0
         text_handler(screen,
                      prompt,
                      int(scr_width / 2.6) + 10,
