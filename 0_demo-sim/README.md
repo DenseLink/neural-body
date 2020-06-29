@@ -5,12 +5,12 @@ An n-body simulator powered by a neural network.
 Neural Body is an n-body simulator currently as an alpha demonstration of substituting 
 calculations for planetary motion with a neural network.  Currently, the neural 
 networks can predict the position of Mars or Pluto given the rest of the positions
-in the planetary system.  
+in the planetary system from a simulator.
 
 The eventual goal is to replace the physics simulator that calculates the positions
-of other bodies to feed the neural network completely with neural networks that 
-take in an acceleration vector on each body along with a desired simulation time 
-step and perform the integration necessary to calculate the displacement of the body.
+of other bodies  completely with neural networks that take in an acceleration 
+vector on each body along with a desired simulation time step and perform the 
+integration necessary to calculate the displacement of the body.
 
 Considerable time was put into training the first version of the neural network 
 which was a simple, 2 layer, feedforward neural network with 300 nodes per layer
@@ -49,15 +49,15 @@ All dependencies above except for Python 3.8 should install when `pip install` i
 ### Setup
 
 Installing from .tar.gz:
-- Download `neural_body-0.1.0.tar.gz` from the `dist` directory.
+- Download `neural_body-0.1.2.tar.gz` from the `dist` directory.
 - Navigate to local folder where download is located.
-- Use `pip install neural_body`
-- Use the `neural_body` command to run the simulator.
+- Use `pip install neural_body-0.1.2.tar.gz`
+- Use the `neural_body` command to run the simulator from terminal.
 
 Installing from PyPi:
 - PyPi project page is located <a href="https://pypi.org/project/neural-body/" target="_blank"> here </a>
 - Use `pip install neural-body`
-- Use the `neural_body` command to run the simulator.
+- Use the `neural_body` command to run the simulator from terminal.
 
 ---
 ## Usage
@@ -110,7 +110,8 @@ folder.  You will need to download and host yourself by running `python3 -m http
 ---
 ## Team
 The AstroGators formed as a result of the "CIS4930 - Performant Python Programming" 
-course at the University of Florida.
+course at the University of Florida developed by 
+<a href="https://www.eng.ufl.edu/eed/faculty-staff/jeremiah-blanchard/" target="_blank"> Jeremiah Blanchard </a>
 
 Team members include:
 - Nathaniel Edgar

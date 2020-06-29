@@ -1,4 +1,4 @@
-numpy
 pandas
-pygame==2.0.0.dev10
+numpy
 tensorflow
+pygame==2.0.0.dev10
