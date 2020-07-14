@@ -2,6 +2,10 @@
 # Ignore pycache and pycharm config files for demo-simualtor.
 neural_network_dev/simulator/0_benrules-realtime/.idea
 neural_network_dev/simulator/0_benrules-realtime/__pycache__
+neural_network_dev/simulator/2_benrules_v2/0_modified_sim_before_use/.idea
+neural_network_dev/simulator/2_benrules_v2/0_modified_sim_before_use/__pycache__
+neural_network_dev/simulator/1_Attempt at nbody sim/nBody-master/.idea
+neural_network_dev/simulator/1_Attempt at nbody sim/nBody-master/__pycache__
 
 
 # ignore PyCharm config in demo simulator
