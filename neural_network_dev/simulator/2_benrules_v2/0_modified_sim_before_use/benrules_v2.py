@@ -5,49 +5,17 @@ import matplotlib.pyplot as plot
 from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
 
-# Because I'm lazy, just making a global pandas dataframes for the:
+# Because I'm lazy, just making a global lists to keep track of:
 # acceleration
 # velocity
 # position
 # masses
-acc_df = pd.DataFrame(
-    columns=[
-        'time_step',
-        'body_name',
-        'acc_x',
-        'acc_y',
-        'acc_z'
-    ]
-)
-vel_df = pd.DataFrame(
-    columns=[
-        'time_step',
-        'body_name',
-        'vel_x',
-        'vel_y',
-        'vel_z'
-    ]
-)
-# Positions will be calculated relative to the sun
-pos_df = pd.DataFrame(
-    columns=[
-        'time_step',
-        'body_name',
-        'pos_x',
-        'pos_y',
-        'pos_z'
-    ]
-)
-# Keep track of resulting displacements from the new velocity and accelerations.
-dis_df = pd.DataFrame(
-    columns=[
-        'time_step',
-        'body_name',
-        'dis_x',
-        'dis_y',
-        'dis_z'
-    ]
-)
+
+acc_list = []
+vel_list = []
+pos_list = []
+dis_list = []
+mass_list = []
 
 # Class that takes the place of a vector.  Used instead of numpy arrays.
 class point:
@@ -93,15 +61,15 @@ def calculate_single_body_acceleration(bodies, body_index,
     # Save the resulting acceleration for the current time step.
     # Saving with same reporting frequency as other histories.
     if current_step % report_freq == 0:
-        history_entry = [
-            current_step,
-            bodies[body_index].name,
-            acceleration.x,
-            acceleration.y,
-            acceleration.z
-        ]
+        history_entry = {
+            'time_step':current_step,
+            'body_name':bodies[body_index].name,
+            'acc_x':acceleration.x,
+            'acc_y':acceleration.y,
+            'acc_z':acceleration.z
+        }
         # Append new row to the pandas dataframe.
-        acc_df.loc[len(acc_df)] = history_entry
+        acc_list.append(history_entry)
     return acceleration
 
 def compute_velocity(bodies, time_step = 1,
@@ -119,15 +87,15 @@ def compute_velocity(bodies, time_step = 1,
         target_body.velocity.z += acceleration.z * time_step
         # Save the resulting velocity to the velocity history.
         if current_step % report_freq == 0:
-            history_entry = [
-                current_step,
-                bodies[body_index].name,
-                target_body.velocity.x,
-                target_body.velocity.y,
-                target_body.velocity.z
-            ]
+            history_entry = {
+                'time_step': current_step,
+                'body_name': bodies[body_index].name,
+                'vel_x': target_body.velocity.x,
+                'vel_y': target_body.velocity.y,
+                'vel_z': target_body.velocity.z
+            }
             # Append new row to the pandas dataframe.
-            vel_df.loc[len(vel_df)] = history_entry
+            vel_list.append(history_entry)
 
 
 def update_location(bodies, time_step = 1,
@@ -151,14 +119,14 @@ def update_location(bodies, time_step = 1,
         # Save both the displacements and locations to their respective
         # history dataframes.
         if current_step % report_freq == 0:
-            dis_hist_row = [
-                current_step,
-                target_body.name,
-                displacement_x,
-                displacement_y,
-                displacement_z
-            ]
-            dis_df.loc[len(dis_df)] = dis_hist_row
+            dis_hist_row = {
+                'time_step': current_step,
+                'body_name': target_body.name,
+                'dis_x': displacement_x,
+                'dis_y': displacement_y,
+                'dis_z': displacement_z
+            }
+            dis_list.append(dis_hist_row)
             # For the current target body, calculate the relative position to
             # the sun and then save to position dataframe.
             # Assume first entry in bodies is always the sun.
@@ -166,14 +134,21 @@ def update_location(bodies, time_step = 1,
             pos_rel_sun_y = target_body.location.y - bodies[0].location.y
             pos_rel_sun_z = target_body.location.z - bodies[0].location.z
             # Save the relative positions to the dataframe.
-            pos_his_row = [
-                current_step,
-                target_body.name,
-                pos_rel_sun_x,
-                pos_rel_sun_y,
-                pos_rel_sun_z
-            ]
-            pos_df.loc[len(pos_df)] = pos_his_row
+            pos_his_row = {
+                'time_step': current_step,
+                'body_name': target_body.name,
+                'dis_x': pos_rel_sun_x,
+                'dis_y': pos_rel_sun_y,
+                'dis_z': pos_rel_sun_z
+            }
+            pos_list.append(pos_his_row)
+            # While I'm at it, also append the body mass to the mass history.
+            mass_his_row = {
+                'time_step': current_step,
+                'body_name': target_body.name,
+                'mass': target_body.mass
+            }
+            mass_list.append(mass_his_row)
 
 def compute_gravity_step(bodies, time_step = 1,
                          current_step = 0, report_freq=1):
@@ -268,3 +243,17 @@ if __name__ == "__main__":
 
     # Convert the lists of dictionaries tracking simulator history to pandas dataframe.
     # Appending to pandas dataframe was unbelievably slow.
+    acc_df = pd.DataFrame(acc_list)
+    vel_df = pd.DataFrame(vel_list)
+    dis_df = pd.DataFrame(dis_list)
+    pos_df = pd.DataFrame(pos_list)
+    mass_df = pd.DataFrame(mass_list)
+    print("Simulation Complete")
+    # Save the resulting dataframes to the output directory
+    results_dir = 'output/'
+    acc_df.to_pickle(results_dir + 'a.pkl')
+    vel_df.to_pickle(results_dir + 'v.pkl')
+    dis_df.to_pickle(results_dir + 'd.pkl')
+    pos_df.to_pickle(results_dir + 'p.pkl')
+    mass_df.to_pickle(results_dir + 'm.pkl')
+    print('Results Saved')
