@@ -4,6 +4,7 @@ import random
 import matplotlib.pyplot as plot
 from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
+from tqdm import tqdm
 
 # Because I'm lazy, just making a global lists to keep track of:
 # acceleration
@@ -137,9 +138,9 @@ def update_location(bodies, time_step = 1,
             pos_his_row = {
                 'time_step': current_step,
                 'body_name': target_body.name,
-                'dis_x': pos_rel_sun_x,
-                'dis_y': pos_rel_sun_y,
-                'dis_z': pos_rel_sun_z
+                'pos_x': pos_rel_sun_x,
+                'pos_y': pos_rel_sun_y,
+                'pos_z': pos_rel_sun_z
             }
             pos_list.append(pos_his_row)
             # While I'm at it, also append the body mass to the mass history.
@@ -203,7 +204,7 @@ def run_simulation(bodies, names = None, time_step = 1,
     # only as much as needed.  This allows the simulator to run at higher
     # resolution (smaller time step), but the saved data to be lower
     # resolution.
-    for i in range(1,number_of_steps):
+    for i in tqdm(range(1,number_of_steps)):
         # Call function to calculate new position after a single time step.
         compute_gravity_step(bodies, time_step = time_step, current_step=i,
                              report_freq=report_freq)
@@ -217,28 +218,70 @@ def run_simulation(bodies, names = None, time_step = 1,
     return body_locations_hist        
             
 #planet data (location (m), mass (kg), velocity (m/s)
-sun = {"location":point(0,0,0), "mass":2e30, "velocity":point(0,0,0)}
-mercury = {"location":point(0,5.7e10,0), "mass":3.285e23, "velocity":point(47000,0,0)}
-venus = {"location":point(0,1.1e11,0), "mass":4.8e24, "velocity":point(35000,0,0)}
-earth = {"location":point(0,1.5e11,0), "mass":6e24, "velocity":point(30000,0,0)}
-mars = {"location":point(0,2.2e11,0), "mass":2.4e24, "velocity":point(24000,0,0)}
-jupiter = {"location":point(0,7.7e11,0), "mass":1e28, "velocity":point(13000,0,0)}
-saturn = {"location":point(0,1.4e12,0), "mass":5.7e26, "velocity":point(9000,0,0)}
-uranus = {"location":point(0,2.8e12,0), "mass":8.7e25, "velocity":point(6835,0,0)}
-neptune = {"location":point(0,4.5e12,0), "mass":1e26, "velocity":point(5477,0,0)}
-pluto = {"location":point(0,3.7e12,0), "mass":1.3e22, "velocity":point(4748,0,0)}
+# Source Data: https://nssdc.gsfc.nasa.gov/planetary/factsheet/
+sun = {"location":point(0,0,0), "mass":1.989e30, "velocity":point(0,0,0)}
+mercury = {"location":point(0,57.9e9,0), "mass":3.285e23, "velocity":point(47400,0,0)}
+venus = {"location":point(0,108.2e9,0), "mass":4.87e24, "velocity":point(35000,0,0)}
+earth = {"location":point(0,149.6e9,0), "mass":5.97e24, "velocity":point(29800,0,0)}
+mars = {"location":point(0,227.9e9,0), "mass":0.642e24, "velocity":point(24100,0,0)}
+jupiter = {"location":point(0,778.6e9,0), "mass":1898e24, "velocity":point(13100,0,0)}
+saturn = {"location":point(0,1433.5e9,0), "mass":568e24, "velocity":point(9700,0,0)}
+uranus = {"location":point(0,2872.5e9,0), "mass":86.8e24, "velocity":point(6835,0,0)}
+neptune = {"location":point(0,4495.1e9,0), "mass":102e24, "velocity":point(5477,0,0)}
+pluto = {"location":point(0,5906.4e9,0), "mass":0.0146e24, "velocity":point(4748,0,0)}
+sat1 = {
+    "location": point(0, 149.602, 0),
+    "mass": 4500,
+    "velocity": point(7800, 0, 0)
+}
 
 if __name__ == "__main__":
 
     #build list of planets in the simulation, or create your own
     bodies = [
-        body( location = sun["location"], mass = sun["mass"], velocity = sun["velocity"], name = "sun"),
-        body( location = earth["location"], mass = earth["mass"], velocity = earth["velocity"], name = "earth"),
-        body( location = mars["location"], mass = mars["mass"], velocity = mars["velocity"], name = "mars"),
-        body( location = venus["location"], mass = venus["mass"], velocity = venus["velocity"], name = "venus"),
-        ]
+        body(location = sun["location"], mass = sun["mass"],
+              velocity = sun["velocity"], name = "sun"),
+        body(location=mercury["location"], mass=mercury["mass"],
+             velocity=mercury["velocity"], name="mercury"),
+        body(location=venus["location"], mass=venus["mass"],
+             velocity=venus["velocity"], name="venus"),
+        body(location = earth["location"], mass = earth["mass"],
+              velocity = earth["velocity"], name = "earth"),
+        body(location = mars["location"], mass = mars["mass"],
+              velocity = mars["velocity"], name = "mars"),
+        body(location=jupiter["location"], mass=jupiter["mass"],
+             velocity=jupiter["velocity"], name="jupiter"),
+        body(location=saturn["location"], mass=saturn["mass"],
+             velocity=saturn["velocity"], name="saturn"),
+        body(location=uranus["location"], mass=uranus["mass"],
+             velocity=uranus["velocity"], name="uranus"),
+        body(location=neptune["location"], mass=neptune["mass"],
+             velocity=neptune["velocity"], name="neptune"),
+        body(location=pluto["location"], mass=pluto["mass"],
+             velocity=pluto["velocity"], name="pluto"),
+        body(location=sat1["location"], mass=sat1["mass"],
+             velocity=sat1["velocity"], name="sat1"),
+    ]
+
+    """
+    Run the simulation.  
+    -> time_step is the length of the simulation time step in seconds.
+    -> number_of_steps is the number of time steps to run the simulation for.
+    -> report_freq is how often to save the results.  Set to 1 to write a 
+        result at every time step.
     
-    motions = run_simulation(bodies, time_step = 100, number_of_steps = 80000, report_freq = 1000)
+    Units of time to seconds:
+    365.25 days = 31557600 seconds
+    100 years = 3155760000 seconds
+    248 years (orbit of pluto) = 7826284800
+    
+    """
+    motions = run_simulation(
+        bodies,
+        time_step = 1200,
+        number_of_steps = 6521904,
+        report_freq = 1
+    )
     plot_output(motions, outfile = 'orbits.png')
 
     # Convert the lists of dictionaries tracking simulator history to pandas dataframe.
