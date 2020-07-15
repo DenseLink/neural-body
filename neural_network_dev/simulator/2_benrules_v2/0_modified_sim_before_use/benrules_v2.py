@@ -141,17 +141,6 @@ def update_location(bodies, time_step = 1,
         # Save both the displacements and locations to their respective
         # history dataframes.
         if current_step % report_freq == 0:
-            # dis_hist_row = {
-            #     'time_step': current_step,
-            #     'body_name': target_body.name,
-            #     'dis_x': displacement_x,
-            #     'dis_y': displacement_y,
-            #     'dis_z': displacement_z
-            # }
-
-            # # dis_list.append(dis_hist_row)
-            # dis_np[current_step - 1][body_index][0] = current_step
-            # dis_np[current_step - 1][body_index][1] = body_index
             dis_np[current_step - 1][body_index][0] = displacement_x
             dis_np[current_step - 1][body_index][1] = displacement_y
             dis_np[current_step - 1][body_index][2] = displacement_z
@@ -162,23 +151,6 @@ def update_location(bodies, time_step = 1,
             pos_rel_sun_y = target_body.location.y - bodies[0].location.y
             pos_rel_sun_z = target_body.location.z - bodies[0].location.z
             # # Save the relative positions to the dataframe.
-            # pos_his_row = {
-            #     'time_step': current_step,
-            #     'body_name': target_body.name,
-            #     'pos_x': pos_rel_sun_x,
-            #     'pos_y': pos_rel_sun_y,
-            #     'pos_z': pos_rel_sun_z
-            # }
-            # pos_list.append(pos_his_row)
-            # # While I'm at it, also append the body mass to the mass history.
-            # mass_his_row = {
-            #     'time_step': current_step,
-            #     'body_name': target_body.name,
-            #     'mass': target_body.mass
-            # }
-            # mass_list.append(mass_his_row)
-            # pos_np[current_step - 1][body_index][0] = current_step
-            # pos_np[current_step - 1][body_index][1] = body_index
             pos_np[current_step - 1][body_index][0] = pos_rel_sun_x
             pos_np[current_step - 1][body_index][1] = pos_rel_sun_y
             pos_np[current_step - 1][body_index][2] = pos_rel_sun_z
@@ -310,8 +282,8 @@ if __name__ == "__main__":
     
     """
     # Setup simulation settings
-    time_step = 1200
-    number_of_steps = 6521904
+    time_step = 800
+    number_of_steps = 9782856
     report_frequency = 1
 
     # Set the shape of and initialize global numpy arrays that store the
