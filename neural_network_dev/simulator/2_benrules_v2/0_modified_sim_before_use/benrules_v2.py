@@ -266,7 +266,7 @@ if __name__ == "__main__":
     """
     # Setup simulation settings
     time_step = 800
-    number_of_steps = 9782856
+    number_of_steps = 8000 #9782856
     report_frequency = 1
 
     # Set the shape of and initialize global numpy arrays that store the
@@ -274,22 +274,22 @@ if __name__ == "__main__":
     # Fill arrays with np.nan until the values can be overwritten by the
     # simulation.
     acc_np = np.full(
-        (number_of_steps*len(bodies), len(bodies), 3),
+        (number_of_steps-1, len(bodies), 3),
         np.nan,
         dtype=np.float32
     )
     vel_np = np.full(
-        (number_of_steps * len(bodies), len(bodies), 3),
+        (number_of_steps-1, len(bodies), 3),
         np.nan,
         dtype=np.float32
     )
     pos_np = np.full(
-        (number_of_steps * len(bodies), len(bodies), 3),
+        (number_of_steps-1, len(bodies), 3),
         np.nan,
         dtype=np.float32
     )
     dis_np = np.full(
-        (number_of_steps * len(bodies), len(bodies), 3),
+        (number_of_steps-1, len(bodies), 3),
         np.nan,
         dtype=np.float32
     )
