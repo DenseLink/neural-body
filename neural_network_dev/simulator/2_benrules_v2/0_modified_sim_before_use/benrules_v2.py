@@ -246,9 +246,9 @@ if __name__ == "__main__":
         body(location=neptune["location"], mass=neptune["mass"],
              velocity=neptune["velocity"], name="neptune"),
         body(location=pluto["location"], mass=pluto["mass"],
-             velocity=pluto["velocity"], name="pluto"),
-        body(location=sat1["location"], mass=sat1["mass"],
-             velocity=sat1["velocity"], name="sat1"),
+             velocity=pluto["velocity"], name="pluto")
+        #body(location=sat1["location"], mass=sat1["mass"],
+        #     velocity=sat1["velocity"], name="sat1"),
     ]
 
     """
