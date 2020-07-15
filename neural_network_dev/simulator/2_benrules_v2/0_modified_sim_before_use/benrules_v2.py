@@ -4,7 +4,9 @@ import random
 import matplotlib.pyplot as plot
 from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
+import numpy as np
 from tqdm import tqdm
+import gc # Garbage collector to free memory every time step.
 
 # Because I'm lazy, just making a global lists to keep track of:
 # acceleration
@@ -17,6 +19,12 @@ vel_list = []
 pos_list = []
 dis_list = []
 mass_list = []
+
+acc_np = None
+vel_np = None
+pos_np = None
+dis_np = None
+mass_np = None
 
 # Class that takes the place of a vector.  Used instead of numpy arrays.
 class point:
@@ -61,16 +69,17 @@ def calculate_single_body_acceleration(bodies, body_index,
 
     # Save the resulting acceleration for the current time step.
     # Saving with same reporting frequency as other histories.
-    if current_step % report_freq == 0:
-        history_entry = {
-            'time_step':current_step,
-            'body_name':bodies[body_index].name,
-            'acc_x':acceleration.x,
-            'acc_y':acceleration.y,
-            'acc_z':acceleration.z
-        }
-        # Append new row to the pandas dataframe.
-        acc_list.append(history_entry)
+    # if current_step % report_freq == 0:
+        # history_entry = {
+        #     'time_step':current_step,
+        #     'body_name':bodies[body_index].name,
+        #     'acc_x':acceleration.x,
+        #     'acc_y':acceleration.y,
+        #     'acc_z':acceleration.z
+        # }
+        # # Append new row to the pandas dataframe.
+        # acc_list.append(history_entry)
+
     return acceleration
 
 def compute_velocity(bodies, time_step = 1,
@@ -88,15 +97,27 @@ def compute_velocity(bodies, time_step = 1,
         target_body.velocity.z += acceleration.z * time_step
         # Save the resulting velocity to the velocity history.
         if current_step % report_freq == 0:
-            history_entry = {
-                'time_step': current_step,
-                'body_name': bodies[body_index].name,
-                'vel_x': target_body.velocity.x,
-                'vel_y': target_body.velocity.y,
-                'vel_z': target_body.velocity.z
-            }
-            # Append new row to the pandas dataframe.
-            vel_list.append(history_entry)
+            # history_entry = {
+            #     'time_step': current_step,
+            #     'body_name': bodies[body_index].name,
+            #     'vel_x': target_body.velocity.x,
+            #     'vel_y': target_body.velocity.y,
+            #     'vel_z': target_body.velocity.z
+            # }
+            # # Append new row to the pandas dataframe.
+            # vel_list.append(history_entry)
+
+            # vel_np[current_step - 1][body_index][0] = current_step
+            # vel_np[current_step - 1][body_index][1] = body_index
+            vel_np[current_step - 1][body_index][0] = target_body.velocity.x
+            vel_np[current_step - 1][body_index][1] = target_body.velocity.y
+            vel_np[current_step - 1][body_index][2] = target_body.velocity.z
+
+            # acc_np[current_step - 1][body_index][0] = current_step
+            # acc_np[current_step - 1][body_index][1] = body_index
+            acc_np[current_step - 1][body_index][0] = acceleration.x
+            acc_np[current_step - 1][body_index][1] = acceleration.y
+            acc_np[current_step - 1][body_index][2] = acceleration.z
 
 
 def update_location(bodies, time_step = 1,
@@ -108,7 +129,7 @@ def update_location(bodies, time_step = 1,
     :param time_step:
     :return:
     """
-    for target_body in bodies:
+    for body_index, target_body in enumerate(bodies):
         # Calculate the displacement resulting from the new velocities.
         displacement_x = target_body.velocity.x * time_step
         displacement_y = target_body.velocity.y * time_step
@@ -120,36 +141,47 @@ def update_location(bodies, time_step = 1,
         # Save both the displacements and locations to their respective
         # history dataframes.
         if current_step % report_freq == 0:
-            dis_hist_row = {
-                'time_step': current_step,
-                'body_name': target_body.name,
-                'dis_x': displacement_x,
-                'dis_y': displacement_y,
-                'dis_z': displacement_z
-            }
-            dis_list.append(dis_hist_row)
-            # For the current target body, calculate the relative position to
-            # the sun and then save to position dataframe.
-            # Assume first entry in bodies is always the sun.
+            # dis_hist_row = {
+            #     'time_step': current_step,
+            #     'body_name': target_body.name,
+            #     'dis_x': displacement_x,
+            #     'dis_y': displacement_y,
+            #     'dis_z': displacement_z
+            # }
+
+            # # dis_list.append(dis_hist_row)
+            # dis_np[current_step - 1][body_index][0] = current_step
+            # dis_np[current_step - 1][body_index][1] = body_index
+            dis_np[current_step - 1][body_index][0] = displacement_x
+            dis_np[current_step - 1][body_index][1] = displacement_y
+            dis_np[current_step - 1][body_index][2] = displacement_z
+            # # For the current target body, calculate the relative position to
+            # # the sun and then save to position dataframe.
+            # # Assume first entry in bodies is always the sun.
             pos_rel_sun_x = target_body.location.x - bodies[0].location.x
             pos_rel_sun_y = target_body.location.y - bodies[0].location.y
             pos_rel_sun_z = target_body.location.z - bodies[0].location.z
-            # Save the relative positions to the dataframe.
-            pos_his_row = {
-                'time_step': current_step,
-                'body_name': target_body.name,
-                'pos_x': pos_rel_sun_x,
-                'pos_y': pos_rel_sun_y,
-                'pos_z': pos_rel_sun_z
-            }
-            pos_list.append(pos_his_row)
-            # While I'm at it, also append the body mass to the mass history.
-            mass_his_row = {
-                'time_step': current_step,
-                'body_name': target_body.name,
-                'mass': target_body.mass
-            }
-            mass_list.append(mass_his_row)
+            # # Save the relative positions to the dataframe.
+            # pos_his_row = {
+            #     'time_step': current_step,
+            #     'body_name': target_body.name,
+            #     'pos_x': pos_rel_sun_x,
+            #     'pos_y': pos_rel_sun_y,
+            #     'pos_z': pos_rel_sun_z
+            # }
+            # pos_list.append(pos_his_row)
+            # # While I'm at it, also append the body mass to the mass history.
+            # mass_his_row = {
+            #     'time_step': current_step,
+            #     'body_name': target_body.name,
+            #     'mass': target_body.mass
+            # }
+            # mass_list.append(mass_his_row)
+            # pos_np[current_step - 1][body_index][0] = current_step
+            # pos_np[current_step - 1][body_index][1] = body_index
+            pos_np[current_step - 1][body_index][0] = pos_rel_sun_x
+            pos_np[current_step - 1][body_index][1] = pos_rel_sun_y
+            pos_np[current_step - 1][body_index][2] = pos_rel_sun_z
 
 def compute_gravity_step(bodies, time_step = 1,
                          current_step = 0, report_freq=1):
@@ -208,12 +240,13 @@ def run_simulation(bodies, names = None, time_step = 1,
         # Call function to calculate new position after a single time step.
         compute_gravity_step(bodies, time_step = time_step, current_step=i,
                              report_freq=report_freq)
-        
-        if i % report_freq == 0:
-            for index, body_location in enumerate(body_locations_hist):
-                body_location["x"].append(bodies[index].location.x)
-                body_location["y"].append(bodies[index].location.y)           
-                body_location["z"].append(bodies[index].location.z)       
+
+        #gc.collect()
+        # if i % report_freq == 0:
+        #     for index, body_location in enumerate(body_locations_hist):
+        #         body_location["x"].append(bodies[index].location.x)
+        #         body_location["y"].append(bodies[index].location.y)
+        #         body_location["z"].append(bodies[index].location.z)
 
     return body_locations_hist        
             
@@ -276,27 +309,59 @@ if __name__ == "__main__":
     248 years (orbit of pluto) = 7826284800
     
     """
+    # Setup simulation settings
+    time_step = 1200
+    number_of_steps = 6521904
+    report_frequency = 1
+
+    # Set the shape of and initialize global numpy arrays that store the
+    # simulation history.
+    # Fill arrays with np.nan until the values can be overwritten by the
+    # simulation.
+    acc_np = np.full(
+        (number_of_steps*len(bodies), len(bodies), 3),
+        np.nan,
+        dtype=np.float32
+    )
+    vel_np = np.full(
+        (number_of_steps * len(bodies), len(bodies), 3),
+        np.nan,
+        dtype=np.float32
+    )
+    pos_np = np.full(
+        (number_of_steps * len(bodies), len(bodies), 3),
+        np.nan,
+        dtype=np.float32
+    )
+    dis_np = np.full(
+        (number_of_steps * len(bodies), len(bodies), 3),
+        np.nan,
+        dtype=np.float32
+    )
+    mass_np = np.full(
+        (len(bodies), 1),
+        np.nan,
+        dtype=np.float32
+    )
+
+    # Save the masses for each body.
+    for body_index, target_body in enumerate(bodies):
+        mass_np[body_index][0] = target_body.mass
+
     motions = run_simulation(
         bodies,
-        time_step = 1200,
-        number_of_steps = 6521904,
-        report_freq = 1
+        time_step=time_step,
+        number_of_steps=number_of_steps,
+        report_freq=report_frequency
     )
-    plot_output(motions, outfile = 'orbits.png')
+    #plot_output(motions, outfile = 'orbits.png')
 
-    # Convert the lists of dictionaries tracking simulator history to pandas dataframe.
-    # Appending to pandas dataframe was unbelievably slow.
-    acc_df = pd.DataFrame(acc_list)
-    vel_df = pd.DataFrame(vel_list)
-    dis_df = pd.DataFrame(dis_list)
-    pos_df = pd.DataFrame(pos_list)
-    mass_df = pd.DataFrame(mass_list)
     print("Simulation Complete")
-    # Save the resulting dataframes to the output directory
+    # Save the resulting numpy arrays
     results_dir = 'output/'
-    acc_df.to_pickle(results_dir + 'a.pkl')
-    vel_df.to_pickle(results_dir + 'v.pkl')
-    dis_df.to_pickle(results_dir + 'd.pkl')
-    pos_df.to_pickle(results_dir + 'p.pkl')
-    mass_df.to_pickle(results_dir + 'm.pkl')
+    np.save(results_dir + 'a.npy', acc_np)
+    np.save(results_dir + 'v.npy', vel_np)
+    np.save(results_dir + 'd.npy', pos_np)
+    np.save(results_dir + 'p.npy', dis_np)
+    np.save(results_dir + 'm.npy', mass_np)
     print('Results Saved')
