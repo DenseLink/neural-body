@@ -7,6 +7,8 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 import gc # Garbage collector to free memory every time step.
+from numba import jit
+import h5py
 
 # Because I'm lazy, just making a global lists to keep track of:
 # acceleration
@@ -26,12 +28,15 @@ pos_np = None
 dis_np = None
 mass_np = None
 
+
 # Class that takes the place of a vector.  Used instead of numpy arrays.
 class point:
     def __init__(self, x,y,z):
         self.x = x
         self.y = y
         self.z = z
+
+
 # Class to store all the initial and current state properties of a body.
 class body:
     def __init__(self, location, mass, velocity, name = ""):
@@ -39,6 +44,7 @@ class body:
         self.mass = mass
         self.velocity = velocity
         self.name = name
+
 
 def calculate_single_body_acceleration(bodies, body_index,
                                        current_step = 0, report_freq=1):
@@ -66,21 +72,8 @@ def calculate_single_body_acceleration(bodies, body_index,
                                      - target_body.location.y)
             acceleration.z += tmp * (external_body.location.z
                                      - target_body.location.z)
-
-    # Save the resulting acceleration for the current time step.
-    # Saving with same reporting frequency as other histories.
-    # if current_step % report_freq == 0:
-        # history_entry = {
-        #     'time_step':current_step,
-        #     'body_name':bodies[body_index].name,
-        #     'acc_x':acceleration.x,
-        #     'acc_y':acceleration.y,
-        #     'acc_z':acceleration.z
-        # }
-        # # Append new row to the pandas dataframe.
-        # acc_list.append(history_entry)
-
     return acceleration
+
 
 def compute_velocity(bodies, time_step = 1,
                      current_step = 0, report_freq=1):
@@ -97,24 +90,10 @@ def compute_velocity(bodies, time_step = 1,
         target_body.velocity.z += acceleration.z * time_step
         # Save the resulting velocity to the velocity history.
         if current_step % report_freq == 0:
-            # history_entry = {
-            #     'time_step': current_step,
-            #     'body_name': bodies[body_index].name,
-            #     'vel_x': target_body.velocity.x,
-            #     'vel_y': target_body.velocity.y,
-            #     'vel_z': target_body.velocity.z
-            # }
-            # # Append new row to the pandas dataframe.
-            # vel_list.append(history_entry)
-
-            # vel_np[current_step - 1][body_index][0] = current_step
-            # vel_np[current_step - 1][body_index][1] = body_index
             vel_np[current_step - 1][body_index][0] = target_body.velocity.x
             vel_np[current_step - 1][body_index][1] = target_body.velocity.y
             vel_np[current_step - 1][body_index][2] = target_body.velocity.z
 
-            # acc_np[current_step - 1][body_index][0] = current_step
-            # acc_np[current_step - 1][body_index][1] = body_index
             acc_np[current_step - 1][body_index][0] = acceleration.x
             acc_np[current_step - 1][body_index][1] = acceleration.y
             acc_np[current_step - 1][body_index][2] = acceleration.z
@@ -155,12 +134,14 @@ def update_location(bodies, time_step = 1,
             pos_np[current_step - 1][body_index][1] = pos_rel_sun_y
             pos_np[current_step - 1][body_index][2] = pos_rel_sun_z
 
+
 def compute_gravity_step(bodies, time_step = 1,
                          current_step = 0, report_freq=1):
     compute_velocity(bodies, time_step = time_step,
                      current_step = current_step, report_freq=report_freq)
     update_location(bodies, time_step = time_step,
                     current_step = current_step, report_freq=report_freq)
+
 
 def plot_output(bodies, outfile = None):
     fig = plot.figure()
@@ -188,6 +169,7 @@ def plot_output(bodies, outfile = None):
         plot.savefig(outfile)
     else:
         plot.show()
+
 
 def run_simulation(bodies, names = None, time_step = 1,
                    number_of_steps = 10000, report_freq = 100):
@@ -221,7 +203,8 @@ def run_simulation(bodies, names = None, time_step = 1,
         #         body_location["z"].append(bodies[index].location.z)
 
     return body_locations_hist        
-            
+
+
 #planet data (location (m), mass (kg), velocity (m/s)
 # Source Data: https://nssdc.gsfc.nasa.gov/planetary/factsheet/
 sun = {"location":point(0,0,0), "mass":1.989e30, "velocity":point(0,0,0)}
@@ -331,9 +314,19 @@ if __name__ == "__main__":
     print("Simulation Complete")
     # Save the resulting numpy arrays
     results_dir = 'output/'
-    np.save(results_dir + 'a.npy', acc_np)
-    np.save(results_dir + 'v.npy', vel_np)
-    np.save(results_dir + 'd.npy', pos_np)
-    np.save(results_dir + 'p.npy', dis_np)
+    # np.save(results_dir + 'a.npy', acc_np)
+    # np.save(results_dir + 'v.npy', vel_np)
+    # np.save(results_dir + 'd.npy', pos_np)
+    # np.save(results_dir + 'p.npy', dis_np)
     np.save(results_dir + 'm.npy', mass_np)
+
+    # Save results as hdf5 for later partial reading.
+    with h5py.File(results_dir + 'a.hdf5', 'w') as f:
+        dset = f.create_dataset("acc", data=acc_np)
+    with h5py.File(results_dir + 'v.hdf5', 'w') as f:
+        dset = f.create_dataset("vel", data=vel_np)
+    with h5py.File(results_dir + 'p.hdf5', 'w') as f:
+        dset = f.create_dataset("pos", data=pos_np)
+    with h5py.File(results_dir + 'd.hdf5', 'w') as f:
+        dset = f.create_dataset("dis", data=dis_np)
     print('Results Saved')
