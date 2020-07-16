@@ -266,7 +266,7 @@ if __name__ == "__main__":
     """
     # Setup simulation settings
     time_step = 800
-    number_of_steps = 8000 #9782856
+    number_of_steps = 9782856
     report_frequency = 1
 
     # Set the shape of and initialize global numpy arrays that store the
