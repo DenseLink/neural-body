@@ -16,12 +16,6 @@ import h5py
 # position
 # masses
 
-acc_list = []
-vel_list = []
-pos_list = []
-dis_list = []
-mass_list = []
-
 acc_np = None
 vel_np = None
 pos_np = None
