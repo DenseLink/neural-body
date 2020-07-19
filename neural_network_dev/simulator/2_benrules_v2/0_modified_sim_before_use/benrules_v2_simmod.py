@@ -125,6 +125,28 @@ class benrules_v2:
         # Save the masses for each body.
         for body_index, target_body in enumerate(self.bodies):
             self.mass_np[body_index][0] = target_body.mass
+        # Start creating set of numpy arrays that will keep track of current
+        # velocities, locations.
+        # Numpy arrays will have shape of (num_bodies, 3).
+        self.current_vel_np = np.full(
+            (len(self.bodies), 3),
+            np.nan,
+            np.float32
+        )
+        self.current_loc_np = np.full(
+            (len(self.bodies), 3),
+            np.nan,
+            np.float32
+        )
+        # Initialize the numpy arrays with the given velocities and locaitons.
+        for idx, body in enumerate(self.bodies):
+            self.current_vel_np[idx][0] = body.velocity.x
+            self.current_vel_np[idx][1] = body.velocity.y
+            self.current_vel_np[idx][2] = body.velocity.z
+            self.current_loc_np[idx][0] = body.location.x
+            self.current_loc_np[idx][1] = body.location.y
+            self.current_loc_np[idx][2] = body.location.z
+
 
     def run_simulation(self):
         # create output container for each body
@@ -154,13 +176,14 @@ class benrules_v2:
             #         body_location["z"].append(self.bodies[index].location.z)
 
     def _compute_gravity_step(self, current_step=0):
-        self._compute_velocity(current_step=current_step)
-        self._update_location(current_step=current_step)
+        #self._compute_velocity(current_step=current_step)
+        self._compute_velocity_vectorized(current_step=current_step)
+        #self._update_location(current_step=current_step)
+        self._update_location_vectorized(current_step=current_step)
 
     def _compute_velocity(self, current_step=0):
         for body_index, target_body in enumerate(self.bodies):
             acceleration = self._calculate_single_body_acceleration(body_index)
-            acceleration_dos = self._calc_single_bod_acc_vectorized(body_index)
 
             target_body.velocity.x += acceleration.x * self.time_step
             target_body.velocity.y += acceleration.y * self.time_step
@@ -178,7 +201,22 @@ class benrules_v2:
                 self.acc_np[current_step - 1][body_index][1] = acceleration.y
                 self.acc_np[current_step - 1][body_index][2] = acceleration.z
 
-    def _calc_single_bod_acc_vectorized(self, body_index):
+    def _compute_velocity_vectorized(self, current_step):
+        """
+        After getting acceleration from vectorized single_bod_acceleration,
+        we can simply multiply by the time step to get velocity.
+
+        :return:
+        """
+        acceleration_np = self._calc_single_bod_acc_vectorized()
+        velocity_np = self.current_vel_np.T.reshape(3, acceleration_np.shape[1], 1) + (acceleration_np * self.time_step)
+        # Convert back to the tracking format
+        self.current_vel_np[:,:] = velocity_np.T.reshape(acceleration_np.shape[1], 3)
+        if current_step % self.report_frequency == 0:
+            self.vel_np[current_step - 1, :, :] = self.current_vel_np
+            self.acc_np[current_step - 1, :, :] = acceleration_np.T.reshape(acceleration_np.shape[1], 3)
+
+    def _calc_single_bod_acc_vectorized(self):
         """
         This is a prototype version of the acceleration vector adder.  For
         it to work with an arbitrary number of bodies, assume the positions of
@@ -219,14 +257,14 @@ class benrules_v2:
         # Calculate the tmp value for every body at the same time
         g_const = 6.67408e-11  # m3 kg-1 s-2
         acceleration_np = g_const * ((diff_mat.transpose((0,2,1)) * (np.reciprocal(r ** 3, out=np.zeros_like(r), where=(r!=0.0))).T) @ mass_vec)
-
-        # Even though we just calculated all the accerations for each dimension
-        # for each body, extract the one we are concerned with and return.
-        acceleration = self.point(0, 0, 0)
-        acceleration.x = acceleration_np[0][body_index]
-        acceleration.y = acceleration_np[1][body_index]
-        acceleration.z = acceleration_np[2][body_index]
-        return acceleration
+        return acceleration_np
+        # # Even though we just calculated all the accerations for each dimension
+        # # for each body, extract the one we are concerned with and return.
+        # acceleration = self.point(0, 0, 0)
+        # acceleration.x = acceleration_np[0][body_index]
+        # acceleration.y = acceleration_np[1][body_index]
+        # acceleration.z = acceleration_np[2][body_index]
+        # return acceleration
 
     def _calculate_single_body_acceleration(self, body_index):
         """
@@ -254,6 +292,17 @@ class benrules_v2:
                 acceleration.z += tmp * (external_body.location.z
                                          - target_body.location.z)
         return acceleration
+
+    def _update_location_vectorized(self, current_step):
+        displacement_np = self.current_vel_np * self.time_step
+        self.current_loc_np = self.current_loc_np + displacement_np
+        if current_step % self.report_frequency == 0:
+            self.dis_np[current_step - 1, :, :] = displacement_np
+            # Calculate and save position relative to sun.
+            sun_pos = self.current_loc_np[0]
+            pos_rel_sun_np = self.current_loc_np[:] - sun_pos
+            self.pos_np[current_step - 1, :, :] = pos_rel_sun_np
+
 
     def _update_location(self, current_step=0):
         """
