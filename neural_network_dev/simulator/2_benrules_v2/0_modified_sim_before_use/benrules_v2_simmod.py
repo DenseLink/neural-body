@@ -160,6 +160,7 @@ class benrules_v2:
     def _compute_velocity(self, current_step=0):
         for body_index, target_body in enumerate(self.bodies):
             acceleration = self._calculate_single_body_acceleration(body_index)
+            acceleration_dos = self._calc_single_bod_acc_vectorized(body_index)
 
             target_body.velocity.x += acceleration.x * self.time_step
             target_body.velocity.y += acceleration.y * self.time_step
@@ -176,6 +177,56 @@ class benrules_v2:
                 self.acc_np[current_step - 1][body_index][0] = acceleration.x
                 self.acc_np[current_step - 1][body_index][1] = acceleration.y
                 self.acc_np[current_step - 1][body_index][2] = acceleration.z
+
+    def _calc_single_bod_acc_vectorized(self, body_index):
+        """
+        This is a prototype version of the acceleration vector adder.  For
+        it to work with an arbitrary number of bodies, assume the positions of
+        all bodies will be provided as a numpy array with an [x,y,z] vector to
+        store the positions.
+
+        :param body_index:
+        :return:
+        """
+        # To be removed later.  Convert the bodies into a numpy vector with the
+        # position data.
+        # Position vector stores the x,y,z positions of each body.
+        pos_vec = np.full(
+            (len(self.bodies), 3),
+            np.nan,
+            dtype=np.float64
+        )
+        mass_vec = np.full(
+            (len(self.bodies), 1),
+            np.nan,
+            dtype=np.float64
+        )
+        for idx, body in enumerate(self.bodies):
+            pos_vec[idx][0] = body.location.x
+            pos_vec[idx][1] = body.location.y
+            pos_vec[idx][2] = body.location.z
+            mass_vec[idx][0] = body.mass
+        # Create matrix of positions duplicated for later calculating
+        # differences between all positions at the same time.
+        pos_vec = pos_vec.T.reshape((3, pos_vec.shape[0], 1)) # Have to reshape from previous to get columns that are the x, y, and z dimensions
+        pos_mat = pos_vec @ np.ones((1, pos_vec.shape[1]))
+        # Find differences between all bodies and all other bodies at
+        # the same time.
+        diff_mat = pos_mat - pos_mat.transpose((0, 2, 1))
+        # Calculate the radius or absolute distances between all bodies
+        # and every other body
+        r = np.sqrt(np.sum(np.square(diff_mat), axis=0))
+        # Calculate the tmp value for every body at the same time
+        g_const = 6.67408e-11  # m3 kg-1 s-2
+        acceleration_np = g_const * ((diff_mat.transpose((0,2,1)) * (np.reciprocal(r ** 3, out=np.zeros_like(r), where=(r!=0.0))).T) @ mass_vec)
+
+        # Even though we just calculated all the accerations for each dimension
+        # for each body, extract the one we are concerned with and return.
+        acceleration = self.point(0, 0, 0)
+        acceleration.x = acceleration_np[0][body_index]
+        acceleration.y = acceleration_np[1][body_index]
+        acceleration.z = acceleration_np[2][body_index]
+        return acceleration
 
     def _calculate_single_body_acceleration(self, body_index):
         """

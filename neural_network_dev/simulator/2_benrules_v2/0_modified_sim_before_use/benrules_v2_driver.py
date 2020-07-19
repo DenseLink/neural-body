@@ -9,7 +9,7 @@ from random import randint
 def main():
     # Setup simulation settings
     time_step = 800
-    number_of_steps = 80000
+    number_of_steps = 197231
     report_frequency = 1
 
     # Grab a random state of the universe to start from.
@@ -68,18 +68,18 @@ def main():
     # Set range of initial speeds for satellites.
     # Escape speed from earth is about 11.2 km/s.  11,200 m/s
     # Avg speed of a satellite is 7600 m/s
-    sat_speed_range = (11200, 15000)
+    sat_speed_range = (15000, 20000)
     # Set range of orbits above earth for satellites.  Take into account
     # the Radius of earth since the mass will be located at its center.
     # Avg orbit is 160 to 2000 km.  160000 to 2000000 m
     rad_earth = 6371000
-    sat_alt_range = (rad_earth + 160000, rad_earth + 2000000)
+    sat_alt_range = (rad_earth + 1000000, rad_earth + 5000000)
 
     # ---> Create list of random satellites starting from earth.
     # Get location of earth.
     earth_spec = initial_bodies[3]
     sat_list = []
-    num_sats_to_sim = 6
+    num_sats_to_sim = 10
     for i in range(0, num_sats_to_sim):
         # Randomly select mass, speed, and altitude above earth for sat.
         temp_mass = randint(sat_mass_range[0], sat_mass_range[1])
