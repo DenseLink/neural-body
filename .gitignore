@@ -19,7 +19,7 @@ neural_network_dev/simulator/2_benrules_v2/0_Data_Generation_Notebooks/input_dat
 neural_network_dev/simulator/2_benrules_v2/0_modified_sim_before_use/computed_data/
 neural_network_dev/simulator/2_benrules_v2/0_Data_Generation_Notebooks/output/
 neural_network_dev/simulator/2_benrules_v2/0_modified_sim_before_use/sim_cache/
-
+neural_network_dev/model_deployments/1_lstm_v1/input_data/
 
 # Compiled source #
 ###################

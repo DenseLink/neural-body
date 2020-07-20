@@ -226,27 +226,27 @@ class benrules_v2:
         :param body_index:
         :return:
         """
-        # To be removed later.  Convert the bodies into a numpy vector with the
-        # position data.
-        # Position vector stores the x,y,z positions of each body.
-        pos_vec = np.full(
-            (len(self.bodies), 3),
-            np.nan,
-            dtype=np.float64
-        )
-        mass_vec = np.full(
-            (len(self.bodies), 1),
-            np.nan,
-            dtype=np.float64
-        )
-        for idx, body in enumerate(self.bodies):
-            pos_vec[idx][0] = body.location.x
-            pos_vec[idx][1] = body.location.y
-            pos_vec[idx][2] = body.location.z
-            mass_vec[idx][0] = body.mass
+        # # To be removed later.  Convert the bodies into a numpy vector with the
+        # # position data.
+        # # Position vector stores the x,y,z positions of each body.
+        # pos_vec = np.full(
+        #     (len(self.bodies), 3),
+        #     np.nan,
+        #     dtype=np.float64
+        # )
+        # mass_vec = np.full(
+        #     (len(self.bodies), 1),
+        #     np.nan,
+        #     dtype=np.float64
+        # )
+        # for idx, body in enumerate(self.bodies):
+        #     pos_vec[idx][0] = body.location.x
+        #     pos_vec[idx][1] = body.location.y
+        #     pos_vec[idx][2] = body.location.z
+        #     mass_vec[idx][0] = body.mass
         # Create matrix of positions duplicated for later calculating
         # differences between all positions at the same time.
-        pos_vec = pos_vec.T.reshape((3, pos_vec.shape[0], 1)) # Have to reshape from previous to get columns that are the x, y, and z dimensions
+        pos_vec = self.current_loc_np.T.reshape((3, self.current_loc_np.shape[0], 1)) # Have to reshape from previous to get columns that are the x, y, and z dimensions
         pos_mat = pos_vec @ np.ones((1, pos_vec.shape[1]))
         # Find differences between all bodies and all other bodies at
         # the same time.
@@ -256,15 +256,8 @@ class benrules_v2:
         r = np.sqrt(np.sum(np.square(diff_mat), axis=0))
         # Calculate the tmp value for every body at the same time
         g_const = 6.67408e-11  # m3 kg-1 s-2
-        acceleration_np = g_const * ((diff_mat.transpose((0,2,1)) * (np.reciprocal(r ** 3, out=np.zeros_like(r), where=(r!=0.0))).T) @ mass_vec)
+        acceleration_np = g_const * ((diff_mat.transpose((0,2,1)) * (np.reciprocal(r ** 3, out=np.zeros_like(r), where=(r!=0.0))).T) @ self.mass_np)
         return acceleration_np
-        # # Even though we just calculated all the accerations for each dimension
-        # # for each body, extract the one we are concerned with and return.
-        # acceleration = self.point(0, 0, 0)
-        # acceleration.x = acceleration_np[0][body_index]
-        # acceleration.y = acceleration_np[1][body_index]
-        # acceleration.z = acceleration_np[2][body_index]
-        # return acceleration
 
     def _calculate_single_body_acceleration(self, body_index):
         """
