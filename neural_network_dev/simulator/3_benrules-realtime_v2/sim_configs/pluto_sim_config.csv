@@ -1,0 +1,11 @@
+satellite?,body_name,body_mass,location_x,location_y,location_z,velocity_x,velocity_y,velocity_z
+no,sun,2E+30,0,0,0,0,0,0
+no,mercury,3.285E+23,0,57000000000,0,47000,0,0
+no,venus,4.8E+24,0,1.1E+11,0,35000,0,0
+no,earth,6E+24,0,1.5E+11,0,30000,0,0
+no,mars,2.4E+24,0,2.2E+11,0,24000,0,0
+no,jupiter,1E+28,0,7.7E+11,0,13000,0,0
+no,saturn,5.7E+26,0,1.4E+12,0,9000,0,0
+no,uranus,8.7E+25,0,2.8E+12,0,6835,0,0
+no,neptune,1E+26,0,4.5E+12,0,5477,0,0
+yes,pluto,1.3E+22,0,3.7E+12,0,4748,0,0
