@@ -15,9 +15,10 @@ def main():
     # Set time step (most likely in seconds) in simulation time.
     # How long the simulation steps forward at each iteration.
     time_step = 100
+    pause_time_step = 250  # Pause the simulator at this time step and FF or RW
     # Total number of time steps performed by the simulation.
     # Total length of simulation = time_step * number_of_steps.
-    number_of_steps = 500
+    number_of_steps = 2000
 
     # Read simulator and satellite initial state from config .csv file.
     keep_trying_read = True
@@ -41,6 +42,10 @@ def main():
     curr_time_step = 0
     while curr_time_step < number_of_steps:
         curr_time_step += 1
+        # Pause and set a new time step for the simulator
+        if (curr_time_step == pause_time_step):
+            new_ts = int(input("Enter a time step to jump to: "))
+            simulation.current_time_step = new_ts
         # Get next state of the simulation.
         current_positions, predicted_position = simulation.get_next_sim_state_v2()
         #current_positions = simulation.get_next_sim_state()

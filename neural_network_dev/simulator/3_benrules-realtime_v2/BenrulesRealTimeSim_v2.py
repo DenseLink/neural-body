@@ -168,6 +168,11 @@ class BenrulesRealTimeSim:
         # Using iterrows() to go over each row in dataframe and extract info
         # from each row.
         self._bodies = []
+        read_planet_pos = []
+        read_planet_vel = []
+        read_sat_pos = []
+        read_sat_vel = []
+        read_masses = []
         for index, row in in_df.iterrows():
             # Check if satellite or other.
             # If satellite, then set predicting name to choose the right
@@ -190,6 +195,62 @@ class BenrulesRealTimeSim:
                     name = str(row["body_name"])
                 )
             )
+            # Also initialize the NEW numpy arrays for tracking current system
+            # state
+            read_planet_pos.append(
+                np.array([np.float32(row["location_x"]),
+                          np.float32(row["location_y"]),
+                          np.float32(row["location_z"])])
+            )
+            read_planet_vel.append(
+                np.array([np.float32(row["velocity_x"]),
+                          np.float32(row["velocity_y"]),
+                          np.float32(row["velocity_z"])])
+            )
+            #TODO: Add satellites in here.
+            read_masses.append(
+                np.array([np.float32(row["body_mass"])])
+            )
+
+        # Create numpy arrays to store body masses
+        # Using 1 array for both planets and satellites.  Only calculation
+        # using masses is the acceleration calculation and we don't need the
+        # masses separated.
+        self._num_sats = len(read_sat_pos)
+        self._num_planets = len(read_planet_pos)
+        self._num_bodies = self._num_sats + self._num_planets
+        self._masses = np.stack(read_masses, axis=0)
+        self._planet_pos = np.stack(read_planet_pos, axis=0)
+        self._planet_vel = np.stack(read_planet_vel, axis=0)
+        self._sat_pos = np.stack(read_sat_pos, axis=0)
+        self._sat_vel = np.stack(read_sat_vel, axis=0)
+
+        # self._masses = np.full(
+        #     (self._num_bodies, 1),
+        #     np.nan,
+        #     dtype=np.float32
+        # )
+        # # Create arrays to keep track of the current system state.
+        # self._planet_pos = np.full(
+        #     (self._num_planets, 3),
+        #     np.nan,
+        #     dtype=np.float32
+        # )
+        # self._planet_vel = np.full(
+        #     (self._num_planets, 3),
+        #     np.nan,
+        #     dtype=np.float32
+        # )
+        # self._sat_pos = np.full(
+        #     (self._num_sats, 3),
+        #     np.nan,
+        #     dtype=np.float32
+        # )
+        # self._sat_vel = np.full(
+        #     (self._num_sats, 3),
+        #     np.nan,
+        #     dtype=np.float32
+        # )
 
 
     def __init__(self, in_config_df, time_step=100):
@@ -250,30 +311,38 @@ class BenrulesRealTimeSim:
         self._current_time_step = 0
         self._max_time_step_reached = 0
 
-        #________Code Below Here is for Numpy and Vectorization Implementation.
-        # Create numpy arrays to track current positions, velocity, etc
-        #--->  INSERT ARRAYS HERE
+        # Create numpy caches
         # Keep track of how full the data caches are
         self._curr_cache_size = 0
-        self._max_cache_size = 1000
+        self._max_cache_size = 100
         # Keep track of time steps in the cache
         self._latest_ts_in_cache = 0
+        # Keep track of current position in cache.
+        self._curr_cache_index = -1
         # Create Caches
-        self._num_sats = 1 # Temporary variable until we can read in the sats
-        self._num_planets = len(self._bodies)
         self._planet_pos_cache = np.full(
-            (self._max_cache_size - 1, self._num_planets, 3),
+            (self._max_cache_size, self._num_planets, 3),
+            np.nan,
+            dtype=np.float32
+        )
+        self._planet_vel_cache = np.full(
+            (self._max_cache_size, self._num_planets, 3),
             np.nan,
             dtype=np.float32
         )
         self._sat_pos_cache = np.full(
-            (self._max_cache_size - 1, self._num_sats, 3),
+            (self._max_cache_size, self._num_sats, 3),
+            np.nan,
+            dtype=np.float32
+        )
+        self._sat_vel_cache = np.full(
+            (self._max_cache_size, self._num_sats, 3),
             np.nan,
             dtype=np.float32
         )
         # Create archive file to store sim data with necessary datasets and
         # and groups.
-        # Incremental appending to h5py files
+        # Setup for incremental resizing and appending.
         self._sim_archive_loc = self._current_working_directory \
                           + '/sim_archives/' \
                           + 'sim_archive.hdf5'
@@ -284,10 +353,13 @@ class BenrulesRealTimeSim:
             # Create datasets to later append data to.
             planet_group.create_dataset("loc_archive",
                                         (0, self._num_planets, 3),
-                                        maxshape=(None,))
+                                        maxshape=(None, self._num_planets, 3))
             sat_group.create_dataset("loc_archive",
                                      (0, self._num_sats, 3),
-                                     maxshape=(None,))
+                                     maxshape=(None, self._num_planets, 3))
+        # Keep track of the latest time step stored in the archive.  Will be
+        # used to determine if data from cache actually need flushing.
+        self._latest_ts_in_archive = 0
 
     def _calculate_single_body_acceleration(self, body_index):
         """
@@ -336,6 +408,11 @@ class BenrulesRealTimeSim:
             target_body.velocity.x += acceleration.x * self._time_step
             target_body.velocity.y += acceleration.y * self._time_step
             target_body.velocity.z += acceleration.z * self._time_step
+            # Update the NEW numpy arrays that keep track of current
+            # system state as well.
+            self._planet_vel[body_index] = np.array([target_body.velocity.x,
+                                                     target_body.velocity.y,
+                                                     target_body.velocity.z])
 
     def _update_location(self):
         """
@@ -348,10 +425,15 @@ class BenrulesRealTimeSim:
         to get the body's new location.
         """
 
-        for target_body in self._bodies:
+        for body_index, target_body in enumerate(self._bodies):
             target_body.location.x += target_body.velocity.x * self._time_step
             target_body.location.y += target_body.velocity.y * self._time_step
             target_body.location.z += target_body.velocity.z * self._time_step
+            # Update the NEW numpy arrays that keep track of current
+            # system state as well.
+            self._planet_pos[body_index] = np.array([target_body.location.x,
+                                                     target_body.location.y,
+                                                     target_body.location.z])
 
     def _compute_gravity_step(self):
         """
@@ -369,32 +451,81 @@ class BenrulesRealTimeSim:
         Returns:
         """
 
-        # Open archive for appending, resize datasets, and append current
-        # caches to the end of their respective datasets.
-        with h5py.File(self._sim_archive_loc, 'a') as f:
-            # Grab pointer to the datasets
-            planet_dset = f['planets/loc_archive']
-            sat_dset = f['satellites/loc_archive']
-            # Resize the datasets to accept the new set of cache of data
-            planet_dset.resize((planet_dset.shape[0] + self._curr_cache_size),
-                               axis=0)
-            sat_dset.resize((planet_dset.shape[0] + self._curr_cache_size),
-                            axis=0)
-            # Save data to the file
-            planet_dset[-self._curr_cache_size:] = \
-                self._planet_pos_cache[0:self._curr_cache_size]
-            sat_dset[-self._curr_cache_size:] = \
-                self._sat_pos_cache[0:self._curr_cache_size]
-        # Reset the caches
+        # Check to make sure there is data in cache that needs to be flushed
+        # to the archive before going through the whole file opening
+        # difficulty.
+        # If the latest TS in the cache is less than the latest time step
+        # in the archive, then I need to flush that data to the archive.
+        if self._latest_ts_in_cache > self._latest_ts_in_archive:
+            # Figure out what data from the cache needs to be added to the
+            # archive.
+            beg_ts_in_cache = self._latest_ts_in_cache \
+                              - self._curr_cache_size + 1
+            beg_cache_index = None
+            # Calculate portion of cache that should be flushed
+            if self._latest_ts_in_archive in range(beg_ts_in_cache,
+                                                   self._latest_ts_in_cache):
+                beg_cache_index = self._latest_ts_in_cache \
+                                  - self._latest_ts_in_archive - 1
+            else:
+                # Flush the whole cache to the end of the archive
+                beg_cache_index = 0
+            end_cache_index = self._curr_cache_index
+            cache_flush_size = end_cache_index - beg_cache_index + 1
+            # Open archive for appending, resize datasets, and append current
+            # caches to the end of their respective datasets.
+            with h5py.File(self._sim_archive_loc, 'a') as f:
+                # Grab pointer to the datasets
+                planet_dset = f['planets/loc_archive']
+                # sat_dset = f['satellites/loc_archive']
+                # Resize the datasets to accept the new set of cache of data
+                planet_dset.resize((planet_dset.shape[0] + cache_flush_size),
+                                   axis=0)
+                # sat_dset.resize((planet_dset.shape[0] + cache_flush_size),
+                #                 axis=0)
+                # Save data to the file
+                planet_dset[-cache_flush_size:] = \
+                    self._planet_pos_cache[beg_cache_index:end_cache_index + 1]
+                # sat_dset[-self._curr_cache_size:] = \
+                #     self._sat_pos_cache[0:self._curr_cache_size]
+                # Update what is the latest time step stored in the archive.
+                # Can assume it is the size of the archive.
+                self._latest_ts_in_archive = planet_dset.shape[0]
+        # TODO: When flushing cache, make sure to always include 1 past time step
+
+        # Reset the caches whether data was flushed or not.
         self._latest_ts_in_cache = None
         self._curr_cache_size = 0
+        self._curr_cache_index = -1
+
+    def _update_caches(self, target_time_step):
+        """
+        Update the cache with necessary data from archive.
+        Returns:
+
+        """
+        # Flush current cache of any data not yet in the archive.
+        self._flush_cache_to_archive()
+        # Figure out what data to grab from archive.  If the target_time_step
+        # plus the max cache size is larger than the latest time step in the
+        # archive, then we can partially fill the cache and set the cache size
+        # accordingly.
 
 
     def get_next_sim_state_v2(self):
+        # Push current time step counter and figure out how to get current
+        # time step's value
+        self._current_time_step += 1
+
         # We know we need to get positions through calculation and inference
         # rather than from cache when our current simulation has reached
         # the max time step.
-        if self._current_time_step == self._max_time_step_reached:
+        # If the current_time_step-1 == the max time step reached, then we know
+        # we have gone beyond the current simulation and need to compute the
+        # next simulation time step.
+        if self._current_time_step-1 == self._max_time_step_reached:
+            # Move forward the maximum time step the simulation has reached.
+            self._max_time_step_reached += 1
             # Extract last row of dataframe recording simulator history, remove
             # the planet we are trying to predict from the columns, and convert
             # to numpy array as the input vector to the neural network.
@@ -409,7 +540,20 @@ class BenrulesRealTimeSim:
             # Also create a coordinate list that can be added as row to the
             # history dataframe
             coordinate_list = []
+            # Check if cache is full or within tolerance where we need to
+            # flush cache to archive file
+            if self._curr_cache_index == self._max_cache_size - 1:
+                self._flush_cache_to_archive()
+            # Increase current cache size.
+            self._curr_cache_size += 1
+            self._curr_cache_index += 1
+            # Add current time step to the cache
+            self._planet_pos_cache[self._curr_cache_index] = self._planet_pos
+            self._planet_vel_cache[self._curr_cache_index] = self._planet_vel
+
+            # Update the old cache
             for index, target_body in enumerate(self._bodies):
+                # Add data to the old cache
                 simulation_positions.update(
                     {target_body.name: [target_body.location.x,
                                         target_body.location.y,
@@ -417,26 +561,66 @@ class BenrulesRealTimeSim:
                 coordinate_list.append(target_body.location.x)
                 coordinate_list.append(target_body.location.y)
                 coordinate_list.append(target_body.location.z)
-                # Check if cache is full or within tolerance where we need to
-                # flush cache to archive file
-                if self._curr_cache_size == self._max_cache_size:
-                    self._flush_cache_to_archive()
-                if self._curr_cache_size < self._max_cache_size:
-                    # Try adding to numpy location cache
-                    self._planet_pos_cache[self._current_time_step, index, 0] = \
-                        target_body.location.x
-                    self._planet_pos_cache[self._current_time_step, index, 1] = \
-                        target_body.location.y
-                    self._planet_pos_cache[self._current_time_step, index, 2] = \
-                        target_body.location.z
-            # Increase current cache size.
-            self._curr_cache_size += 1
+                # if self._curr_cache_size <= self._max_cache_size:
+                #     # Try adding to numpy location cache
+                #     # Using size before incrementing by 1 to account for index
+                #     # of np arrays starting at 0.
+                #     self._planet_pos_cache[self._curr_cache_index, index, 0] =\
+                #         target_body.location.x
+                #     self._planet_pos_cache[self._curr_cache_index, index, 1] =\
+                #         target_body.location.y
+                #     self._planet_pos_cache[self._curr_cache_index, index, 2] =\
+                #         target_body.location.z
+
+            # Update the latest time step stored in the cache
+            self._latest_ts_in_cache = self._current_time_step
             # Store coordinates to dataframe tracking simulation history
             self._body_locations_hist.loc[
                 len(self._body_locations_hist)] = coordinate_list
-            # Push time step counters forward
-            self._current_time_step += 1
-            self._max_time_step_reached += 1
+
+        # If the current time step is less than the max time step reached and
+        # the current time step is in the range of time steps in the cache,
+        # then we can go ahead and grab position data from the cache.
+        elif (self._current_time_step < self._max_time_step_reached) and \
+                (self._current_time_step in range(
+                    self._latest_ts_in_cache - self._curr_cache_size + 1,
+                    self._latest_ts_in_cache + 1
+                )):
+            # If the current time step is in the range of time steps in the
+            # cache, we can assume we can increase the cache index and grab
+            # position data from that index.
+            self._curr_cache_index += 1
+            # Format position data for each planet into simple lists.
+            # Dictionary key is the name of the planet.
+            simulation_positions = {}
+            # Run through each body and update the current body positions.
+            for body_index, target_body in enumerate(self._bodies):
+                target_body.location.x = \
+                    self._planet_pos_cache[self._curr_cache_index,
+                                           body_index, 0]
+                target_body.location.y = \
+                    self._planet_pos_cache[self._curr_cache_index,
+                                           body_index, 1]
+                target_body.location.y = \
+                    self._planet_pos_cache[self._curr_cache_index,
+                                           body_index, 2]
+            # Assuming previous time step is always available in cache,
+            # grab previous time step and use to run inference.
+            prediction_data_row = pd.DataFrame(
+                data=self._planet_pos_cache[self._current_time_step-1].reshape((-1,)),
+                columns=list(self._body_locations_hist.columns)
+            )
+
+        # If the current time step is less than the max time step reached and
+        # the current time step is NOT in the range of the cache, we need to
+        # update the cache before proceeding with getting location information.
+        elif (self._current_time_step < self._max_time_step_reached) and \
+                (self._current_time_step not in range(
+                    self._latest_ts_in_cache - self._curr_cache_size + 1,
+                    self._latest_ts_in_cache + 1
+                )):
+            print("FUUCCKCKKCKCKCK")
+
         else:
             # Extract row of previous time step to current time step for
             # constructing input vector to neural network.
@@ -464,6 +648,22 @@ class BenrulesRealTimeSim:
             # Push current time step forward 1
             self._current_time_step += 1
 
+        # Predict planet location using neural network.
+        # Need to use the name of the planet to find which one to extract from
+        # the input vector.
+        # Drop columns from dataframe for the planet we are trying to predict.
+        prediction_data_row = prediction_data_row.drop(
+            [self._satellite_predicting_name + "_x",
+             self._satellite_predicting_name + "_y",
+             self._satellite_predicting_name + "_z"]
+        )
+        input_vector = prediction_data_row.values.reshape(1, -1)
+        # Predict position of satellite
+        pred_pos = self._nn.make_prediction(input_vector)
+
+        # Return dictionary with planet name as key and a list with each planet
+        # name containing the coordinates
+        return simulation_positions, pred_pos
 
     def get_next_sim_state(self):
         """
@@ -628,12 +828,17 @@ class BenrulesRealTimeSim:
         if in_time_step > self._max_time_step_reached:
             while self._max_time_step_reached < in_time_step:
                 current_positions, predicted_position \
-                    = self.get_next_sim_state()
+                    = self.get_next_sim_state_v2()
         # If the time is between 0 and the max, set the current time step to 
         # the given time step.
         if (in_time_step >= 0) and \
                 (in_time_step <= self._max_time_step_reached):
+            # Update the simulator's time step
             self._current_time_step = in_time_step
+            # Flush the current cache of data not currently in the archive.
+            self._flush_cache_to_archive()
+            #TODO: Update cache with portion from archive.
+            # Will update current cache index in this function.
 
     @property
     def max_time_step_reached(self):
