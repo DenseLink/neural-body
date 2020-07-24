@@ -685,7 +685,7 @@ class BenrulesRealTimeSim:
             if self._curr_cache_index == self._max_cache_size:
                 self._flush_cache_to_archive()
             # Compute and predict next positions of all bodies.
-            self._compute_gravity_step_vectorized(ignore_nn=True)
+            self._compute_gravity_step_vectorized(ignore_nn=False)
             # Create one numpy array with all body position data to return.
             simulation_positions = np.concatenate(
                 (self._planet_pos_cache[self._curr_cache_index],

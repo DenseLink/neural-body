@@ -113,9 +113,24 @@ class BenrulesRealTimeSim:
             """
 
             pred = self._model.predict(input_sequence)
-            # Process the predicted values to output a single numpy array rather
-            # than three 2D arrays with a single value each.
-            return pred
+            # Split out the predictions and add a 0 column for the z-axis
+            # to the predictions.
+            zeroes = np.full(
+                (pred.shape[1], 1),
+                0.0,
+                dtype=np.float32
+            )
+            pred_displacement = np.append(
+                pred[0, :, :2],
+                zeroes,
+                axis=1
+            )
+            pred_velocity = np.append(
+                pred[0, :, -2:],
+                zeroes,
+                axis=1
+            )
+            return pred_displacement, pred_velocity
 
     # Class Variables
 
@@ -217,6 +232,11 @@ class BenrulesRealTimeSim:
             np.nan,
             dtype=np.float32
         )
+        self._sat_acc_cache = np.full(
+            (self._max_cache_size, self._num_sats, 3),
+            np.nan,
+            dtype=np.float32
+        )
 
         # Initialize the first number of time steps that are equal to the
         # length of input to the LSTM.  Start by reading values into first spot
@@ -225,6 +245,7 @@ class BenrulesRealTimeSim:
         self._planet_vel_cache[0] = np.stack(read_planet_vel)
         self._sat_pos_cache[0] = np.stack(read_sat_pos)
         self._sat_vel_cache[0] = np.stack(read_sat_vel)
+        # Merge all body masses into a single numpy array.
         self._masses = np.concatenate(
             (np.stack(read_planet_masses),
              np.stack(read_sat_masses)),
@@ -232,6 +253,20 @@ class BenrulesRealTimeSim:
         )
         read_planet_names.extend(read_sat_names)
         self._body_names = read_planet_names
+        # # Initialize initial acceleration by calculating acceleration on all
+        # # satellites.  Extract last rows as the acceleration for the sats.
+        # self._curr_cache_index = 1
+        # acceleration_np = self._calc_single_bod_acc_vectorized()
+        # acceleration_np = \
+        #     acceleration_np.T.reshape(acceleration_np.shape[1], 3)
+        # self._curr_cache_index = -1
+        # self._sat_acc_cache[0, :, :] = acceleration_np[-self._num_sats:, :]
+
+        # Initialize the acceleration with all 0's for the satellites in the
+        # initial time step.
+        self._sat_acc_cache[0, :, :] = np.full((self._num_sats, 3), 0,
+                                               dtype=np.float32)
+        # Update cache trackers
         self._current_time_step += 1
         self._max_time_step_reached += 1
         self._curr_cache_index += 1
@@ -300,6 +335,9 @@ class BenrulesRealTimeSim:
             sat_group.create_dataset("vel_archive",
                                      (0, self._num_sats, 3),
                                      maxshape=(None, self._num_sats, 3))
+            sat_group.create_dataset("acc_archive",
+                                     (0, self._num_sats, 3),
+                                     maxshape=(None, self._num_sats, 3))
         # Keep track of the latest time step stored in the archive.  Will be
         # used to determine if data from cache actually need flushing.
         self._latest_ts_in_archive = 0
@@ -363,15 +401,55 @@ class BenrulesRealTimeSim:
                 velocity_np[:self._num_planets, :]
             self._sat_vel_cache[self._curr_cache_index, :, :] = \
                 velocity_np[-self._num_sats:, :]
+            acceleration_np = \
+                acceleration_np.T.reshape(acceleration_np.shape[1], 3)
+            self._sat_acc_cache[self._curr_cache_index, :, :] = \
+                acceleration_np[-self._num_sats:]
         else:
-            # USE NEURAL NETWORK HERE FOR BOTH NEXT POSITIONS AND VELOCITIES
-            # GET RID OF ALL THIS STUFF IN THE ELSE STATEMENT.
-            velocity_np = \
-                self.current_vel_np.T.reshape(3, acceleration_np.shape[1], 1) \
-                + (acceleration_np * self._time_step)
-            # Convert back to the tracking format
-            self.current_vel_np[:, :] = \
-                velocity_np.T.reshape(acceleration_np.shape[1], 3)
+            # Compute next state for the planets using the normal simulator.
+            velocity_np = self._planet_vel_cache[self._curr_cache_index - 1]
+            velocity_np = velocity_np.T.reshape(3, velocity_np.shape[0], 1) \
+                          + (acceleration_np[:, 0:self._num_planets, :] * self._time_step)
+            # Convert back to caching / tracking format and save to cache
+            velocity_np = velocity_np.T.reshape(velocity_np.shape[1], 3)
+            self._planet_vel_cache[self._curr_cache_index, :, :] = \
+                velocity_np[:self._num_planets, :]
+            # Predict next velocity and positions for the
+            # Neural network returns multiple time steps after the current
+            # time step and includes the next position and velocity.
+            # Run inference for each satellite
+            acceleration_np = \
+                acceleration_np.T.reshape(acceleration_np.shape[1], 3)
+            self._sat_acc_cache[self._curr_cache_index, :, :] = \
+                acceleration_np[-self._num_sats:]
+            # Loop over all satellites.
+            for i in range(0, self._num_sats):
+                # Extract the input sequence for that satellites' past time
+                # steps
+                # input_vec = [mass, acc_x, acc_y, vel_x, vel_y] X seq_length
+                mass = self._masses[-(self._num_sats - i)]
+                acc = self._sat_acc_cache[self._curr_cache_index - self._len_lstm_in_seq:self._curr_cache_index, i, 0:2]
+                vel = self._sat_vel_cache[self._curr_cache_index - self._len_lstm_in_seq:self._curr_cache_index, i, 0:2]
+                # Repeat the mass for each of the time steps in the sequence.
+                mass = np.repeat(mass, self._len_lstm_in_seq, axis=0)
+                mass = mass.reshape((-1, 1))
+                # Create input and reshape to 3D for the model.
+                input_sequence = np.concatenate(
+                    [mass, acc, vel],
+                    axis=1
+                ).reshape(1, self._len_lstm_in_seq, 5)
+                # Make prediction of the next n time steps.
+                # Output format of [dis_x, dis_y, vel_x, vel_y]
+                pred_displacement, pred_velocity = \
+                    self._nn.make_prediction(input_sequence)
+                # Save the prediction for one time step ahead to the velocity
+                # and position caches for the satellites.
+                num_ts_into_future = 1
+                self._sat_vel_cache[self._curr_cache_index, i, :] = \
+                    pred_velocity[num_ts_into_future - 1]
+                self._sat_pos_cache[self._curr_cache_index, i, :] = \
+                    self._sat_pos_cache[self._curr_cache_index - 1, i, :] \
+                    + pred_displacement[num_ts_into_future - 1]
 
     def _update_location_vectorized(self, ignore_nn = False):
         if ignore_nn == True:
@@ -390,11 +468,15 @@ class BenrulesRealTimeSim:
                 self._sat_pos_cache[self._curr_cache_index - 1, :, :] \
                 + displacement_np[-self._num_sats, :]
         else:
-            # Calculate new positions of planets only and assume satellites
-            # were updated by the velocity function.
-            print('shitttt')
-            #displacement_np = self.current_vel_np * self._time_step
-            #self.current_loc_np = self.current_loc_np + displacement_np
+            # Only calculate displacement and new positions for the planets.
+            # Satellite positions determined in the velocity function.
+            velocities = self._planet_vel_cache[self._curr_cache_index]
+            displacement_np = velocities * self._time_step
+            # Update locations of planets
+            self._planet_pos_cache[self._curr_cache_index, :, :] = \
+                self._planet_pos_cache[self._curr_cache_index - 1, :, :] \
+                + displacement_np
+
         # Reset all positions relative to the sun.
         # Assume sun is always body 0
         self._planet_pos_cache[self._curr_cache_index, :, :] = \
@@ -452,6 +534,7 @@ class BenrulesRealTimeSim:
                 planet_vel_archive = f['planets/vel_archive']
                 sat_pos_archive = f['satellites/loc_archive']
                 sat_vel_archive = f['satellites/vel_archive']
+                sat_acc_archive = f['satellites/acc_archive']
                 # sat_dset = f['satellites/loc_archive']
                 # Resize the datasets to accept the new set of cache of data
                 planet_pos_archive.resize((planet_pos_archive.shape[0]
@@ -462,6 +545,8 @@ class BenrulesRealTimeSim:
                                         + cache_flush_size), axis=0)
                 sat_vel_archive.resize((sat_vel_archive.shape[0]
                                         + cache_flush_size), axis=0)
+                sat_acc_archive.resize((sat_vel_archive.shape[0]
+                                        + cache_flush_size), axis=0)
                 # Save data to the file
                 planet_pos_archive[-cache_flush_size:] = \
                     self._planet_pos_cache[beg_cache_index:end_cache_index + 1]
@@ -471,7 +556,8 @@ class BenrulesRealTimeSim:
                     self._sat_pos_cache[beg_cache_index:end_cache_index + 1]
                 sat_vel_archive[-cache_flush_size:] = \
                     self._sat_vel_cache[beg_cache_index:end_cache_index + 1]
-
+                sat_acc_archive[-cache_flush_size:] = \
+                    self._sat_acc_cache[beg_cache_index:end_cache_index + 1]
                 self._latest_ts_in_archive = planet_pos_archive.shape[0]
 
         # After flushing archive, we need to make sure we always fill the
@@ -495,6 +581,7 @@ class BenrulesRealTimeSim:
             prev_planet_vel = self._planet_vel_cache[-self._len_lstm_in_seq:]
             prev_sat_pos = self._sat_pos_cache[-self._len_lstm_in_seq:]
             prev_sat_vel = self._sat_vel_cache[-self._len_lstm_in_seq:]
+            prev_sat_acc = self._sat_acc_cache[-self._len_lstm_in_seq:]
             # Fill the first part of the cache with this data.
             self._planet_pos_cache[:self._len_lstm_in_seq] = \
                 prev_planet_pos
@@ -504,6 +591,8 @@ class BenrulesRealTimeSim:
                 prev_sat_pos
             self._sat_vel_cache[:self._len_lstm_in_seq] = \
                 prev_sat_vel
+            self._sat_acc_cache[:self._len_lstm_in_seq] = \
+                prev_sat_acc
             # Reset the cache trackers.
             self._latest_ts_in_cache = self._current_time_step - 1
             self._curr_cache_size = self._len_lstm_in_seq
@@ -518,6 +607,7 @@ class BenrulesRealTimeSim:
                 planet_vel_archive = f['planets/vel_archive']
                 sat_pos_archive = f['satellites/loc_archive']
                 sat_vel_archive = f['satellites/vel_archive']
+                sat_acc_archive = f['satellites/acc_archive']
                 # Calculate the indices to extract from the archive.
                 beg_archive_index = self._current_time_step \
                     - self._len_lstm_in_seq - 1
@@ -530,6 +620,8 @@ class BenrulesRealTimeSim:
                     sat_pos_archive[beg_archive_index:end_archive_index + 1]
                 prev_sat_vel = \
                     sat_vel_archive[beg_archive_index:end_archive_index + 1]
+                prev_sat_acc = \
+                    sat_acc_archive[beg_archive_index:end_archive_index + 1]
                 # Fill the first part of the cache with this data.
                 self._planet_pos_cache[:self._len_lstm_in_seq] = \
                     prev_planet_pos
@@ -539,6 +631,8 @@ class BenrulesRealTimeSim:
                     prev_sat_pos
                 self._sat_vel_cache[:self._len_lstm_in_seq] = \
                     prev_sat_vel
+                self._sat_acc_cache[:self._len_lstm_in_seq] = \
+                    prev_sat_acc
                 # Set the pointer for the current cache index to 1 beyond the
                 # past data filled.
                 self._curr_cache_index = self._len_lstm_in_seq
@@ -563,23 +657,11 @@ class BenrulesRealTimeSim:
                     sat_pos_archive[beg_archive_index:end_archive_index]
                 self._sat_vel_cache[beg_cache_index:end_cache_index] = \
                     sat_vel_archive[beg_archive_index:end_archive_index]
+                self._sat_acc_cache[beg_cache_index:end_cache_index] = \
+                    sat_acc_archive[beg_archive_index:end_archive_index]
                 # Update the cache size and latest ts in the cache
                 self._curr_cache_size = end_cache_index
                 self._latest_ts_in_cache = end_archive_index
-
-    def _update_caches(self, target_time_step):
-        """
-        Update the cache with necessary data from archive.
-        Returns:
-
-        """
-        # Flush current cache of any data not yet in the archive.
-        self._flush_cache_to_archive()
-        # Figure out what data to grab from archive.  If the target_time_step
-        # plus the max cache size is larger than the latest time step in the
-        # archive, then we can partially fill the cache and set the cache size
-        # accordingly.
-
 
     def get_next_sim_state_v2(self):
         # We know we need to get positions through calculation and inference
@@ -603,7 +685,7 @@ class BenrulesRealTimeSim:
             if self._curr_cache_index == self._max_cache_size:
                 self._flush_cache_to_archive()
             # Compute and predict next positions of all bodies.
-            self._compute_gravity_step_vectorized(ignore_nn=True)
+            self._compute_gravity_step_vectorized(ignore_nn=False)
             # Create one numpy array with all body position data to return.
             simulation_positions = np.concatenate(
                 (self._planet_pos_cache[self._curr_cache_index],
