@@ -118,7 +118,7 @@ class BenrulesRealTimeSim:
             zeroes = np.full(
                 (pred.shape[1], 1),
                 0.0,
-                dtype=np.float32
+                dtype=np.float64
             )
             pred_displacement = np.append(
                 pred[0, :, :2],
@@ -163,32 +163,32 @@ class BenrulesRealTimeSim:
             if row["satellite?"] == "yes":
                 self._satellite_predicting_name = str(row["body_name"])
                 read_sat_pos.append(
-                    np.array([np.float32(row["location_x"]),
-                              np.float32(row["location_y"]),
-                              np.float32(row["location_z"])])
+                    np.array([np.float64(row["location_x"]),
+                              np.float64(row["location_y"]),
+                              np.float64(row["location_z"])])
                 )
                 read_sat_vel.append(
-                    np.array([np.float32(row["velocity_x"]),
-                              np.float32(row["velocity_y"]),
-                              np.float32(row["velocity_z"])])
+                    np.array([np.float64(row["velocity_x"]),
+                              np.float64(row["velocity_y"]),
+                              np.float64(row["velocity_z"])])
                 )
                 read_sat_masses.append(
-                    np.array([np.float32(row["body_mass"])])
+                    np.array([np.float64(row["body_mass"])])
                 )
                 read_sat_names.append(str(row["body_name"]))
             else:
                 read_planet_pos.append(
-                    np.array([np.float32(row["location_x"]),
-                              np.float32(row["location_y"]),
-                              np.float32(row["location_z"])])
+                    np.array([np.float64(row["location_x"]),
+                              np.float64(row["location_y"]),
+                              np.float64(row["location_z"])])
                 )
                 read_planet_vel.append(
-                    np.array([np.float32(row["velocity_x"]),
-                              np.float32(row["velocity_y"]),
-                              np.float32(row["velocity_z"])])
+                    np.array([np.float64(row["velocity_x"]),
+                              np.float64(row["velocity_y"]),
+                              np.float64(row["velocity_z"])])
                 )
                 read_planet_masses.append(
-                    np.array([np.float32(row["body_mass"])])
+                    np.array([np.float64(row["body_mass"])])
                 )
                 read_planet_names.append(str(row["body_name"]))
 
@@ -215,27 +215,27 @@ class BenrulesRealTimeSim:
         self._planet_pos_cache = np.full(
             (self._max_cache_size, self._num_planets, 3),
             np.nan,
-            dtype=np.float32
+            dtype=np.float64
         )
         self._planet_vel_cache = np.full(
             (self._max_cache_size, self._num_planets, 3),
             np.nan,
-            dtype=np.float32
+            dtype=np.float64
         )
         self._sat_pos_cache = np.full(
             (self._max_cache_size, self._num_sats, 3),
             np.nan,
-            dtype=np.float32
+            dtype=np.float64
         )
         self._sat_vel_cache = np.full(
             (self._max_cache_size, self._num_sats, 3),
             np.nan,
-            dtype=np.float32
+            dtype=np.float64
         )
         self._sat_acc_cache = np.full(
             (self._max_cache_size, self._num_sats, 3),
             np.nan,
-            dtype=np.float32
+            dtype=np.float64
         )
 
         # Initialize the first number of time steps that are equal to the
@@ -265,7 +265,7 @@ class BenrulesRealTimeSim:
         # Initialize the acceleration with all 0's for the satellites in the
         # initial time step.
         self._sat_acc_cache[0, :, :] = np.full((self._num_sats, 3), 0,
-                                               dtype=np.float32)
+                                               dtype=np.float64)
         # Update cache trackers
         self._current_time_step += 1
         self._max_time_step_reached += 1
@@ -308,7 +308,7 @@ class BenrulesRealTimeSim:
         # Create neural network object that lets us run neural network
         # predictions as well.
         # Default to mars model if key in dictionary not found.
-        nn_name = 'alpha_lstm_100epochs_mml.h5'
+        nn_name = 'my_model.h5'
         nn_path = self._current_working_directory + "/nn/" + nn_name
         self._nn = self._NeuralNet(model_path=nn_path)
 
