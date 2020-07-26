@@ -1,6 +1,7 @@
 import pygame
 import sys
 import pandas as pd
+import numpy as np
 from neural_body.BenrulesRealTimeSim_v2 import BenrulesRealTimeSim
 import os
 
@@ -222,9 +223,6 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
         input_text = ""
         while not (input_text != "" and textbox_active == 0):
 
-            x_track = [[0] * tail_length for i in range(num_planets)]
-            y_track = [[0] * tail_length for i in range(num_planets)]
-
             pause = 0
             view = 0
             click_now = 0
@@ -280,6 +278,8 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
 
             # Get next simulator state (positioning of all objects).
             current_positions = simulation.get_next_sim_state_v2()
+            x_track = [[0] * tail_length for i in range(len(current_positions) + 5)]
+            y_track = [[0] * tail_length for i in range(len(current_positions) + 5)]
 
             while not (input_text != "" and textbox_active == 0):
                 # the functions below will be replaced by neural net output
@@ -321,74 +321,23 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 # Calculate the relative position of each body to the sun.
                 # mercury
 
-                x1 = int((current_positions[1][0]
-                          - current_positions[1][0]) / zoom) + sunx
-                y1 = int((current_positions[1][1]
-                          - current_positions[0][1]) / zoom) + suny
-                xi1 = int((current_positions[1][0]
-                           - current_positions[0][0])
-                          / zoom_i * 8) + sun_i_x
-                yi1 = int((current_positions[1][1]
-                           - current_positions[0][1])
-                          / zoom_i * 8) + sun_i_y
+                scaled_x_pos = (current_positions[:, 0] - current_positions[0][
+                    0]) / zoom + sunx
+                scaled_y_pos = (current_positions[:, 1] - current_positions[0][
+                    1]) / zoom + suny
+                scaled_xi_pos = (current_positions[1:5, 0] - current_positions[0][
+                    0]) / zoom_i * 8 + sun_i_x
+                scaled_yi_pos = (current_positions[1:5, 1] - current_positions[0][
+                    0]) / zoom_i * 8 + sun_i_y
 
-                x2 = int((current_positions[2][0]
-                          - current_positions[0][0]) / zoom) + sunx
-                y2 = int((current_positions[2][1]
-                          - current_positions[0][1]) / zoom) + suny
-                xi2 = int((current_positions[2][0]
-                           - current_positions[0][0])
-                          / zoom_i * 8) + sun_i_x
-                yi2 = int((current_positions[2][1]
-                           - current_positions[0][1])
-                          / zoom_i * 8) + sun_i_y
+                scaled_x_pos = np.append(scaled_x_pos,scaled_xi_pos)
+                scaled_y_pos = np.append(scaled_y_pos,scaled_yi_pos)
 
-                x3 = int((current_positions[3][0]
-                          - current_positions[0][0]) / zoom) + sunx
-                y3 = int((current_positions[3][1]
-                          - current_positions[0][1]) / zoom) + suny
-                xi3 = int((current_positions[3][0]
-                           - current_positions[0][0])
-                          / zoom_i * 8) + sun_i_x
-                yi3 = int((current_positions[3][1]
-                           - current_positions[0][1])
-                          / zoom_i * 8) + sun_i_y
 
-                x4 = int((current_positions[4][0]
-                          - current_positions[0][0]) / zoom) + sunx
-                y4 = int((current_positions[4][1]
-                          - current_positions[0][1]) / zoom) + suny
-                xi4 = int((current_positions[4][0]
-                           - current_positions[0][0])
-                          / zoom_i * 8) + sun_i_x
-                yi4 = int((current_positions[4][1]
-                           - current_positions[0][1])
-                          / zoom_i * 8) + sun_i_y
-
-                x5 = int((current_positions[5][0]
-                          - current_positions[0][0]) / zoom) + sunx
-                y5 = int((current_positions[5][1]
-                          - current_positions[0][1]) / zoom) + suny
-
-                x6 = int((current_positions[6][0]
-                          - current_positions[0][0]) / zoom) + sunx
-                y6 = int((current_positions[6][1]
-                          - current_positions[0][1]) / zoom) + suny
-
-                x7 = int((current_positions[7][0]
-                          - current_positions[0][0]) / zoom) + sunx
-                y7 = int((current_positions[7][1]
-                          - current_positions[0][1]) / zoom) + suny
-
-                x9 = int((current_positions[8][0]
-                          - current_positions[0][0]) / zoom) + sunx
-                y9 = int((current_positions[8][1]
-                          - current_positions[0][1]) / zoom) + suny
-
-                x8 = int((current_positions[9][0]
-                          - current_positions[0][0]) / zoom) + sunx
-                y8 = int((current_positions[9][1]
-                          - current_positions[0][1]) / zoom) + suny
+                scaled_x_pos = scaled_x_pos.astype(int)
+                scaled_y_pos = scaled_y_pos.astype(int)
+                scaled_xi_pos = scaled_xi_pos.astype(int)
+                scaled_yi_pos = scaled_yi_pos.astype(int)
 
                 # Setting the stage.
                 screen.fill((0, 0, 0))
@@ -402,47 +351,18 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 if pause == 0:
                     # shifts all data points within the lists to the left to
                     # make room for the new trail data point
-                    for j in range(0, num_planets):
+                    for j in range(0, len(x_track) - 1):
                         for i in range(0, tail_length - 1):
                             x_track[j][i] = x_track[j][i + 1]
                             y_track[j][i] = y_track[j][i + 1]
-
-                    # pushing the new trail x and y datapoints to the back
-                    # of the lists
-                    # the x1...y5 values will be replaced with two 2D lists
-                    # when real data is used, making this 4 lines
-                    x_track[0][tail_length - 1] = x1
-                    x_track[1][tail_length - 1] = x2
-                    x_track[2][tail_length - 1] = x3
-                    x_track[3][tail_length - 1] = x4
-                    x_track[4][tail_length - 1] = x5
-                    x_track[5][tail_length - 1] = x6
-                    x_track[6][tail_length - 1] = x7
-                    x_track[7][tail_length - 1] = x8
-                    x_track[8][tail_length - 1] = x9
-                    x_track[9][tail_length - 1] = xi1
-                    x_track[10][tail_length - 1] = xi2
-                    x_track[11][tail_length - 1] = xi3
-                    x_track[12][tail_length - 1] = xi4
-
-                    y_track[0][tail_length - 1] = y1
-                    y_track[1][tail_length - 1] = y2
-                    y_track[2][tail_length - 1] = y3
-                    y_track[3][tail_length - 1] = y4
-                    y_track[4][tail_length - 1] = y5
-                    y_track[5][tail_length - 1] = y6
-                    y_track[6][tail_length - 1] = y7
-                    y_track[7][tail_length - 1] = y8
-                    y_track[8][tail_length - 1] = y9
-                    y_track[9][tail_length - 1] = yi1
-                    y_track[10][tail_length - 1] = yi2
-                    y_track[11][tail_length - 1] = yi3
-                    y_track[12][tail_length - 1] = yi4
+                        if abs(scaled_x_pos[j]) < 10000:
+                            x_track[j][tail_length-1] = scaled_x_pos[j]
+                            y_track[j][tail_length-1] = scaled_y_pos[j]
 
                 if view == 0:
                     # Iterates through the 2D list and draws the planet's
                     # trails
-                    for k in range(0, num_planets):
+                    for k in range(len(x_track) - 1):
                         if k != 8 or nasa == "No":
                             for j in range(1, tail_length - 1):
                                 i = tail_length - j
@@ -456,60 +376,60 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                                         [x_track[k][j - 1], y_track[k][j - 1]],
                                         1)
 
-                    pygame.draw.circle(screen, (255, 255, 0), [x2, y2], 2)
-                    pygame.draw.circle(screen, (0, 255, 255), [x3, y3], 2)
-                    pygame.draw.circle(screen, (255, 255, 255), [x4, y4], 2)
-                    pygame.draw.circle(screen, (255, 0, 0), [x5, y5], 5)
-                    pygame.draw.circle(screen, (0, 255, 0), [x1, y1], 2)
-                    pygame.draw.circle(screen, (100, 50, 220), [x6, y6], 5)
-                    pygame.draw.circle(screen, (73, 155, 55), [x7, y7], 5)
-                    pygame.draw.circle(screen, (55, 75, 95), [x8, y8], 5)
+                    pygame.draw.circle(screen, (0, 255, 0),
+                                       [scaled_x_pos[1], scaled_y_pos[1]], 2)
+                    pygame.draw.circle(screen, (255, 255, 0), [scaled_x_pos[2], scaled_y_pos[2]], 2)
+                    pygame.draw.circle(screen, (0, 255, 255), [scaled_x_pos[3], scaled_y_pos[3]], 2)
+                    pygame.draw.circle(screen, (255, 255, 255), [scaled_x_pos[4], scaled_y_pos[4]], 2)
+                    pygame.draw.circle(screen, (255, 0, 0), [scaled_x_pos[5], scaled_y_pos[5]], 5)
+                    pygame.draw.circle(screen, (100, 50, 220), [scaled_x_pos[6], scaled_y_pos[6]], 5)
+                    pygame.draw.circle(screen, (73, 155, 55), [scaled_x_pos[7], scaled_y_pos[7]], 5)
+                    pygame.draw.circle(screen, (55, 75, 95), [scaled_x_pos[9], scaled_y_pos[9]], 5)
                     if nasa == "No":
-                        pygame.draw.circle(screen, (255, 102, 255), [x9, y9],
+                        pygame.draw.circle(screen, (255, 102, 255), [scaled_x_pos[8], scaled_y_pos[8]],
                                            5)
 
-                    pygame.draw.circle(screen, (255, 255, 0), [xi2, yi2], 5)
-                    pygame.draw.circle(screen, (0, 255, 255), [xi3, yi3], 5)
-                    pygame.draw.circle(screen, (255, 255, 255), [xi4, yi4], 5)
-                    pygame.draw.circle(screen, (0, 255, 0), [xi1, yi1], 5)
+                    pygame.draw.circle(screen, (255, 255, 0), [scaled_xi_pos[0], scaled_yi_pos[0]], 5)
+                    pygame.draw.circle(screen, (0, 255, 255), [scaled_xi_pos[1], scaled_yi_pos[1]], 5)
+                    pygame.draw.circle(screen, (255, 255, 255), [scaled_xi_pos[2], scaled_yi_pos[2]], 5)
+                    pygame.draw.circle(screen, (0, 255, 0), [scaled_xi_pos[3], scaled_yi_pos[3]], 5)
 
                 else:
                     pygame.draw.circle(
-                        screen, (255, 255, 0), [x2, int(scr_height / 2)], 5
+                        screen, (255, 255, 0), [scaled_x_pos[2], suny], 5
                     )
                     pygame.draw.circle(
-                        screen, (0, 255, 255), [x3, int(scr_height / 2)], 5
+                        screen, (0, 255, 255), [scaled_x_pos[3], suny], 5
                     )
                     pygame.draw.circle(
-                        screen, (255, 255, 255), [x4, int(scr_height / 2)], 5
+                        screen, (255, 255, 255), [scaled_x_pos[4], suny], 5
                     )
                     pygame.draw.circle(
-                        screen, (255, 0, 0), [x5, int(scr_height / 2)], 5
+                        screen, (255, 0, 0), [scaled_x_pos[5], suny], 5
                     )
                     pygame.draw.circle(
-                        screen, (0, 255, 0), [x1, int(scr_height / 2)], 5
+                        screen, (0, 255, 0), [scaled_x_pos[1], suny], 5
                     )
                     pygame.draw.circle(
-                        screen, (100, 50, 220), [x6, int(scr_height / 2)], 5
+                        screen, (100, 50, 220), [scaled_x_pos[6], suny], 5
                     )
                     pygame.draw.circle(
-                        screen, (73, 155, 55), [x7, int(scr_height / 2)], 5
+                        screen, (73, 155, 55), [scaled_x_pos[7], suny], 5
                     )
                     pygame.draw.circle(
-                        screen, (55, 75, 95), [x8, int(scr_height / 2)], 5
+                        screen, (55, 75, 95), [scaled_x_pos[9], suny], 5
                     )
                     if nasa == "No":
                         pygame.draw.circle(screen, (255, 102, 255),
-                                           [x9, int(scr_height / 2)], 5
-                                           )
+                                           [scaled_x_pos[8], suny], 5)
 
-                    pygame.draw.circle(screen, (255, 255, 0), [xi2, sun_i_y],
+                    pygame.draw.circle(screen, (255, 255, 0), [scaled_xi_pos[1], sun_i_y],
                                        5)
-                    pygame.draw.circle(screen, (0, 255, 255), [xi3, sun_i_y],
+                    pygame.draw.circle(screen, (0, 255, 255), [scaled_xi_pos[2], sun_i_y],
                                        5)
-                    pygame.draw.circle(screen, (255, 255, 255), [xi4, sun_i_y],
+                    pygame.draw.circle(screen, (255, 255, 255), [scaled_xi_pos[3], sun_i_y],
                                        5)
-                    pygame.draw.circle(screen, (0, 255, 0), [xi1, sun_i_y], 5)
+                    pygame.draw.circle(screen, (0, 255, 0), [scaled_xi_pos[0], sun_i_y], 5)
 
                 # Updates the display with the new frame
                 states = menu(
@@ -532,8 +452,8 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 input2_text = states[12]
 
                 if (input2_text != "" and input2_active == 0):
-                    x_track = [[0] * tail_length for i in range(num_planets)]
-                    y_track = [[0] * tail_length for i in range(num_planets)]
+                    x_track = [[0] * tail_length for i in range(len(current_positions) + 5)]
+                    y_track = [[0] * tail_length for i in range(len(current_positions) + 5)]
                     print("beginning processing")
                     pygame.draw.rect(screen,
                                      (0, 0, 0),
