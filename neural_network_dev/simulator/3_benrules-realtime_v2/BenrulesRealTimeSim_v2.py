@@ -308,7 +308,7 @@ class BenrulesRealTimeSim:
         # Create neural network object that lets us run neural network
         # predictions as well.
         # Default to mars model if key in dictionary not found.
-        nn_name = 'alpha_lstm_100epochs_mml.h5'
+        nn_name = 'my_model.h5'
         nn_path = self._current_working_directory + "/nn/" + nn_name
         self._nn = self._NeuralNet(model_path=nn_path)
 
