@@ -15,10 +15,10 @@ def main():
     # Set time step (most likely in seconds) in simulation time.
     # How long the simulation steps forward at each iteration.
     time_step = 800
-    pause_time_step = 250  # Pause the simulator at this time step and FF or RW
+    pause_time_step = 60000  # Pause the simulator at this time step and FF or RW
     # Total number of time steps performed by the simulation.
     # Total length of simulation = time_step * number_of_steps.
-    number_of_steps = 500
+    number_of_steps = 2000
 
     # Read simulator and satellite initial state from config .csv file.
     keep_trying_read = True
