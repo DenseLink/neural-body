@@ -22,6 +22,8 @@ import numpy as np
 import tensorflow as tf
 import os
 import h5py
+# Imports for multiprocessing producer/consumer data model.
+from multiprocessing import Process, Queue, Lock, cpu_count
 
 
 class BenrulesRealTimeSim:
@@ -135,6 +137,22 @@ class BenrulesRealTimeSim:
     # Class Variables
 
     # Planet data units: (location (m), mass (kg), velocity (m/s)
+
+    def _calc_more_vals(self, count):
+        temp_list = []
+        for i in range(0, 10):
+            count += 1
+            temp_list.append(count)
+        return count, temp_list
+
+    def _maintain_future_cache(self, output_queue):
+        count = 0
+        vals = []
+        while True:
+            if len(vals) < 5:
+                count, temp_vals = self._calc_more_vals(count)
+                vals.extend(temp_vals)
+            output_queue.put(vals.pop(0))
 
     def _parse_sim_config(self, in_df):
         """
@@ -282,6 +300,11 @@ class BenrulesRealTimeSim:
             self._latest_ts_in_cache += 1
             self._curr_cache_size += 1
 
+        # Try starting background processes
+        self._producer_process = Process(target=self._maintain_future_cache, args=(self._output_queue,))
+        self._producer_process.daemon = True
+        self._producer_process.start()
+
     def __init__(self, in_config_df, time_step=800):
         """
         Simulation initialization function.
@@ -299,9 +322,18 @@ class BenrulesRealTimeSim:
         # Since we are using an LSTM network, we will need to initialize the
         # the length of the sequence necessary for input into the LSTM.
         self._len_lstm_in_seq = 4
+        # Grab info for creating background producer / consumer
+        self._num_processes = cpu_count()
+        # Create processing queues that producer / consumer will take
+        # from and fill.
+        buffer_size = 100
+        self._output_queue = Queue(buffer_size)
+        # Test list to append fake processed values to from the producer.
+        self._test_output_list = []
         # Setup the initial set of bodies in the simulation by parsing from
         # config dataframe.
-        self._parse_sim_config(in_config_df)  #self._bodies initialized.
+        self._parse_sim_config(in_config_df)
+        print("bodies parsed")
         # Grab the current working to use for referencing data files
         self._current_working_directory = \
             os.path.dirname(os.path.realpath(__file__))
@@ -747,6 +779,11 @@ class BenrulesRealTimeSim:
             # Advance to the next time step.
             self._current_time_step += 1
             self._curr_cache_index += 1
+
+        # As test, try overwriting items from the processing queue
+        item = self._output_queue.get()
+        simulation_positions[11, 0] = np.float64(self._output_queue.qsize())
+        simulation_positions[11, 1] = np.float64(item)
 
         # Return dictionary with planet name as key and a list with each planet
         # name containing the coordinates
