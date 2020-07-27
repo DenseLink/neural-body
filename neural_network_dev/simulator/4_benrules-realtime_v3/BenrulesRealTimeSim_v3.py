@@ -24,6 +24,7 @@ import os
 import h5py
 # Imports for multiprocessing producer/consumer data model.
 from multiprocessing import Process, Queue, Lock, cpu_count
+from concurrent.futures import *
 
 
 class BenrulesRealTimeSim:
@@ -148,11 +149,23 @@ class BenrulesRealTimeSim:
     def _maintain_future_cache(self, output_queue):
         count = 0
         vals = []
-        while True:
-            if len(vals) < 5:
-                count, temp_vals = self._calc_more_vals(count)
-                vals.extend(temp_vals)
-            output_queue.put(vals.pop(0))
+
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(self._calc_more_vals, count=count)
+            while True:
+                if len(vals) < 5 and future.done():
+                    count, temp_vals = future.result()
+                    vals.extend(temp_vals)
+                    future = executor.submit(self._calc_more_vals, count=count)
+                if vals:
+                    output_queue.put(vals.pop(0))
+        #
+        # while True:
+        #     if len(vals) < 5:
+        #         # Launch futures thread
+        #         count, temp_vals = self._calc_more_vals(count)
+        #         vals.extend(temp_vals)
+        #     output_queue.put(vals.pop(0))
 
     def _parse_sim_config(self, in_df):
         """
