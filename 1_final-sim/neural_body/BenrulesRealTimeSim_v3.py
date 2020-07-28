@@ -1,18 +1,83 @@
 """Real-Time basic simulator for planetary motions with neural network
-inference for prediction of pluto's position.
+inference for prediction of an arbitrary number of satellites.
 
 This module contains the BenrulesRealTimeSim class, which creates a real time
-simulator of the sun, planets, and pluto.  The non-real-time version was
-forked from GitHub user benrules2 at the below repo:
+simulator of the sun, planets, pluto, and an arbitrary number of satellites.
+The initial simulation was forked from benrules2 on Github at the below link.
 https://gist.github.com/benrules2/220d56ea6fe9a85a4d762128b11adfba
-The simulator originally would simulate a fixed number of time steps and
-then output a record of the past simulation.  The code was repackaged into a
-class and methods added to allow querying and advancing of the simulator
-in real-time at a fixed time step.
-Further additions were made to then integrate a class for loading a neural
-network (NeuralNet) that would load a Tensorflow model, take a vector
-containing all other planetary positions (X, Y, Z) and output the predicted
-position of Pluto in the next time step.
+This simulator simulated a system for a fixed number of time steps and output
+the results to a custom class and dictionary.
+
+v2 of the simulator converted it to a real time simulator using a Pandas
+dataframe to track simulation history and rewind back in time.  It also used
+a feed-forward neural network that predicted the location of a specifically
+trained body given the positions of every other body.  It also used
+dictionaries to store current simulation states and calculated steps from
+acceleration to velocity to displacement using loops.  Overall, this presented
+the below challenges:
+1. High memory usage.  Since the simulation for all time was stored to a
+   Pandas Dataframe in memory, this meant that as the simulation ran, the
+   memory usage would continually grow.
+2. Slow simulation computations.  Many of the calculations used double and
+   triple nested loops to calculte gravitational influence on a body and
+   convert from the acceleration to velocity and velocity to displacement
+   domains.
+3. CPU idle time.  Since all calculations were done at run time, the simulator
+   would sit at idle rather than continuing to perform calculations in the
+   background.
+
+v3, while taking inspiration from the original benrules simulator,
+no longer resembles the original.  v3 is extensible to an arbitrary number of
+satellites in the simulation.  The LSTM neural net it uses relies on the body
+acceleration and current velocities to predict where the body will go for the
+next 20 time steps.  The current behavior of the neural net is strange, which
+is why in the config files, there is an option to turn it off and rely on the
+simulator only.  Much more feature engineering, data generation, and
+hyperparameter tuning is needed to accurately mimic orbital behavior.
+One of the main challenges that arose as well with the LSTM network is slower
+inference time.  Without background processing and predicting multiple time
+steps at each inference, performance would be sub 3 fps.  Because of this
+challenge and the v2 challenges, the below changes were made to v3.
+1. Instead of using a Pandas dataframe that could require large amounts of
+   memory with longer simulation durations, a new cache-archive system was
+   developed to exchange simulation tracking between a numpy array that stores
+   a sequence of 100 values in memory and an hdf5 file that stores a total
+   record of the simulation so far.  As time jumps are performed, trackers and
+   functions handle the flushing of new values from the cache to the archive
+   and loading of time steps from the archive.  Having a history stored in
+   numpy arrays also helps with vectorized computation since time steps don't
+   need to be copied to other data structures for use in calculations.
+2. Slow simulation computations were addressed by fully vectorizing all
+   simulation computations using numpy linear algebra and getting rid of all
+   computation loops.  This vectorization was done while maintaining the
+   capability to add an arbitrary number of bodies to the simulation.
+   Slow inference time with the neural network was addressed by trying to
+   predict 20 time steps ahead given a sequence of 4 time steps as input to
+   an LSTM network.  This enabled 1 inference cycle to produce 20 time steps.
+3. Since the simulator is inherently a serial problem (in order to predict
+   the next state, we must know the previous stat), the best option to address
+   performance was to ensure a producer/consumer model was uses to
+   continually run a producer in a background process that calculated future
+   time steps even while the simulation is paused or when there is available
+   CPU time on another processor.  Main simulation calculations were moved to
+   an external process that calculates future time steps.  This process
+   maintains a pre-queue of about 5000 future time steps.  It feeds a queue
+   of 100 time steps between the background process and the main simulator that
+   provides positions to the front end.  In order to reliably keep the main
+   queue filled, the background process continually tries to keep the main
+   queue filled with values from the pre-queue.  It is able to continually
+   perform this task since the calculations filling the pre-queue are launched
+   and performed in a separate thread.  This help mitigate the
+   degradation of the buffer that the main queue provides.
+
+In addition to the above improvements, benchmarking and queue monitoring occur
+to ensure that the system runs at a steady pace that the simulator can keep
+up with.  The user can burst to 2X or 1X, but if the queue begins to degrade,
+the simulator will automatically revert back to 1X.  This is mainly for when
+the neural network is used.  When not using the neural network, the simulator
+will usually revert to a max framerate of 50 fps and even when running at
+faster speeds, keep up without throttling back.
+
 """
 
 # Imports
@@ -21,15 +86,13 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 import os
-import h5py
+import time
+import h5py # Used for archive
+from collections import deque # Used for burn maneuvers
 # Imports for multiprocessing producer/consumer data model.
 from multiprocessing import Process, Queue, Lock, cpu_count, Value
-from concurrent.futures import *
-import concurrent.futures.thread
 from threading import Thread
 import threading
-import sys
-from collections import deque
 
 # Check if DISPLAY has been detected.  If not, assume WSL with pycharm and grab
 # display connection.  Needed for pynput import.
@@ -48,24 +111,18 @@ except KeyError as error:
     # Set the display
     os.environ["DISPLAY"] = line_list[-1].rstrip() + ":0"
 
+# Need to run above before importing pynput
 from pynput import keyboard
-import time
-
 
 class BenrulesRealTimeSim:
     """
-    Class containing a basic, real-time simulator for planet motions that also
-    interacts with the NNModelLoader class to load a neural network that
-    predicts the motion of one of the bodies in the next time step.
+    Class containing real-time simulator for planet motions an an arbitrary
+    number of satellites.  Can operate with and without a neural net to
+    predict the motions of the satellites.
 
     Instance Variables:
-    :ivar _bodies: Current physical state of each body at the current time step
-    :ivar _body_locations_hist: Pandas dataframe containing the positional
-        history of all bodies in the simulation.
-    :ivar _time_step: The amount of time the simulation uses between time
-        steps.  The amount of "simulation time" that passes.
-    :ivar _nn: NNModelLoader object instance that contains the neural network
-        loaded in Tensorflow.
+    :ivar blah: description
+
     """
 
     @staticmethod
@@ -79,8 +136,8 @@ class BenrulesRealTimeSim:
         all bodies will be provided as a numpy array with an [x,y,z] vector to
         store the positions.
 
-        :param body_index:
-        :return:
+        :param blah: description
+
         """
         # Combine planets and satellites into a single position vector
         # to calculate all accelerations
@@ -309,116 +366,6 @@ class BenrulesRealTimeSim:
         result_list = [new_planet_pos, new_planet_vel, new_sat_pos,
                        new_sat_vel, new_sat_acc]
         result_queue.put(result_list)
-        #return new_planet_pos, new_planet_vel, new_sat_pos, new_sat_vel, new_sat_acc
-
-    # def _maintain_future_cache(self, output_queue, initial_planet_pos,
-    #                            initial_planet_vel, initial_sat_pos,
-    #                            initial_sat_vel, initial_sat_acc, masses,
-    #                            time_step, nn_path, num_in_steps_lstm,
-    #                            num_out_steps_lstm, keep_future_running,
-    #                            ignore_nn):
-    #     # Load neural net to run inference with.
-    #     neural_net = tf.keras.models.load_model(nn_path)
-    #     # Lists to cache calculations before they are pushed to the queue
-    #     planet_pos_history = []
-    #     planet_vel_history = []
-    #     sat_pos_history = []
-    #     sat_vel_history = []
-    #     sat_acc_history = []
-    #
-    #     with ThreadPoolExecutor(max_workers=5) as executor:
-    #         # Initialize all lists with first call to future with the
-    #         # initial simulation values.
-    #         future = executor.submit(
-    #             self._future_compute_new_pos_vectorized,
-    #             initial_planet_pos[-1],
-    #             initial_planet_vel[-1],
-    #             initial_sat_pos[-1],
-    #             initial_sat_vel[-num_in_steps_lstm:],
-    #             initial_sat_acc[-num_in_steps_lstm:],
-    #             masses,
-    #             time_step,
-    #             neural_net,
-    #             num_in_steps_lstm,
-    #             num_out_steps_lstm,
-    #             ignore_nn,
-    #         )
-    #         # Grab initial future and add to lists
-    #         new_planet_pos, new_planet_vel, new_sat_pos, new_sat_vel, \
-    #         new_sat_acc = future.result()
-    #         # Add initialization to the lists
-    #         planet_pos_history.extend(new_planet_pos)
-    #         planet_vel_history.extend(new_planet_vel)
-    #         sat_pos_history.extend(new_sat_pos)
-    #         sat_vel_history.extend(new_sat_vel)
-    #         sat_acc_history.extend(new_sat_acc)
-    #         # Start another future
-    #         future = executor.submit(
-    #             self._future_compute_new_pos_vectorized,
-    #             planet_pos_history[-1],
-    #             planet_vel_history[-1],
-    #             sat_pos_history[-1],
-    #             np.array(sat_vel_history[-num_in_steps_lstm:]),
-    #             np.array(sat_acc_history[-num_in_steps_lstm:]),
-    #             masses,
-    #             time_step,
-    #             neural_net,
-    #             num_in_steps_lstm,
-    #             num_out_steps_lstm,
-    #             ignore_nn
-    #         )
-    #         pre_q_max_size = 2000
-    #         q_max_size = self._out_queue_max_size
-    #         while keep_future_running.value == 1:
-    #             if keep_future_running == 0:
-    #                 break
-    #             if (len(planet_pos_history) <= pre_q_max_size) and future.done():
-    #                 # Grab results from future and append to lists
-    #                 new_planet_pos, new_planet_vel, new_sat_pos, new_sat_vel, \
-    #                 new_sat_acc= future.result()
-    #                 # Extend the current lists
-    #                 planet_pos_history.extend(new_planet_pos)
-    #                 planet_vel_history.extend(new_planet_vel)
-    #                 sat_pos_history.extend(new_sat_pos)
-    #                 sat_vel_history.extend(new_sat_vel)
-    #                 sat_acc_history.extend(new_sat_acc)
-    #                 # Start new future thread to compute more
-    #                 future = executor.submit(
-    #                     self._future_compute_new_pos_vectorized,
-    #                     planet_pos_history[-1],
-    #                     planet_vel_history[-1],
-    #                     sat_pos_history[-1],
-    #                     np.array(sat_vel_history[-num_in_steps_lstm:]),
-    #                     np.array(sat_acc_history[-num_in_steps_lstm:]),
-    #                     masses,
-    #                     time_step,
-    #                     neural_net,
-    #                     num_in_steps_lstm,
-    #                     num_out_steps_lstm,
-    #                     ignore_nn
-    #                 )
-    #             # If the queue needs values, go and keep on pushing values.
-    #             if planet_pos_history and (output_queue.qsize() < q_max_size):
-    #                 # Be careful where we are blocking.  Make sure we will
-    #                 # not be waiting to put item in queue
-    #                 if not output_queue.full():
-    #                     output_list = [
-    #                         planet_pos_history.pop(0),
-    #                         planet_vel_history.pop(0),
-    #                         sat_pos_history.pop(0),
-    #                         sat_vel_history.pop(0),
-    #                         sat_acc_history.pop(0)
-    #                     ]
-    #                     output_queue.put(output_list)
-    #             # If the pre-q filled up, then just keep on trying to push
-    #             # values to the queue.  Will pause here until queue has taken
-    #             # more values.
-    #             if (len(planet_pos_history) > pre_q_max_size):
-    #                 time.sleep(1)
-    #         temp_result = future.result()
-    #         executor.shutdown()
-    #     print('Future cache complete')
-    #     return
 
     @staticmethod
     def _create_acc_burn_vec(curr_time_step, num_out_steps_lstm,
