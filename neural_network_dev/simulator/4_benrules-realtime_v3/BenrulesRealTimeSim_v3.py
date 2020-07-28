@@ -25,6 +25,7 @@ import h5py
 # Imports for multiprocessing producer/consumer data model.
 from multiprocessing import Process, Queue, Lock, cpu_count
 from concurrent.futures import *
+import time
 
 
 class BenrulesRealTimeSim:
@@ -135,9 +136,280 @@ class BenrulesRealTimeSim:
             )
             return pred_displacement, pred_velocity
 
+    class _NeuralNetMulti:
+        """Class to load Tensorflow model stored in .h5 file and run
+        inference with it. """
+
+        def __init__(self, model_path):
+            """
+            Constructor for model class.  Loads the model into a private
+                instance
+            variable that can then be called on to make predictions on the
+            position of planet the network was trained on.
+
+            :param model_path: Path, including name, to the .h5 file storing
+                the neural net.
+            :param planet_predicting: Name of planet the model is predicting.
+            """
+
+            self._model = tf.keras.models.load_model(model_path)
+
+        def make_prediction(self, input_sequence):
+            """
+            Function to take a vector of all other planet positions and output
+            the XYZ position of the planet being predicted for the current time
+            step.
+
+            :param input_vector: Numpy array of all other planets and stars
+                in the system.
+            :return: Dictionary of X,Y,Z positions of planet we are predicting.
+            """
+
+            in_seq_2 = input_sequence[0, :, :].reshape((1,4,5))
+
+            pred = self._model.predict(in_seq_2)
+            # Split out the predictions and add a 0 column for the z-axis
+            # to the predictions.
+            zeroes = np.full(
+                (pred.shape[1], 1),
+                0.0,
+                dtype=np.float64
+            )
+            pred_displacement = np.append(
+                pred[:, :, :2],
+                zeroes,
+                axis=1
+            )
+            pred_velocity = np.append(
+                pred[:, :, -2:],
+                zeroes,
+                axis=1
+            )
+            return pred_displacement, pred_velocity
+
     # Class Variables
 
     # Planet data units: (location (m), mass (kg), velocity (m/s)
+    @staticmethod
+    def _future_calc_single_bod_acc_vectorized(planet_pos,
+                                               sat_pos,
+                                               masses):
+        """
+        This is a prototype version of the acceleration vector adder.  For
+        it to work with an arbitrary number of bodies, assume the positions of
+        all bodies will be provided as a numpy array with an [x,y,z] vector to
+        store the positions.
+
+        :param body_index:
+        :return:
+        """
+        # Combine planets and satellites into a single position vector
+        # to calculate all accelerations
+        pos_vec = np.concatenate(
+            (planet_pos,
+             sat_pos),
+            axis=0
+        )
+        # Have to reshape from previous to get columns that are the x, y,
+        # and z dimensions
+        pos_vec = pos_vec.T.reshape((3, pos_vec.shape[0], 1))
+        pos_mat = pos_vec @ np.ones((1, pos_vec.shape[1]))
+        # Find differences between all bodies and all other bodies at
+        # the same time.
+        diff_mat = pos_mat - pos_mat.transpose((0, 2, 1))
+        # Calculate the radius or absolute distances between all bodies
+        # and every other body
+        r = np.sqrt(np.sum(np.square(diff_mat), axis=0))
+        # Calculate the tmp value for every body at the same time
+        g_const = 6.67408e-11  # m3 kg-1 s-2
+        acceleration_np = g_const * ((diff_mat.transpose((0, 2, 1)) * (
+            np.reciprocal(r ** 3, out=np.zeros_like(r),
+                          where=(r != 0.0))).T) @ masses)
+        return acceleration_np
+
+    def _future_compute_new_pos_vectorized(self, planet_pos,
+                                            planet_vel, sat_pos, sat_vel,
+                                            sat_acc, masses, time_step,
+                                            neural_net, ignore_nn=False):
+        """
+        After getting acceleration from vectorized single_bod_acceleration,
+        we can simply multiply by the time step to get velocity.
+
+        :return:
+        """
+
+        # Get the number of planets and satellites
+        num_planets = planet_pos.shape[0]
+        num_sats = sat_pos.shape[0]
+        num_in_items_seq_lstm = sat_vel.shape[0]
+        num_out_seq_lstm = 10
+
+        if ignore_nn == True:
+            # If not using neural network, compute everything as many times as
+            # we should to get the same amount in the output as we would if
+            # we used the nn.  Combining all bodies together.
+            #Initialize values in lists.  Drop the first item later.
+            new_planet_pos = [planet_pos]
+            new_planet_vel = [planet_vel]
+            new_sat_pos = [sat_pos]
+            new_sat_vel = [sat_vel[-1]]
+            new_sat_acc = [sat_acc[-1]]
+            # Loop over the next i time steps and add to the "new" lists
+            for i in range(0, num_out_seq_lstm):
+                # Grab the accelerations acting on each body based on current
+                # body positions.
+                acceleration_np = self._future_calc_single_bod_acc_vectorized(
+                    planet_pos=new_planet_pos[-1],
+                    sat_pos=new_sat_pos[-1],
+                    masses=masses
+                )
+                # Initialize the velocity matrix
+                velocity_np = np.concatenate(
+                    (new_planet_vel[-1],
+                     new_sat_vel[-1]), axis=0
+                )
+                # Calculate the new valocities
+                velocity_np = velocity_np.T.reshape(3, velocity_np.shape[0], 1) \
+                              + (acceleration_np * time_step)
+                # Convert back to caching / tracking format and save to cache
+                velocity_np = velocity_np.T.reshape(acceleration_np.shape[1],
+                                                    3)
+                new_planet_vel.append(velocity_np[:num_planets, :])
+                new_sat_vel.append(velocity_np[-num_sats:, :])
+                acceleration_np = \
+                    acceleration_np.T.reshape(acceleration_np.shape[1], 3)
+                new_sat_acc.append(acceleration_np[-num_sats:])
+                # Calculate displacement and new location for all bodies
+                # Displacement is based on the current velocity.
+                velocities = np.concatenate(
+                    (new_planet_vel[-1],
+                     new_sat_vel[-1]),
+                    axis=0
+                )
+                displacement_np = velocities * time_step
+                # Update new positions of planets and satellites
+                new_planet_pos.append(
+                    new_planet_pos[-1] + displacement_np[:num_planets, :]
+                )
+                new_sat_pos.append(
+                    new_sat_pos[-1] + displacement_np[-num_sats:, :]
+                )
+                # Set all positions relative to the sun assumed to be at index 0
+                new_planet_pos[-1] = new_planet_pos[-1][:, :] - new_planet_pos[-1][0, :]
+                new_sat_pos[-1] = new_sat_pos[-1][:, :] - new_planet_pos[-1][0, :]
+            # Remove first values in lists that initialized them.
+            new_planet_pos.pop(0)
+            new_planet_vel.pop(0)
+            new_sat_pos.pop(0)
+            new_sat_vel.pop(0)
+            new_sat_acc.pop(0)
+
+        else:
+            # For the number of items in the LSTM output sequence, run the
+            # planet calcs for each loop.
+            # Use initial loop to calculate the next time steps from initial
+            # output of the neural net.
+            new_planet_pos = [planet_pos]
+            new_planet_vel = [planet_vel]
+            new_sat_pos = [sat_pos]
+            new_sat_vel = [sat_vel[-1]]
+            new_sat_acc = [sat_acc[-1]]
+            for i in range(0, num_out_seq_lstm):
+                # Grab the accelerations acting on each body based on current
+                # body positions.
+                acceleration_np = self._future_calc_single_bod_acc_vectorized(
+                    planet_pos=new_planet_pos[-1],
+                    sat_pos=new_sat_pos[i], # Account for nn filling list
+                    masses=masses
+                )
+                # Initialize the velocity matrix.
+                # Only run calculations on planets
+                velocity_np = new_planet_vel[-1]
+                velocity_np = velocity_np.T.reshape(3, velocity_np.shape[0], 1) \
+                              + (acceleration_np[:, 0:num_planets, :]
+                                 * time_step)
+                # Convert back to caching / tracking format and save to cache
+                velocity_np = velocity_np.T.reshape(velocity_np.shape[1], 3)
+                new_planet_vel.append(velocity_np[:num_planets, :])
+                # Convert back and record acceleration history of sats.
+                acceleration_np = \
+                    acceleration_np.T.reshape(acceleration_np.shape[1], 3)
+                new_sat_acc.append(acceleration_np[-num_sats:])
+                # Calculate displacement and new location for planets
+                # Displacement is based on the current velocity.
+                velocities = new_planet_vel[-1]
+                displacement_np = velocities * time_step
+                # Update new positions of planets
+                new_planet_pos.append(
+                    new_planet_pos[-1] + displacement_np[:num_planets, :]
+                )
+                # If the initial loop, the run neural net inference.
+                # Need vals from this to calculate acceleration on them at
+                # each of the successive time steps.
+                if i == 0:
+                    # Use the given initialization values to run inference.
+                    # Drop Z
+                    sat_accels = np.swapaxes(sat_acc, 0, 1)[:, :, 0:2]
+                    sat_masses = np.repeat(masses[-num_sats:],
+                                           num_in_items_seq_lstm,
+                                           axis=0)
+                    sat_masses = sat_masses.reshape(
+                        (num_sats, num_in_items_seq_lstm, 1)
+                    )
+                    sat_velocities = np.swapaxes(sat_vel, 0, 1)[:, :, 0:2]
+                    # Create input and reshape to 3D for neural net.
+                    input_sequence = np.concatenate(
+                        [sat_masses, sat_accels, sat_velocities],
+                        axis=2
+                    )
+                    predictions = neural_net.predict(input_sequence)
+                    # Split predictions into displacement and
+                    # pred_dis = predictions[:, :, :2]
+                    # pred_vel = predictions[:, :, -2:]
+                    zeroes = np.full(
+                        (predictions.shape[0], predictions.shape[1], 1),
+                        0.0,
+                        dtype=np.float64
+                    )
+                    pred_dis = np.append(
+                        predictions[:, :, :2],
+                        zeroes,
+                        axis=2
+                    )
+                    pred_vel = np.append(
+                        predictions[:, :, -2:],
+                        zeroes,
+                        axis=2
+                    )
+
+                    # Reshape predictions to be by time step rather than
+                    # by satellite.
+                    pred_dis = np.swapaxes(pred_dis, 0, 1)
+                    pred_vel = np.swapaxes(pred_vel, 0, 1)
+                    # Update satellite positions and velocities using the
+                    # predictions
+                    for j in range(0, pred_dis.shape[0]):
+                        # Add new positions to list using displacement.
+                        new_sat_pos.append(
+                            new_sat_pos[-1] + pred_dis[j]
+                        )
+                        # Add velocities for all satellites to list.
+                        new_sat_vel.append(
+                            pred_vel[j]
+                        )
+                # Set all positions relative to the sun
+                new_planet_pos[-1] = \
+                    new_planet_pos[-1][:, :] - new_planet_pos[-1][0, :]
+                new_sat_pos[i + 1] = \
+                    new_sat_pos[i + 1][:, :] - new_planet_pos[-1][0, :]
+            # After for loop, remove initial values.
+            new_planet_pos.pop(0)
+            new_planet_vel.pop(0)
+            new_sat_pos.pop(0)
+            new_sat_vel.pop(0)
+            new_sat_acc.pop(0)
+
+        return new_planet_pos, new_planet_vel, new_sat_pos, new_sat_vel, new_sat_acc
 
     def _calc_more_vals(self, count):
         temp_list = []
@@ -146,26 +418,94 @@ class BenrulesRealTimeSim:
             temp_list.append(count)
         return count, temp_list
 
-    def _maintain_future_cache(self, output_queue):
-        count = 0
-        vals = []
+    def _maintain_future_cache(self, output_queue, initial_planet_pos,
+                               initial_planet_vel, initial_sat_pos,
+                               initial_sat_vel, initial_sat_acc, masses,
+                               time_step, nn_path, num_in_steps_lstm,
+                               um_out_steps_lstm):
+        # Set whether or not to use the neural net
+        ignore_nn = False
+        # Load neural net to run inference with.
+        neural_net = tf.keras.models.load_model(nn_path)
+        # Lists to cache calculations before they are pushed to the queue
+        planet_pos_history = []
+        planet_vel_history = []
+        sat_pos_history = []
+        sat_vel_history = []
+        sat_acc_history = []
 
         with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(self._calc_more_vals, count=count)
+            # Initialize all lists with first call to future with the
+            # initial simulation values.
+            future = executor.submit(
+                self._future_compute_new_pos_vectorized,
+                initial_planet_pos[-1],
+                initial_planet_vel[-1],
+                initial_sat_pos[-1],
+                initial_sat_vel[-num_in_steps_lstm:],
+                initial_sat_acc[-num_in_steps_lstm:],
+                masses,
+                time_step,
+                neural_net,
+                ignore_nn,
+            )
+            # Grab initial future and add to lists
+            new_planet_pos, new_planet_vel, new_sat_pos, new_sat_vel, \
+            new_sat_acc = future.result()
+            # Add initialization to the lists
+            planet_pos_history.extend(new_planet_pos)
+            planet_vel_history.extend(new_planet_vel)
+            sat_pos_history.extend(new_sat_pos)
+            sat_vel_history.extend(new_sat_vel)
+            sat_acc_history.extend(new_sat_acc)
+            # Start another future
+            future = executor.submit(
+                self._future_compute_new_pos_vectorized,
+                planet_pos_history[-1],
+                planet_vel_history[-1],
+                sat_pos_history[-1],
+                np.array(sat_vel_history[-num_in_steps_lstm:]),
+                np.array(sat_acc_history[-num_in_steps_lstm:]),
+                masses,
+                time_step,
+                neural_net,
+                ignore_nn
+            )
             while True:
-                if len(vals) < 5 and future.done():
-                    count, temp_vals = future.result()
-                    vals.extend(temp_vals)
-                    future = executor.submit(self._calc_more_vals, count=count)
-                if vals:
-                    output_queue.put(vals.pop(0))
-        #
-        # while True:
-        #     if len(vals) < 5:
-        #         # Launch futures thread
-        #         count, temp_vals = self._calc_more_vals(count)
-        #         vals.extend(temp_vals)
-        #     output_queue.put(vals.pop(0))
+                if len(planet_pos_history) < 500 and future.done():
+                    # Grab results from future and append to lists
+                    new_planet_pos, new_planet_vel, new_sat_pos, new_sat_vel, \
+                    new_sat_acc= future.result()
+                    # Extend the current lists
+                    planet_pos_history.extend(new_planet_pos)
+                    planet_vel_history.extend(new_planet_vel)
+                    sat_pos_history.extend(new_sat_pos)
+                    sat_vel_history.extend(new_sat_vel)
+                    sat_acc_history.extend(new_sat_acc)
+                    # Start new future thread to compute more
+                    future = executor.submit(
+                        self._future_compute_new_pos_vectorized,
+                        planet_pos_history[-1],
+                        planet_vel_history[-1],
+                        sat_pos_history[-1],
+                        np.array(sat_vel_history[-num_in_steps_lstm:]),
+                        np.array(sat_acc_history[-num_in_steps_lstm:]),
+                        masses,
+                        time_step,
+                        neural_net,
+                        ignore_nn
+                    )
+                # If values are available in lists, go ahead
+                # and add items to the output queue.
+                if planet_pos_history:
+                    output_list = [
+                        planet_pos_history.pop(0),
+                        planet_vel_history.pop(0),
+                        sat_pos_history.pop(0),
+                        sat_vel_history.pop(0),
+                        sat_acc_history.pop(0)
+                    ]
+                    output_queue.put(output_list)
 
     def _parse_sim_config(self, in_df):
         """
@@ -313,10 +653,40 @@ class BenrulesRealTimeSim:
             self._latest_ts_in_cache += 1
             self._curr_cache_size += 1
 
+        # Just try using function to calculate next number of time steps.
+        # self._future_compute_new_pos_vectorized(
+        #     planet_pos=self._planet_pos_cache[self._len_lstm_in_seq-1],
+        #     planet_vel=self._planet_vel_cache[self._len_lstm_in_seq-1],
+        #     sat_pos=self._sat_pos_cache[self._len_lstm_in_seq-1],
+        #     sat_vel=self._sat_vel_cache[0:self._len_lstm_in_seq],
+        #     sat_acc=self._sat_acc_cache[0:self._len_lstm_in_seq],
+        #     masses=self._masses,
+        #     time_step=self._time_step,
+        #     neural_net=self._nn2,
+        #     ignore_nn=True
+        # )
+
         # Try starting background processes
-        self._producer_process = Process(target=self._maintain_future_cache, args=(self._output_queue,))
-        self._producer_process.daemon = True
-        self._producer_process.start()
+        self._future_queue_process = Process(
+            target=self._maintain_future_cache,
+            args=(self._output_queue,
+                  self._planet_pos_cache[0:self._len_lstm_in_seq],
+                  self._planet_vel_cache[0:self._len_lstm_in_seq],
+                  self._sat_pos_cache[0:self._len_lstm_in_seq],
+                  self._sat_vel_cache[0:self._len_lstm_in_seq],
+                  self._sat_acc_cache[0:self._len_lstm_in_seq],
+                  self._masses,
+                  self._time_step,
+                  self._nn_path,
+                  self._len_lstm_in_seq,
+                  self._len_lstm_out_seq
+                  )
+        )
+        self._future_queue_process.daemon = True
+        self._future_queue_process.start()
+        # Sleep this process for a bit while the background process generates
+        # the future cache.
+        time.sleep(60)
 
     def __init__(self, in_config_df, time_step=800):
         """
@@ -330,11 +700,22 @@ class BenrulesRealTimeSim:
             neural network that will be loaded with Tensorflow in the
             NeuralNet class.
         """
-        # Amount of time that has passed in a single time step in seconds.
-        self._time_step = time_step
+        # Grab the current working to use for referencing data files
+        self._current_working_directory = \
+            os.path.dirname(os.path.realpath(__file__))
+        # Create neural network object that lets us run neural network
+        # predictions as well.
+        nn_name = 'alpha_lstm_100epochs_mml.h5'
+        self._nn_path = self._current_working_directory + "/nn/" + nn_name
+        # self._nn = self._NeuralNet(model_path=self._nn_path)
+        # Create neural net to use with future queue process
+        # self._nn2 = self._NeuralNetMulti(model_path=self._nn_path)
         # Since we are using an LSTM network, we will need to initialize the
         # the length of the sequence necessary for input into the LSTM.
         self._len_lstm_in_seq = 4
+        self._len_lstm_out_seq = 10
+        # Amount of time that has passed in a single time step in seconds.
+        self._time_step = time_step
         # Grab info for creating background producer / consumer
         self._num_processes = cpu_count()
         # Create processing queues that producer / consumer will take
@@ -346,16 +727,6 @@ class BenrulesRealTimeSim:
         # Setup the initial set of bodies in the simulation by parsing from
         # config dataframe.
         self._parse_sim_config(in_config_df)
-        print("bodies parsed")
-        # Grab the current working to use for referencing data files
-        self._current_working_directory = \
-            os.path.dirname(os.path.realpath(__file__))
-        # Create neural network object that lets us run neural network
-        # predictions as well.
-        # Default to mars model if key in dictionary not found.
-        nn_name = 'alpha_lstm_100epochs_mml.h5'
-        nn_path = self._current_working_directory + "/nn/" + nn_name
-        self._nn = self._NeuralNet(model_path=nn_path)
 
         # Create archive file to store sim data with necessary datasets and
         # and groups.
@@ -730,13 +1101,20 @@ class BenrulesRealTimeSim:
             if self._curr_cache_index == self._max_cache_size:
                 self._flush_cache_to_archive()
             # Compute and predict next positions of all bodies.
-            self._compute_gravity_step_vectorized(ignore_nn=False)
+            self._compute_gravity_step_vectorized(ignore_nn=True)
             # Create one numpy array with all body position data to return.
             simulation_positions = np.concatenate(
                 (self._planet_pos_cache[self._curr_cache_index],
                  self._sat_pos_cache[self._curr_cache_index]),
                 axis=0
             )
+            #TODO: Remove later
+            # As test, try overwriting items from the processing queue
+            item = self._output_queue.get()
+            # item is a list of values from
+            simulation_positions[11, :] = item[2][0]
+            #simulation_positions[11, :] = np.array([0.0, 0.0, 0.0])
+
             # Update the latest time step stored in the cache
             self._latest_ts_in_cache = self._current_time_step
 
@@ -792,11 +1170,6 @@ class BenrulesRealTimeSim:
             # Advance to the next time step.
             self._current_time_step += 1
             self._curr_cache_index += 1
-
-        # As test, try overwriting items from the processing queue
-        item = self._output_queue.get()
-        simulation_positions[11, 0] = np.float64(self._output_queue.qsize())
-        simulation_positions[11, 1] = np.float64(item)
 
         # Return dictionary with planet name as key and a list with each planet
         # name containing the coordinates

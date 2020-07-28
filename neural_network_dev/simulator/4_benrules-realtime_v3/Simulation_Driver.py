@@ -8,6 +8,7 @@ more data from it.
 import sys
 import pandas
 from BenrulesRealTimeSim_v3 import BenrulesRealTimeSim
+import time
 
 # Main code
 
@@ -18,7 +19,7 @@ def main():
     pause_time_step = 60000  # Pause the simulator at this time step and FF or RW
     # Total number of time steps performed by the simulation.
     # Total length of simulation = time_step * number_of_steps.
-    number_of_steps = 200
+    number_of_steps = 2000
 
     # Read simulator and satellite initial state from config .csv file.
     keep_trying_read = True
@@ -46,6 +47,8 @@ def main():
             new_ts = int(input("Enter a time step to jump to: "))
             simulation.current_time_step = new_ts
             already_paused = True
+        # if simulation.current_time_step % 20 == 0:
+        #     time.sleep(1)
         # Get next state of the simulation.
         current_positions = simulation.get_next_sim_state_v2()
         print("Current Time Step: {}".format(simulation.current_time_step))
