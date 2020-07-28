@@ -121,8 +121,59 @@ class BenrulesRealTimeSim:
     predict the motions of the satellites.
 
     Instance Variables:
-    :ivar blah: description
-
+    :ivar lock: Shared lock for stdout when troubleshooting or printing
+        messages from background processes.
+    :ivar time_step: Duration of time step the simulator is running on.
+    :ivar current_working_directory: Current location of simuator script.
+    :ivar nn_path: Path to the .h5 file containing the LSTM neural net.
+    :ivar len_lstm_in_seq: Number of time steps in the input sequence to the
+        LSTM network.
+    :ivar len_lstm_out_seq: Number of time steps that can be predicted by the
+        LSTM network in a single inference.
+    :ivar num_processes: Max number of processes the CPU can handle.
+    :ivar out_queue_max_size: Max size of the queue carrying information from
+        the background simulation process and the functions that serve position
+        data to the front end.
+    :ivar output_queue: The queue that receives data from the background
+        simulation process as the producer and the functions that serve
+        position data to the front end as consumers.
+    :ivar keep_future_running: Shared state integer that signals the while
+        loop that runs the background simulation to stop, close out all threads
+        and flush all queues.
+    :ivar in_planet_df: Dataframe containing the initial planet data to launch
+        the simulator.
+    :ivar sim_archive_location: Location to store the .hdf5 file that contains
+        all the cache data from the simulator for the entire simulation.
+    :ivar latest_ts_in_archive: The latest time step stored currently in the
+        hdf5 archive file.
+    :ivar current_time_step: The current time step required to be served by the
+        simulator.  Controls whether to grab data from archive, queue, or
+        the future queue.
+    :ivar max_time_step_reached: The maximum time step the simulator has ever
+        served to the front end.
+    :ivar curr_cache_size: Current size of the in-memory caches.
+    :ivar max_cache_size: Max allowed size of the in-memory caches.
+    :ivar latest_ts_in_cache: Latest time step stored in the current cache
+        state.
+    :ivar num_planets: Number of planets being simulated.
+    :ivar num_sats: Number of satellites loaded into the simualtion.
+    :ivar planet_pos_cache: Numpy array that caches the positions of all
+        planets for the max size of the cache.
+    :ivar planet_vel_cache: Numpy array that caches the velocities of all
+        planets for the max size of the cache.
+    :ivar sat_pos_cache: Numpy array that caches the positions of all
+        satellites for the max size of the cache.
+    :ivar sat_vel_cache: Numpy array that caches the velocities of all
+        satellites for the max size of the cache.
+    :ivar sat_acc_cache: Numpy array that caches the accelerations of all
+        satellites for the max size of the cache.
+    :ivar masses: Numpy array containing the masses of all bodies in the
+        system.
+    :ivar body_names: A list containing the names of all bodies in the system.
+    :ivar future_queue_process: Object containing the background process that
+        is continually calculating future time steps.
+    :ivar max_fps: After simulation initialization, contains the maximum
+        framerate the current system running the simulation can run at.
     """
 
     @staticmethod
@@ -131,14 +182,18 @@ class BenrulesRealTimeSim:
                                                masses,
                                                burn_vec):
         """
-        This is a prototype version of the acceleration vector adder.  For
-        it to work with an arbitrary number of bodies, assume the positions of
-        all bodies will be provided as a numpy array with an [x,y,z] vector to
-        store the positions.
+        This is the function that calculates the acceleration on every every
+        body due to the gravitational influence of every other body.
 
-        :param blah: description
+        :param planet_pos: Numpy array containing the positions of all planets.
+        :param sat_pos: Numpy array containing the positions of all satellites.
+        :param masses: Masses of all bodies in the simualtion.
+        :param burn_vec: Numpy array containing all the burn maneuvers for
+            the time steps currently being calculated.
 
+        :return: Numpy array containing the calculated acceleration vectors.
         """
+
         # Combine planets and satellites into a single position vector
         # to calculate all accelerations
         pos_vec = np.concatenate(
@@ -175,10 +230,43 @@ class BenrulesRealTimeSim:
                                            result_queue, burn_vec,
                                            ignore_nn=False):
         """
-        After getting acceleration from vectorized single_bod_acceleration,
-        we can simply multiply by the time step to get velocity.
+        Function to calculate the positions of bodies in future time steps.
 
-        :return:
+        The function takes in simulation data and calculates a number of
+        future time steps equal to the number of time steps the neural network
+        can output.  This function is meant to run as a separate thread and
+        the results are placed in a result queue for later retrieval by the
+        background simulation process.
+
+        :param planet_pos: Numpy array containing the positions of all planets
+            in the simulation.
+        :param planet_vel: Numpy array containing the velocities of all planets
+            in the simulation.
+        :param sat_pos: Numpy array containing the positions of all satellites
+            in the simulation.
+        :param sat_vel: Numpy array containing the velocities of all satellites
+            in the simulation.
+        :param sat_acc: Numpy array containing the accelerations of all
+            satellites in the system.
+        :param masses: Numpy array containing the masses of all bodies in the
+            system.
+        :param time_step: Integer containing the duration of time step the
+            simulation is running at in seconds.
+        :param neural_net: Variable that points to the Tensorflow model object
+            running in the background simulation process.
+        :param num_in_items_seq_lstm: Number of time steps needed for input
+            to the LSTM neural network.
+        :param num_out_seq_lstm: Number of time steps in the output of the
+            LSTM neural network.
+        :param result_queue: Queue that carries result from computation thread
+            to the background simulation process.
+        :param burn_vec: Numpy array constructed with any additional
+            accelerations due to burn maneuvers.
+        :param ignore_nn: Boolean variable to bypass the neural network and
+            use physics calculations only.
+
+        :return: Results of function are placed in output queue and retrieved
+            by background simulation process at a later point.
         """
 
         # Get the number of planets and satellites
@@ -374,6 +462,16 @@ class BenrulesRealTimeSim:
         Function to create a vector of time steps where each item in the
         vector is a matrix of satellites and additional burn values to use
         during the single body acceleration calculations.
+
+        :param curr_time_step: Current simulation time step calculating the
+            future from.
+        :param num_out_steps_lstm: Number of time steps the LSTM network can
+            output in a single inference.
+        :param sat_maneuver_queues: List of queues containing the burn
+            burn maneuvers for each satellite in the simulation.
+
+        :return: Numpy array containing the time steps beign computed with
+            burn maneuvers for each satellite.
         """
         # Calculate range of time steps the future thread will compute.
         curr_ts_range = range(
@@ -406,6 +504,36 @@ class BenrulesRealTimeSim:
                                time_step, nn_path, num_in_steps_lstm,
                                num_out_steps_lstm, keep_future_running,
                                sat_maneuver_queues, ignore_nn):
+        """
+        :param output_queue: Queue that carries future time steps from this
+            background simulation process to the part of the simulator
+            serving body positions to the front end.
+        :param initial_planet_pos: Numpy array containing the initial positions
+            of the planets in the simulation.
+        :param initial_planet_vel: Numpy array containing the initial
+            velocities of the planets in the simulation.
+        :param initial_sat_pos: Numpy array containing the initial positions of
+            all satellites in the simulation.
+        :param initial_sat_vel: Numpy array containing the initial velocities
+            of all satellites in the simulation.
+        :param initial_sat_acc: Numpy array containing the initial
+            accelerations for all satellites in the simulation.
+        :param masses: Numpy array containing all masses in the system.
+        :param time_step: Time duration the simulation is performing
+            calculations with.
+        :param nn_path: File path of the .h5 file containing the trained
+            LSTM neural network.
+        :param num_in_steps_lstm: Number of time steps needed for input to
+            the LSTM neural network.
+        :param num_out_steps_lstm: Number of time steps output by the LSTM
+            neural network.
+        :param keep_future_running: Shared integer that signals the background
+            process while loop to halt and kill all threads.
+        :param sat_maneuver_queues: List of deques that have burn maneuvers
+            for all satellites.
+        :param ignore_nn: Boolean value of whether or not to ignore the
+            neural network for calculating satellite positions.
+        """
 
         # Local variable to keep track of the current simulation time step.
         # Assumes simulator initialized with enough time steps for the LSTM
@@ -553,34 +681,29 @@ class BenrulesRealTimeSim:
             while not result_queue.empty():
                 temp = result_queue.get_nowait()
         except:
-            print("Exception!")
-
+            print("Exception when trying to flush result_queue")
+            pass
         # If at this point, main loop broke.  Join rest of threads.
         future.join()
-        #print("\n Threads in background")
-        main_thread = threading.current_thread()
-        for t in threading.enumerate():
-            if t is main_thread:
-                continue
-            #print(t.getName())
-            #t.join()
-        print()
-        #print('Future cache complete')
         return
 
     def _parse_sim_config(self, sat_config_file=None, planet_config_df=None):
         """
-        Function to convert
+        Function to convert the given and system config files to appropriate
+        data structures for use by the simulator.
 
-        :param sat_config_file: Filename of config file containing satellite parameters.
-        :param in_df: Dataframe containing the simulation configuration.
-        :return: list of Body objects with name, mass, location, and initial
-            velocity set.
+        This function also launches the background simulation process and
+        benchmarks the system's max, steady state, framerate.
+
+        :param sat_config_file: Filename of config file containing satellite
+            parameters.
+        :param planet_config_df: Dataframe containing the simulation planet
+            configuration.
         """
 
         # Using iterrows() to go over each row in dataframe and extract info
         # from each row.
-        self._bodies = []
+        #self._bodies = []
         read_planet_pos = []
         read_planet_vel = []
         read_sat_pos = []
@@ -796,21 +919,17 @@ class BenrulesRealTimeSim:
         """
         Simulation initialization function.
 
-        :param time_step: Time is seconds between simulation steps.  Used to
-            calculate displacement over that time.
-        :param planet_predicting: Name of the planet being predicted by the
-            neural network.
-        :param nn_path: File path to the location of the .h5 file storing the
-            neural network that will be loaded with Tensorflow in the
-            NeuralNet class.
+        :param sat_config_file: File path to the config file that contains
+            the simulation configuration, satellites, and burn maneuvers for
+            the satellites.
         """
         # Lock to take control of stdout
         self._lock = Lock()
         # Set the base simulation time step duration
-        # 1 hour = 3600
-        # 3 hour = 10800
-        # 6 hour = 21600
-        # 12 hour = 43200
+        # 1 hour = 3600 seconds
+        # 3 hour = 10800 seconds
+        # 6 hour = 21600 seconds
+        # 12 hour = 43200 seconds
         self._time_step = 21600
         # Grab the current working to use for referencing data files
         self._current_working_directory = \
@@ -877,6 +996,11 @@ class BenrulesRealTimeSim:
         self._latest_ts_in_archive = 0
 
     def __del__(self):
+        """
+        Simulation deconstructure. Used to signal background process to stop
+        while loop and halt all computation threads.  Also flushed output
+        queue of values allowing background process to close.
+        """
         # Signal the background process to stop looping.
         self._keep_future_running.value = 0
         # Flush the entire output queue so background process can terminate.
@@ -891,13 +1015,16 @@ class BenrulesRealTimeSim:
 
     def _calc_single_bod_acc_vectorized(self):
         """
-        This is a prototype version of the acceleration vector adder.  For
-        it to work with an arbitrary number of bodies, assume the positions of
-        all bodies will be provided as a numpy array with an [x,y,z] vector to
-        store the positions.
+        This function calculates the acceleration resulting from the
+        gravitational influence of every body on every other body in the
+        simulation.
+
+        Mainly used for initialization of the simulator.  Fully vectorized to
+        improve performance.
 
         :param body_index:
-        :return:
+        :return: Acceleration resulting from gravitation influence of every
+            body on every other body.
         """
         # Combine planets and satellites into a single position vector
         # to calculate all accelerations
@@ -925,10 +1052,13 @@ class BenrulesRealTimeSim:
 
     def _compute_velocity_vectorized(self, ignore_nn=False):
         """
-        After getting acceleration from vectorized single_bod_acceleration,
-        we can simply multiply by the time step to get velocity.
+        Function to calculate the velocities resulting from new time step's
+        acceleration.
 
-        :return:
+        Mainly used for initialization of the simualtor.
+
+        :param ignore_nn: Boolean value to decide whether or not to use the
+            neural network during simulation initialization.
         """
         # Grab the accelerations acting on each body based on current body
         # positions.
@@ -999,6 +1129,15 @@ class BenrulesRealTimeSim:
                     + pred_displacement[num_ts_into_future - 1]
 
     def _update_location_vectorized(self, ignore_nn = False):
+        """
+        Function to calculate displacement and update the positions of all
+        bodies.
+
+        Mainly used for simulation initialization.
+
+        :param ignore_nn: Boolean value to decide whether or not to use the
+            neural network during simulation initialization.
+        """
         if ignore_nn == True:
             # Calculate displacement and new location for all bodies
             velocities = np.concatenate(
@@ -1034,14 +1173,25 @@ class BenrulesRealTimeSim:
             - self._planet_pos_cache[self._curr_cache_index, 0, :]
 
     def _compute_gravity_step_vectorized(self, ignore_nn=False):
+        """
+        Function to coordinate between the velocity and location vectorized
+        functions.
+
+        :param ignore_nn: Boolean value to decide whether or not to use the
+            neural network during simulation initialization.
+        """
         self._compute_velocity_vectorized(ignore_nn=ignore_nn)
         self._update_location_vectorized(ignore_nn=ignore_nn)
 
     def _flush_cache_to_archive(self):
         """
-        If caches are too large, flush to .hdf5 file with groups and datasets
+        Function that handles memory cache management.
 
-        Returns:
+        The function will flush the cache if there are any values in the cache
+        that are not yet in the archive.  It will then prefill the cache with
+        enough values to continuously use  with the neural net.  If there are
+        available values in the archive, it will then fill the latter end
+        of the cache with time steps from the archive.
         """
 
         # Check to make sure there is data in cache that needs to be flushed
@@ -1211,6 +1361,21 @@ class BenrulesRealTimeSim:
                 self._latest_ts_in_cache = end_archive_index
 
     def get_next_sim_state_v2(self):
+        """
+        Function that serves the positions of all bodies in the next time step
+        based on the internally tracked time step.
+
+        Based on the current time step, this function will either retrieve
+        values from the future queue that has new, calculated time steps,
+        retrieve values from the cache directly, or fill the cache
+        with values from the archive file and retrieve from the new, filled
+        cache.
+
+        :returns:
+            - Numpy array with positions of all bodies in the simulation.
+            - Boolean variable telling the front end to slow down request
+              rate to allow background simulation process to fill back up.
+        """
         # We know we need to get positions through calculation and inference
         # rather than from cache when our current simulation has reached
         # the max time step.
@@ -1309,10 +1474,6 @@ class BenrulesRealTimeSim:
             # Advance to the next time step.
             self._current_time_step += 1
             self._curr_cache_index += 1
-
-
-        # Print statement to monitor queue health.
-        #print(f'Output queue size{self._output_queue.qsize()}')
         # If the output queue is starting to get dangerously low, signal front
         # end to slow down simulation speed.
         slow_down = False
@@ -1332,18 +1493,45 @@ class BenrulesRealTimeSim:
 
     @property
     def time_step_duration(self):
+        """
+        Getter that retrieves the duration of the time step in seconds that
+        the simulation uses to calculate new positions.
+
+        :return time_step_duration: Duration of the simulation time step in
+            seconds.
+        """
         return self._time_step
 
     @property
     def max_fps(self):
+        """
+        Getter that returns the calculated max framerate the current system
+        can run at safely while maintaining future time step calculations.
+
+        :return max_fps: Max framerate the current simulation can run at
+            steadily.
+        """
         return self._max_fps
 
     @property
     def body_names(self):
+        """
+        Getter that returns a list of the names of all bodies in the
+        simualtion.
+
+        :return body_names: List with the names of all bodies in the system.
+        """
         return self._body_names
 
     @staticmethod
     def _on_press(key):
+        """
+        Function that checks if escape key has been pressed during time jump.
+
+        :param key: Key pressed from pynput.
+
+        :return: True or false if ESC is pressed.
+        """
         if key == keyboard.Key.esc:
             return False
 
@@ -1355,7 +1543,8 @@ class BenrulesRealTimeSim:
 
         If negative time entered, default to 0 time.  If time entered past the
         maximum time reached, the simulator will "fast-forward" to that time
-        step.
+        step.  If fast forward takes a long time, it can be canceled by
+        pressing the escape key.
         """
 
         # Store the old time step in case we need to reset.
