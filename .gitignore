@@ -13,10 +13,7 @@ neural_network_dev/simulator/1_Attempt at nbody sim/nBody-master/__pycache__
 0_demo-sim/__pycache__/
 0_demo-sim/neural_body/__pycache__/
 neural_network_dev/simulator/3_benrules-realtime_v2/__pycache__/
-1_demo-sim/.idea/
-1_demo-sim/__pycache__/
-1_demo-sim/neural_body/__pycache__/
-
+1_final-sim/neural_body/__pycache__/
 
 # Ignore data output and input directories
 neural_network_dev/simulator/2_benrules_v2/0_modified_sim_before_use/output/
