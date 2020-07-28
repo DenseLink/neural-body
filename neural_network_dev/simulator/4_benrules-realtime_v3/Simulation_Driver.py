@@ -16,10 +16,10 @@ def main():
     # Set time step (most likely in seconds) in simulation time.
     # How long the simulation steps forward at each iteration.
     time_step = 800
-    pause_time_step = 60000  # Pause the simulator at this time step and FF or RW
+    pause_time_step = 175  # Pause the simulator at this time step and FF or RW
     # Total number of time steps performed by the simulation.
     # Total length of simulation = time_step * number_of_steps.
-    number_of_steps = 2000
+    number_of_steps = 20000
 
     # Read simulator and satellite initial state from config .csv file.
     keep_trying_read = True
@@ -47,9 +47,8 @@ def main():
             new_ts = int(input("Enter a time step to jump to: "))
             simulation.current_time_step = new_ts
             already_paused = True
-        # if simulation.current_time_step % 20 == 0:
-        #     time.sleep(1)
-        # Get next state of the simulation.
+        # Sleep to simulate fixed framerate.
+        time.sleep(0.09)
         current_positions = simulation.get_next_sim_state_v2()
         print("Current Time Step: {}".format(simulation.current_time_step))
         # Output the current position of all bodies
