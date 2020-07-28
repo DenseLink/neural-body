@@ -2,10 +2,8 @@ import pygame
 import sys
 import pandas as pd
 import numpy as np
-#from neural_body.BenrulesRealTimeSim import BenrulesRealTimeSim
-from BenrulesRealTimeSim_v3 import BenrulesRealTimeSim
+from neural_body.BenrulesRealTimeSim_v2 import BenrulesRealTimeSim
 import os
-import time
 
 # Set audio driver to avoid ALSA errors
 os.environ['SDL_AUDIODRIVER'] = 'dsp'
@@ -286,8 +284,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
             while not (input_text != "" and textbox_active == 0):
                 # the functions below will be replaced by neural net output
                 curr_time_step += 1
-                # TODO: Craig added.  Replace later with framerate setting.
-                time.sleep(0.07)
+
                 if speed == 0.5 and pause == 0:
                     # Only advance simulation every other time_step.
                     if curr_time_step % 2 == 0:
@@ -391,7 +388,10 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                     if nasa == "No":
                         pygame.draw.circle(screen, (255, 102, 255), [scaled_x_pos[8], scaled_y_pos[8]],
                                            5)
-
+                    pygame.draw.circle(screen, (55, 75, 95),
+                                       [scaled_x_pos[10], scaled_y_pos[10]], 5)
+                    pygame.draw.circle(screen, (55, 75, 95),
+                                       [scaled_x_pos[11], scaled_y_pos[11]], 5)
                     pygame.draw.circle(screen, (255, 255, 0), [scaled_xi_pos[0], scaled_yi_pos[0]], 5)
                     pygame.draw.circle(screen, (0, 255, 255), [scaled_xi_pos[1], scaled_yi_pos[1]], 5)
                     pygame.draw.circle(screen, (255, 255, 255), [scaled_xi_pos[2], scaled_yi_pos[2]], 5)
@@ -826,7 +826,7 @@ def menu(screen, states, scr_width, scr_height, numDays):
                 for event in events:
                     if event.type == pygame.KEYDOWN:
                         if input_active == 1:
-                            if event.key == pygame.K_RETURN:
+                            if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
                                 time_step = 86400 * speed
                                 try:
                                     input_text = current_working_directory + \
@@ -967,7 +967,7 @@ def menu(screen, states, scr_width, scr_height, numDays):
             for event in events:
                 if event.type == pygame.KEYDOWN:
                     if input2_active == 1:
-                        if event.key == pygame.K_RETURN:
+                        if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
                             try:
                                 temp_num = int(input2_text)
                             except:
