@@ -93,27 +93,32 @@ class benrules_v2:
         # ]
         # Add satellites and other bodies to the universe.
         self.bodies.extend(additional_bodies)
+        # Calculate the number of items that will need to be saved to the
+        # caches based on the number of time steps and the reporting frequency.
+        self._num_items_in_output = int(number_of_steps // report_frequency) - 1
+        # Setup index counter for writing items to output caches
+        self._curr_cache_index = -1
         #self.body_locations_hist = []
         # Setup numpy arrays for history tracking
         # Fill arrays with np.nan until the values can be overwritten by the
         # simulation.
         self.acc_np = np.full(
-            (number_of_steps - 1, len(self.bodies), 3),
+            (self._num_items_in_output, len(self.bodies), 3),
             np.nan,
             dtype=np.float32
         )
         self.vel_np = np.full(
-            (number_of_steps - 1, len(self.bodies), 3),
+            (self._num_items_in_output, len(self.bodies), 3),
             np.nan,
             dtype=np.float32
         )
         self.pos_np = np.full(
-            (number_of_steps - 1, len(self.bodies), 3),
+            (self._num_items_in_output, len(self.bodies), 3),
             np.nan,
             dtype=np.float32
         )
         self.dis_np = np.full(
-            (number_of_steps - 1, len(self.bodies), 3),
+            (self._num_items_in_output, len(self.bodies), 3),
             np.nan,
             dtype=np.float32
         )
@@ -213,8 +218,10 @@ class benrules_v2:
         # Convert back to the tracking format
         self.current_vel_np[:,:] = velocity_np.T.reshape(acceleration_np.shape[1], 3)
         if current_step % self.report_frequency == 0:
-            self.vel_np[current_step - 1, :, :] = self.current_vel_np
-            self.acc_np[current_step - 1, :, :] = acceleration_np.T.reshape(acceleration_np.shape[1], 3)
+            # Increment the cache index
+            self._curr_cache_index += 1
+            self.vel_np[self._curr_cache_index, :, :] = self.current_vel_np
+            self.acc_np[self._curr_cache_index, :, :] = acceleration_np.T.reshape(acceleration_np.shape[1], 3)
 
     def _calc_single_bod_acc_vectorized(self):
         """
@@ -290,11 +297,12 @@ class benrules_v2:
         displacement_np = self.current_vel_np * self.time_step
         self.current_loc_np = self.current_loc_np + displacement_np
         if current_step % self.report_frequency == 0:
-            self.dis_np[current_step - 1, :, :] = displacement_np
+            # Assume cache index was already incremented in the velocity function.
+            self.dis_np[self._curr_cache_index, :, :] = displacement_np
             # Calculate and save position relative to sun.
             sun_pos = self.current_loc_np[0]
             pos_rel_sun_np = self.current_loc_np[:] - sun_pos
-            self.pos_np[current_step - 1, :, :] = pos_rel_sun_np
+            self.pos_np[self._curr_cache_index, :, :] = pos_rel_sun_np
 
 
     def _update_location(self, current_step=0):

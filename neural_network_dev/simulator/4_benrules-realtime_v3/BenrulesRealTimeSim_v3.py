@@ -23,8 +23,11 @@ import tensorflow as tf
 import os
 import h5py
 # Imports for multiprocessing producer/consumer data model.
-from multiprocessing import Process, Queue, Lock, cpu_count
+from multiprocessing import Process, Queue, Lock, cpu_count, Value
 from concurrent.futures import *
+import concurrent.futures.thread
+from threading import Thread
+
 import time
 
 
@@ -271,7 +274,8 @@ class BenrulesRealTimeSim:
                                initial_planet_vel, initial_sat_pos,
                                initial_sat_vel, initial_sat_acc, masses,
                                time_step, nn_path, num_in_steps_lstm,
-                               num_out_steps_lstm, ignore_nn):
+                               num_out_steps_lstm, keep_future_running,
+                               ignore_nn):
         # Load neural net to run inference with.
         neural_net = tf.keras.models.load_model(nn_path)
         # Lists to cache calculations before they are pushed to the queue
@@ -301,6 +305,8 @@ class BenrulesRealTimeSim:
             # Grab initial future and add to lists
             new_planet_pos, new_planet_vel, new_sat_pos, new_sat_vel, \
             new_sat_acc = future.result()
+            # del concurrent.futures.thread._threads_queues[
+            #     list(executor._threads)[0]]
             # Add initialization to the lists
             planet_pos_history.extend(new_planet_pos)
             planet_vel_history.extend(new_planet_vel)
@@ -324,7 +330,7 @@ class BenrulesRealTimeSim:
             )
             pre_q_max_size = 2000
             q_max_size = self._out_queue_max_size
-            while True:
+            while keep_future_running.value == 1:
                 if (len(planet_pos_history) <= pre_q_max_size) and future.done():
                     # Grab results from future and append to lists
                     new_planet_pos, new_planet_vel, new_sat_pos, new_sat_vel, \
@@ -364,15 +370,18 @@ class BenrulesRealTimeSim:
                 # values to the queue.  Will pause here until queue has taken
                 # more values.
                 if (len(planet_pos_history) > pre_q_max_size):
-                    output_list = [
-                        planet_pos_history.pop(0),
-                        planet_vel_history.pop(0),
-                        sat_pos_history.pop(0),
-                        sat_vel_history.pop(0),
-                        sat_acc_history.pop(0)
-                    ]
-                    output_queue.put(output_list)
-
+                    time.sleep(1)
+                    # output_list = [
+                    #     planet_pos_history.pop(0),
+                    #     planet_vel_history.pop(0),
+                    #     sat_pos_history.pop(0),
+                    #     sat_vel_history.pop(0),
+                    #     sat_acc_history.pop(0)
+                    # ]
+                    # output_queue.put(output_list)'
+            executor.shutdown(wait=False)
+            print('Now outside the while loop')
+        print('Now outside the with block')
 
     def _parse_sim_config(self, in_df):
         """
@@ -527,6 +536,7 @@ class BenrulesRealTimeSim:
                   self._nn_path,
                   self._len_lstm_in_seq,
                   self._len_lstm_out_seq,
+                  self._keep_future_running,
                   ignore_nn
                   )
         )
@@ -567,8 +577,11 @@ class BenrulesRealTimeSim:
         self._num_processes = cpu_count()
         # Create processing queues that producer / consumer will take
         # from and fill.
-        self._out_queue_max_size = 1000
+        self._out_queue_max_size = 500
         self._output_queue = Queue(self._out_queue_max_size)
+        # Shared memory space to signal termination of threads when simulator's
+        # destructor is called.
+        self._keep_future_running = Value('I', 1)
         # Test list to append fake processed values to from the producer.
         self._test_output_list = []
         # Setup the initial set of bodies in the simulation by parsing from
@@ -604,6 +617,14 @@ class BenrulesRealTimeSim:
         # Keep track of the latest time step stored in the archive.  Will be
         # used to determine if data from cache actually need flushing.
         self._latest_ts_in_archive = 0
+
+    def __del__(self):
+        print("Destructor Called")
+        self._keep_future_running.value = 0
+        time.sleep(3)
+        print('Now after sleep')
+        self._future_queue_process.terminate()
+        print('Process terminate called.')
 
     def _calc_single_bod_acc_vectorized(self):
         """

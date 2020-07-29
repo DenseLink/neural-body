@@ -19,7 +19,7 @@ def main():
     pause_time_step = 175  # Pause the simulator at this time step and FF or RW
     # Total number of time steps performed by the simulation.
     # Total length of simulation = time_step * number_of_steps.
-    number_of_steps = 20000
+    number_of_steps = 300
 
     # Read simulator and satellite initial state from config .csv file.
     keep_trying_read = True
