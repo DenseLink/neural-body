@@ -76,6 +76,8 @@ def main():
     ))
 
     orbits(screen, num_planets, tail_length, clock, scr_width, scr_height)
+    #TODO: Craig added for troubleshooting.  Remove.
+    print("Out of orbits")
 
 
 def sun(screen, x, y):
@@ -233,11 +235,12 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
           print the trails
     """
     input_text = ""
-    while True:
+    keep_running = True
+    while keep_running:
         past_input = input_text
         textbox_active = 0
         input_text = ""
-        while not (input_text != "" and textbox_active == 0):
+        while (not (input_text != "" and textbox_active == 0)) and keep_running:
 
             pause = 0
             view = 0
@@ -297,7 +300,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
             x_track = [[0] * tail_length for i in range(len(current_positions) + 5)]
             y_track = [[0] * tail_length for i in range(len(current_positions) + 5)]
 
-            while not (input_text != "" and textbox_active == 0):
+            while (not (input_text != "" and textbox_active == 0)) and keep_running:
                 # the functions below will be replaced by neural net output
                 curr_time_step += 1
 
@@ -510,14 +513,20 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
 
                 view = states[1]
                 click_now = states[5]
+                # for event in pygame.event.get():
+                #     if event.type == pygame.QUIT:
+                #         pygame.quit()
+                #         sys.exit()
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
-                        pygame.quit()
-                        sys.exit()
-                pygame.display.flip()
+                        keep_running = False
+                if not keep_running:
+                    pygame.quit()
+                    del simulation
+                else:
+                    pygame.display.flip()
                 # clock.tick(1)  # screen refresh rate
                 time.sleep(0.04)
-
 
 
 def print_key(screen):  # scr_width, scr_height
@@ -1223,3 +1232,5 @@ def menu_text(screen, scr_width, scr_height):
 
 if __name__ == "__main__":
     main()
+    print('out of main')
+    sys.exit()

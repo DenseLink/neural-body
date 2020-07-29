@@ -27,6 +27,8 @@ from multiprocessing import Process, Queue, Lock, cpu_count, Value
 from concurrent.futures import *
 import concurrent.futures.thread
 from threading import Thread
+import threading
+import sys
 
 import time
 
@@ -89,6 +91,7 @@ class BenrulesRealTimeSim:
                                            time_step, neural_net,
                                            num_in_items_seq_lstm,
                                            num_out_seq_lstm,
+                                           result_queue,
                                            ignore_nn=False):
         """
         After getting acceleration from vectorized single_bod_acceleration,
@@ -267,8 +270,120 @@ class BenrulesRealTimeSim:
             new_sat_pos.pop(0)
             new_sat_vel.pop(0)
             new_sat_acc.pop(0)
-
+        #Add reults to the result queue
+        result_list = [new_planet_pos, new_planet_vel, new_sat_pos,
+                       new_sat_vel, new_sat_acc]
+        result_queue.put(result_list)
         return new_planet_pos, new_planet_vel, new_sat_pos, new_sat_vel, new_sat_acc
+
+    # def _maintain_future_cache(self, output_queue, initial_planet_pos,
+    #                            initial_planet_vel, initial_sat_pos,
+    #                            initial_sat_vel, initial_sat_acc, masses,
+    #                            time_step, nn_path, num_in_steps_lstm,
+    #                            num_out_steps_lstm, keep_future_running,
+    #                            ignore_nn):
+    #     # Load neural net to run inference with.
+    #     neural_net = tf.keras.models.load_model(nn_path)
+    #     # Lists to cache calculations before they are pushed to the queue
+    #     planet_pos_history = []
+    #     planet_vel_history = []
+    #     sat_pos_history = []
+    #     sat_vel_history = []
+    #     sat_acc_history = []
+    #
+    #     with ThreadPoolExecutor(max_workers=5) as executor:
+    #         # Initialize all lists with first call to future with the
+    #         # initial simulation values.
+    #         future = executor.submit(
+    #             self._future_compute_new_pos_vectorized,
+    #             initial_planet_pos[-1],
+    #             initial_planet_vel[-1],
+    #             initial_sat_pos[-1],
+    #             initial_sat_vel[-num_in_steps_lstm:],
+    #             initial_sat_acc[-num_in_steps_lstm:],
+    #             masses,
+    #             time_step,
+    #             neural_net,
+    #             num_in_steps_lstm,
+    #             num_out_steps_lstm,
+    #             ignore_nn,
+    #         )
+    #         # Grab initial future and add to lists
+    #         new_planet_pos, new_planet_vel, new_sat_pos, new_sat_vel, \
+    #         new_sat_acc = future.result()
+    #         # Add initialization to the lists
+    #         planet_pos_history.extend(new_planet_pos)
+    #         planet_vel_history.extend(new_planet_vel)
+    #         sat_pos_history.extend(new_sat_pos)
+    #         sat_vel_history.extend(new_sat_vel)
+    #         sat_acc_history.extend(new_sat_acc)
+    #         # Start another future
+    #         future = executor.submit(
+    #             self._future_compute_new_pos_vectorized,
+    #             planet_pos_history[-1],
+    #             planet_vel_history[-1],
+    #             sat_pos_history[-1],
+    #             np.array(sat_vel_history[-num_in_steps_lstm:]),
+    #             np.array(sat_acc_history[-num_in_steps_lstm:]),
+    #             masses,
+    #             time_step,
+    #             neural_net,
+    #             num_in_steps_lstm,
+    #             num_out_steps_lstm,
+    #             ignore_nn
+    #         )
+    #         pre_q_max_size = 2000
+    #         q_max_size = self._out_queue_max_size
+    #         while keep_future_running.value == 1:
+    #             if keep_future_running == 0:
+    #                 break
+    #             if (len(planet_pos_history) <= pre_q_max_size) and future.done():
+    #                 # Grab results from future and append to lists
+    #                 new_planet_pos, new_planet_vel, new_sat_pos, new_sat_vel, \
+    #                 new_sat_acc= future.result()
+    #                 # Extend the current lists
+    #                 planet_pos_history.extend(new_planet_pos)
+    #                 planet_vel_history.extend(new_planet_vel)
+    #                 sat_pos_history.extend(new_sat_pos)
+    #                 sat_vel_history.extend(new_sat_vel)
+    #                 sat_acc_history.extend(new_sat_acc)
+    #                 # Start new future thread to compute more
+    #                 future = executor.submit(
+    #                     self._future_compute_new_pos_vectorized,
+    #                     planet_pos_history[-1],
+    #                     planet_vel_history[-1],
+    #                     sat_pos_history[-1],
+    #                     np.array(sat_vel_history[-num_in_steps_lstm:]),
+    #                     np.array(sat_acc_history[-num_in_steps_lstm:]),
+    #                     masses,
+    #                     time_step,
+    #                     neural_net,
+    #                     num_in_steps_lstm,
+    #                     num_out_steps_lstm,
+    #                     ignore_nn
+    #                 )
+    #             # If the queue needs values, go and keep on pushing values.
+    #             if planet_pos_history and (output_queue.qsize() < q_max_size):
+    #                 # Be careful where we are blocking.  Make sure we will
+    #                 # not be waiting to put item in queue
+    #                 if not output_queue.full():
+    #                     output_list = [
+    #                         planet_pos_history.pop(0),
+    #                         planet_vel_history.pop(0),
+    #                         sat_pos_history.pop(0),
+    #                         sat_vel_history.pop(0),
+    #                         sat_acc_history.pop(0)
+    #                     ]
+    #                     output_queue.put(output_list)
+    #             # If the pre-q filled up, then just keep on trying to push
+    #             # values to the queue.  Will pause here until queue has taken
+    #             # more values.
+    #             if (len(planet_pos_history) > pre_q_max_size):
+    #                 time.sleep(1)
+    #         temp_result = future.result()
+    #         executor.shutdown()
+    #     print('Future cache complete')
+    #     return
 
     def _maintain_future_cache(self, output_queue, initial_planet_pos,
                                initial_planet_vel, initial_sat_pos,
@@ -285,11 +400,12 @@ class BenrulesRealTimeSim:
         sat_vel_history = []
         sat_acc_history = []
 
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            # Initialize all lists with first call to future with the
-            # initial simulation values.
-            future = executor.submit(
-                self._future_compute_new_pos_vectorized,
+        # Create another queue that the computing thread can add to.
+        result_queue = Queue(maxsize=5)
+        # Start a thread to initialize the lists.
+        future = Thread(
+            target=self._future_compute_new_pos_vectorized,
+            args=(
                 initial_planet_pos[-1],
                 initial_planet_vel[-1],
                 initial_sat_pos[-1],
@@ -300,22 +416,28 @@ class BenrulesRealTimeSim:
                 neural_net,
                 num_in_steps_lstm,
                 num_out_steps_lstm,
-                ignore_nn,
-            )
-            # Grab initial future and add to lists
-            new_planet_pos, new_planet_vel, new_sat_pos, new_sat_vel, \
-            new_sat_acc = future.result()
-            del concurrent.futures.thread._threads_queues[
-                list(executor._threads)[0]]
-            # Add initialization to the lists
-            planet_pos_history.extend(new_planet_pos)
-            planet_vel_history.extend(new_planet_vel)
-            sat_pos_history.extend(new_sat_pos)
-            sat_vel_history.extend(new_sat_vel)
-            sat_acc_history.extend(new_sat_acc)
-            # Start another future
-            future = executor.submit(
-                self._future_compute_new_pos_vectorized,
+                result_queue,
+                ignore_nn
+            ),
+            daemon=True
+        )
+        future.start()
+        # Wait for initial thread to complete.
+        future.join()
+        # Get results from the result queue
+        results = result_queue.get()
+        # Add initialization to the lists
+        planet_pos_history.extend(results[0])
+        planet_vel_history.extend(results[1])
+        sat_pos_history.extend(results[2])
+        sat_vel_history.extend(results[3])
+        sat_acc_history.extend(results[4])
+        # Terminate current thread
+        #del future
+        # Start another thread and run the main process loop
+        future = Thread(
+            target=self._future_compute_new_pos_vectorized,
+            args=(
                 planet_pos_history[-1],
                 planet_vel_history[-1],
                 sat_pos_history[-1],
@@ -326,24 +448,33 @@ class BenrulesRealTimeSim:
                 neural_net,
                 num_in_steps_lstm,
                 num_out_steps_lstm,
+                result_queue,
                 ignore_nn
-            )
-            pre_q_max_size = 2000
-            q_max_size = self._out_queue_max_size
-            while keep_future_running.value == 1:
-                if (len(planet_pos_history) <= pre_q_max_size) and future.done():
-                    # Grab results from future and append to lists
-                    new_planet_pos, new_planet_vel, new_sat_pos, new_sat_vel, \
-                    new_sat_acc= future.result()
-                    # Extend the current lists
-                    planet_pos_history.extend(new_planet_pos)
-                    planet_vel_history.extend(new_planet_vel)
-                    sat_pos_history.extend(new_sat_pos)
-                    sat_vel_history.extend(new_sat_vel)
-                    sat_acc_history.extend(new_sat_acc)
-                    # Start new future thread to compute more
-                    future = executor.submit(
-                        self._future_compute_new_pos_vectorized,
+            ),
+            daemon=True
+        )
+        future.start()
+        # Run main program loop that generates threads
+        pre_q_max_size = 2000
+        q_max_size = self._out_queue_max_size
+        while keep_future_running.value == 1:
+            if keep_future_running == 0:
+                break
+            if (len(planet_pos_history) <= pre_q_max_size) and (not future.is_alive()):
+                # Make sure the thread completes execution
+                future.join()
+                # Get results from the result queue
+                results = result_queue.get()
+                # Add results to the history lists
+                planet_pos_history.extend(results[0])
+                planet_vel_history.extend(results[1])
+                sat_pos_history.extend(results[2])
+                sat_vel_history.extend(results[3])
+                sat_acc_history.extend(results[4])
+                # Start new future thread to compute more
+                future = Thread(
+                    target=self._future_compute_new_pos_vectorized,
+                    args=(
                         planet_pos_history[-1],
                         planet_vel_history[-1],
                         sat_pos_history[-1],
@@ -354,10 +485,17 @@ class BenrulesRealTimeSim:
                         neural_net,
                         num_in_steps_lstm,
                         num_out_steps_lstm,
+                        result_queue,
                         ignore_nn
-                    )
-                # If the queue needs values, go and keep on pushing values.
-                if planet_pos_history and (output_queue.qsize() < q_max_size):
+                    ),
+                    daemon=True
+                )
+                future.start()
+            # If the queue needs values, go and keep on pushing values.
+            if planet_pos_history and (output_queue.qsize() < q_max_size):
+                # Be careful where we are blocking.  Make sure we will
+                # not be waiting to put item in queue
+                if not output_queue.full():
                     output_list = [
                         planet_pos_history.pop(0),
                         planet_vel_history.pop(0),
@@ -366,22 +504,31 @@ class BenrulesRealTimeSim:
                         sat_acc_history.pop(0)
                     ]
                     output_queue.put(output_list)
-                # If the pre-q filled up, then just keep on trying to push
-                # values to the queue.  Will pause here until queue has taken
-                # more values.
-                if (len(planet_pos_history) > pre_q_max_size):
-                    time.sleep(1)
-                    # output_list = [
-                    #     planet_pos_history.pop(0),
-                    #     planet_vel_history.pop(0),
-                    #     sat_pos_history.pop(0),
-                    #     sat_vel_history.pop(0),
-                    #     sat_acc_history.pop(0)
-                    # ]
-                    # output_queue.put(output_list)'
-            executor.shutdown(wait=False)
-            print('Now outside the while loop')
-        print('Now outside the with block')
+            # If the pre-q filled up, then just keep on trying to push
+            # values to the queue.  Will pause here until queue has taken
+            # more values.
+            if (len(planet_pos_history) > pre_q_max_size):
+                time.sleep(1)
+        # Flush the entire result queue so background threads can terminate.
+        try:
+            while not result_queue.empty():
+                temp = result_queue.get_nowait()
+        except:
+            print("Exception!")
+
+        # If at this point, main loop broke.  Join rest of threads.
+        future.join()
+        print("Threads in background")
+        main_thread = threading.current_thread()
+        for t in threading.enumerate():
+            if t is main_thread:
+                continue
+            print(t.getName())
+            #t.join()
+        print()
+        print('Future cache complete')
+        return
+
 
     def _parse_sim_config(self, in_df):
         """
@@ -618,12 +765,24 @@ class BenrulesRealTimeSim:
         self._latest_ts_in_archive = 0
 
     def __del__(self):
-        print("Destructor Called")
+        print('simulator deconstructor called')
         self._keep_future_running.value = 0
-        time.sleep(3)
-        print('Now after sleep')
+        print('Set background loop condition')
+        # Flush the entire output queue so background process can terminate.
+        print('Flushing the output queue')
+        try:
+            while not self._output_queue.empty():
+                temp = self._output_queue.get_nowait()
+        except:
+            print("Exception!")
+
         self._future_queue_process.terminate()
-        print('Process terminate called.')
+        print('Attempted to terminate background process.')
+        # if self._future_queue_process.is_alive():
+        #     print('attempting to join process')
+        #     self._future_queue_process.join()
+        #     print('process joined')
+
         return
 
     def _calc_single_bod_acc_vectorized(self):
