@@ -574,7 +574,20 @@ class BenrulesRealTimeSim:
         #                  np.float64(satellite_page["VZStart"][0])]
         #    )
 
-            # Populate satellite maneuver matrices
+            # Populate satellite manuever list
+        #    sat_mans = []
+        #    for index, maneuver in enumerate(satellite_page["MStart"]):
+        #        sat_mans.append(
+        #            [maneuver,
+        #            np.array(
+        #                [np.float64(satellite_page["DeltaVX"][index]),
+        #                np.float64(satellite_page["DeltaVY"][index]),
+        #                np.float64(satellite_page["DeltaVZ"][index])]
+        #            )]
+        #        )
+        #    read_sat_mans.append(sat_mans)
+
+            # Populate satellite maneuver matrix
         #    satellite_maneuvers_raw = []
         #    satellite_maneuvers_raw.append(satellite_page["MStart"])
         #    satellite_maneuvers_raw.append(satellite_page["DeltaVX"])
