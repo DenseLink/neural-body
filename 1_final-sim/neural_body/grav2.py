@@ -5,6 +5,7 @@ import numpy as np
 from neural_body.BenrulesRealTimeSim_v3 import BenrulesRealTimeSim
 import os
 import time
+import tkinter as tk
 
 # Set audio driver to avoid ALSA errors
 os.environ['SDL_AUDIODRIVER'] = 'dsp'
@@ -73,6 +74,7 @@ def main():
         int(502),
         int(142)
     ))
+
     orbits(screen, num_planets, tail_length, clock, scr_width, scr_height)
 
 
@@ -850,7 +852,9 @@ def menu(screen, states, scr_width, scr_height, numDays):
 
                 for event in events:
                     if event.type == pygame.KEYDOWN:
+                        err_msg = ""
                         if input_active == 1:
+
                             if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
                                 time_step = 86400 * speed
                                 try:
@@ -864,13 +868,8 @@ def menu(screen, states, scr_width, scr_height, numDays):
                                     valid_File = 2
                                     print("An error is thrown, v = 2")
                                     input_text = ""
-                                    text_handler(screen,
-                                                 "Invalid file, please try "
-                                                 "again!",
-                                                 int(scr_width / 2.6) + 10,
-                                                 int(scr_height / 1.9) + 10,
-                                                 12,
-                                                 255)
+                                    err_msg = "Invalid file, please try again!"
+
                                 else:
                                     valid_File = 1
                                     print("Is a valid file, v = 1")
@@ -879,8 +878,34 @@ def menu(screen, states, scr_width, scr_height, numDays):
                                     pause = 0
                             elif event.key == pygame.K_BACKSPACE:
                                 input_text = input_text[:-1]
+                                err_msg = ""
+                                pygame.display.update(pygame.Rect(
+                                    int(scr_width / 2.6) + 10,
+                                    int(scr_height / 1.9) + 9,
+                                    10,
+                                    20
+                                ))
                             else:
                                 input_text += event.unicode
+                                err_msg = ""
+                                pygame.display.update(pygame.Rect(
+                                    int(scr_width / 2.6) + 10,
+                                    int(scr_height / 1.9) + 9,
+                                    10,
+                                    20
+                                ))
+                            keys = pygame.key.get_pressed()
+                            if (keys[pygame.K_RCTRL] or keys[pygame.K_LCTRL]) and keys[pygame.K_v]:
+                                root = tk.Tk()
+                                # keep the window from showing
+                                root.withdraw()
+                                input_text += root.clipboard_get()
+                        text_handler(screen,
+                                     err_msg,
+                                     int(scr_width / 2.6) + 10,
+                                     int(scr_height / 1.9) + 9,
+                                     20,
+                                     255)
                 if valid_File != 1:
                     text_handler(screen, input_text + "|",
                                  int(scr_width / 2.51) + 3,
@@ -888,7 +913,10 @@ def menu(screen, states, scr_width, scr_height, numDays):
                 # if valid_File == 2:
 
         else:
-            text_handler(screen, input_text, int(scr_width / 2.51) + 3,
+            temp_text = input_text
+            if len(input_text) > 30:
+                temp_text = input2_text[-30:]
+            text_handler(screen, temp_text, int(scr_width / 2.51) + 3,
                          int(scr_height / 2.17) + 3, 30, 255)
 
     if input2_active == 1:
@@ -1011,10 +1039,20 @@ def menu(screen, states, scr_width, scr_height, numDays):
                                 pause = 0
 
                         elif event.key == pygame.K_BACKSPACE:
-                            input2_text = input_text[:-1]
+                            input2_text = input2_text[:-1]
                         else:
                             input2_text += event.unicode
-            text_handler(screen, input2_text + "|", int(scr_width / 2.51) + 3,
+                        keys = pygame.key.get_pressed()
+                        if (keys[pygame.K_RCTRL] or keys[pygame.K_LCTRL]) and \
+                                keys[pygame.K_v]:
+                            root = tk.Tk()
+                            # keep the window from showing
+                            root.withdraw()
+                            input2_text += root.clipboard_get()
+            temp_text = input2_text
+            if len(input2_text) > 30:
+                temp_text = input2_text[-30:]
+            text_handler(screen, temp_text + "|", int(scr_width / 2.51) + 3,
                          int(scr_height / 2.17) + 3, 30, 255)
         else:
             text_handler(screen, input2_text, int(scr_width / 2.51) + 3,
