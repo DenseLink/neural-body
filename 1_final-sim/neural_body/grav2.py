@@ -2,8 +2,9 @@ import pygame
 import sys
 import pandas as pd
 import numpy as np
-from neural_body.BenrulesRealTimeSim_v2 import BenrulesRealTimeSim
+from neural_body.BenrulesRealTimeSim_v3 import BenrulesRealTimeSim
 import os
+import time
 
 # Set audio driver to avoid ALSA errors
 os.environ['SDL_AUDIODRIVER'] = 'dsp'
@@ -50,6 +51,28 @@ def main():
     # trackers for the planet trails
     num_planets = 13
     tail_length = 150
+
+    pygame.draw.rect(screen,
+                     (255, 255, 255),
+                     pygame.Rect(
+                         int(250),
+                         int(260),
+                         int(500),
+                         int(140)
+                     ),
+                     2)
+    text_handler(screen,
+                 'Loading, Please Wait...',
+                 int(305),
+                 int(310),
+                 35,
+                 255)
+    pygame.display.update(pygame.Rect(
+        int(250),
+        int(260),
+        int(502),
+        int(142)
+    ))
     orbits(screen, num_planets, tail_length, clock, scr_width, scr_height)
 
 
@@ -499,7 +522,9 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                         pygame.quit()
                         sys.exit()
                 pygame.display.flip()
-                clock.tick(60)  # screen refresh rate
+                # clock.tick(1)  # screen refresh rate
+                time.sleep(0.04)
+
 
 
 def print_key(screen):  # scr_width, scr_height
