@@ -9,8 +9,8 @@ from random import randint
 def main():
     # Setup simulation settings
     time_step = 720
-    number_of_steps = 220000
-    report_frequency = 5
+    number_of_steps = 1200000
+    report_frequency = 30
 
     # Grab a random state of the universe to start from.
     # Read in the binary numpy files storing the acceleration,

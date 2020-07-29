@@ -566,7 +566,6 @@ class BenrulesRealTimeSim:
         nn_name = 'my_model 99_95 8532.h5'
         self._nn_path = self._current_working_directory + "/nn/" + nn_name
         # Create neural net to use with future queue process
-        # self._nn2 = self._NeuralNetMulti(model_path=self._nn_path)
         # Since we are using an LSTM network, we will need to initialize the
         # the length of the sequence necessary for input into the LSTM.
         self._len_lstm_in_seq = 4
