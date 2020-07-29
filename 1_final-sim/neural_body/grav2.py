@@ -280,6 +280,8 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                            "/sim_configs/sat1_sim_config.csv"
             if past_input != "":
                 start_string = past_input
+                #del simulation
+                #TODO: Add delete statement to clear out any previous simulations.
             simulation = BenrulesRealTimeSim(
                 time_step=time_step,
                 in_config_df=pd.read_csv(start_string)
@@ -404,6 +406,8 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                     pygame.draw.circle(screen, (100, 50, 220), [scaled_x_pos[6], scaled_y_pos[6]], 5)
                     pygame.draw.circle(screen, (73, 155, 55), [scaled_x_pos[7], scaled_y_pos[7]], 5)
                     pygame.draw.circle(screen, (55, 75, 95), [scaled_x_pos[9], scaled_y_pos[9]], 5)
+                    pygame.draw.circle(screen, (55, 75, 95), [scaled_x_pos[10], scaled_y_pos[10]], 5)
+                    pygame.draw.circle(screen, (55, 75, 95), [scaled_x_pos[10], scaled_y_pos[10]], 5)
                     if nasa == "No":
                         pygame.draw.circle(screen, (255, 102, 255), [scaled_x_pos[8], scaled_y_pos[8]],
                                            5)

@@ -529,7 +529,7 @@ class BenrulesRealTimeSim:
         print('Future cache complete')
         return
 
-    def _parse_sim_config(self, sat_config_file, in_df):
+    def _parse_sim_config(self, sat_config_file=None, in_df=None):
         """
         Function to convert
 
@@ -788,7 +788,7 @@ class BenrulesRealTimeSim:
         self._test_output_list = []
         # Setup the initial set of bodies in the simulation by parsing from
         # config dataframe.
-        self._parse_sim_config(in_config_df)
+        self._parse_sim_config(in_df=in_config_df)
 
         # Create archive file to store sim data with necessary datasets and
         # and groups.
