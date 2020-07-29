@@ -553,19 +553,26 @@ class BenrulesRealTimeSim:
         read_sat_mans = []
 
         # Load satellite config
-        #config = read_excel(sat_config_file, sheet_name=None):
+        #config = pd.read_excel(sat_config_file, sheet_name=None):
         #for satellite_page in config.values():
 
-            # Load initial values
+        # Load initial values
         #    read_sat_names.append(
-        #        str(satellite_page["Name"][0]))
+        #        str(satellite_page["Name"][0])
+        #    )
         #    read_sat_masses.append(
-        #        np.array([np.float64(satellite_page["Mass"][0])]))
-            # TODO: START LOCATION BASED ON ALTITUDE read_sat_masses.append()
+        #        np.array([np.float64(satellite_page["Mass"][0])])
+        #    )
+        #    read_sat_masses.append(
+        #        np.array([np.float64(0),
+        #                  np.float64(satellite_page["Altitude"][0]),
+        #                  np.float64(0)]
+        #    )
         #    read_sat_masses.append(
         #        np.array([np.float64(satellite_page["VXStart"][0]),
         #                  np.float64(satellite_page["VYStart"][0]),
-        #                  np.float64(satellite_page["VZStart"][0])])
+        #                  np.float64(satellite_page["VZStart"][0])]
+        #    )
 
             # Populate satellite maneuver matrices
         #    satellite_maneuvers_raw = []
