@@ -576,7 +576,7 @@ class BenrulesRealTimeSim:
         self._num_processes = cpu_count()
         # Create processing queues that producer / consumer will take
         # from and fill.
-        self._out_queue_max_size = 500
+        self._out_queue_max_size = 100
         self._output_queue = Queue(self._out_queue_max_size)
         # Shared memory space to signal termination of threads when simulator's
         # destructor is called.
@@ -983,6 +983,8 @@ class BenrulesRealTimeSim:
             self._sat_pos_cache[self._curr_cache_index, :, :] = next_state[2]
             self._sat_vel_cache[self._curr_cache_index, :, :] = next_state[3]
             self._sat_acc_cache[self._curr_cache_index, :, :] = next_state[4]
+            # Increase the current cache size.
+            self._curr_cache_size += 1
             # Create one numpy array with all body position data to return.
             simulation_positions = np.concatenate(
                 (self._planet_pos_cache[self._curr_cache_index],
@@ -1001,7 +1003,7 @@ class BenrulesRealTimeSim:
                 (self._current_time_step in range(
                     self._latest_ts_in_cache - self._curr_cache_size
                     + self._len_lstm_in_seq + 1,
-                    self._latest_ts_in_cache +1
+                    self._latest_ts_in_cache + 1
                 )):
             # If the current time step is in the range of time steps in the
             # cache, we can assume that we can calculate the index in the

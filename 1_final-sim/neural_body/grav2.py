@@ -2,7 +2,8 @@ import pygame
 import sys
 import pandas as pd
 import numpy as np
-from neural_body.BenrulesRealTimeSim_v3 import BenrulesRealTimeSim
+#from neural_body.BenrulesRealTimeSim_v3 import BenrulesRealTimeSim
+from BenrulesRealTimeSim_v3 import BenrulesRealTimeSim
 import os
 import time
 import tkinter as tk
