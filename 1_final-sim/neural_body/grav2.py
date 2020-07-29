@@ -2,8 +2,7 @@ import pygame
 import sys
 import pandas as pd
 import numpy as np
-#from neural_body.BenrulesRealTimeSim_v3 import BenrulesRealTimeSim
-from BenrulesRealTimeSim_v3 import BenrulesRealTimeSim
+from neural_body.BenrulesRealTimeSim_v3 import BenrulesRealTimeSim
 import os
 import time
 import tkinter as tk
@@ -82,12 +81,9 @@ def main():
 def sun(screen, x, y):
     """
         Function to place the sun image on the screen
-
         A simple function for loading the sun image and placing it on the
         screen at a given coordinate. The size is static
-
         **List of input parameters:**
-
         :param screen: window created by pygame used to display application
         :param x: the integer x-coordinate pixel value where the sun should be
             placed
@@ -104,7 +100,6 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
     """
         Function that runs the simulation. Handles function calls to display
         all visual elements and determine orbital locations.
-
         This class operates as the master of the program, containing the
         infinite loop that the program relies on in order to function. All
         important interactions between the various components of the program
@@ -112,7 +107,6 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
         reside within it. Because global variables are not used, this class
         acts as an intermediate to pass variables as parameters and receive
         them back as returned values.
-
         Methods used:
         - pygame.draw.circle - replicates the planets drawn on the screen
         - text_handler - names each of the replicated planets
@@ -138,9 +132,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
         - pygame.display.flip() - method to refresh the pygame display
         - clock.tick(60) - method used to set a frame rate of 60 frames per
           second
-
         **List of input parameters:**
-
         :param num_planets: Int representing the number of planet bodies on the
             entire screen, inner planets view + solar system view
         :param tail_length: Int representing the length of the tail to follow
@@ -149,9 +141,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
         :param screen: window created by pygame used to display application
         :param scr_width: An in that represents the width of the screen
         :param scr_height: An int that represents the height of the screen
-
         **List of internal variables:**
-
         - input_text - string containing user-entered filepath for a new init
           file
         - past_input - string used to store input_text between when it is reset
@@ -533,12 +523,9 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
 def print_key(screen):  # scr_width, scr_height
     """
         Method to display a planet key
-
         Method that displays a key of planet colors and names when selected in
         order to aid in user planet idenntification
-
         **List of input parameters:**
-
         :param screen: window created by pygame used to display application
     """
     pygame.draw.circle(screen, (255, 255, 0), [850, 70], 4)
@@ -567,15 +554,11 @@ def menu(screen, states, scr_width, scr_height, numDays):
         menu. If mouse is hovering over menu item the text for that menu item
         will change from grey to white. If clicked on or hovered over, menu
         item will activate.
-
         **Methods used:**
-
         - text_handler - displays text on the screen
         - pygame.draw - draws rectangles on the screen to separate parts of
           the application.
-
         **List of input parameters:**
-
         :param screen: window created by pygame used to display application
         :param states: A list of the current states of the system, see list
             of states below
@@ -583,9 +566,7 @@ def menu(screen, states, scr_width, scr_height, numDays):
         :param scr_height: An int that represents the height of the screen
         :param numDays: An int that represents how many Earth days have passed
             in the simulation
-
         **List of Menu Selection Areas:**
-
         - play_pause - List that contains the length and width parameters
             for the play/pause menu option
         - toggle - List that contains the length and width parameters for
@@ -600,9 +581,7 @@ def menu(screen, states, scr_width, scr_height, numDays):
             parameters for the display key menu option
         - day_select - List that contains the length and width parameters
             for the point in time selection menu option
-
         **List of states of the application:**
-
         - pause - An int that specifies whether or not the simulation runs,
             0 means it's running, 1 means it is paused
         - view - An int that determines what view is displayed, 0 for
@@ -624,7 +603,6 @@ def menu(screen, states, scr_width, scr_height, numDays):
             textbox is showing, 0 means no, 1 means yes
         - input2_text - String that determines what day will be traveled
             to after the travel to day is determined
-
         :return: returns the above list of states to feed information to the
             program for control of specific features
     """
@@ -1067,19 +1045,14 @@ def menu(screen, states, scr_width, scr_height, numDays):
 def click_handler(click_now):
     """
         Function to capture characteristics of user clicks
-
         Function to easily capture mouse location and actions. click_now is
         used to prevent clicks from being repeated each time the simulation
         screen is re-rendered.
-
         **List of input parameters:**
-
         :param click_now: contains an integer of either 0 or 1 that denotes
             whether or not the mouse was pressed down during the previous
             program cycle in order to handle sustained presses
-
         **List of returned values:**
-
         :returns:
         - action_flag - Flag is set to 0 if the click is a continued press,
           1 if the click is new
@@ -1102,13 +1075,10 @@ def click_handler(click_now):
 def text_handler(screen, text, scr_x, scr_y, size, color):
     """
         Function to place text on the screen at a desired location
-
         Function to place custom text on the screen at any desired location.
         The color of the text is currently restricted to shades of grey and
         white to match the visual theme we are pursuing.
-
         **List of input parameters:**
-
         :param screen: the usable area for drawing within the application
             window
         :param text: string of text to be displayed on the screen. One line
@@ -1132,14 +1102,11 @@ def text_handler(screen, text, scr_x, scr_y, size, color):
 def boxes(screen, scr_width, scr_height):
     """
         Function that places UI divider boxes on the screen
-
         Function to draw the boundries of the three areas of the application.
         These being the menu, solar system view, and inner planet view. These
         views are static and rendered first, putting them at the bottom of the
         visual instnaces
-
         **List of input parameters:**
-
         :param screen: the usable area for drawing within the application
             window
         :param scr_width: the width of the screen in pixels. This will always
@@ -1181,13 +1148,10 @@ def boxes(screen, scr_width, scr_height):
 def menu_text(screen, scr_width, scr_height):
     """
         Function to place menu option text on the screen
-
         Function to display the base text of the menu on the screen. All
         values start out as light grey but are overlaid with
         white text by another method when moused over
-
         **List of input parameters:**
-
         :param screen: the usable area for drawing within the application
             window
         :param scr_width: the width of the screen in pixels. This will always
