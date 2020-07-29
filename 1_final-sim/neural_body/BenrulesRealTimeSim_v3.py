@@ -529,11 +529,11 @@ class BenrulesRealTimeSim:
         print('Future cache complete')
         return
 
-
-    def _parse_sim_config(self, in_df):
+    def _parse_sim_config(self, sat_config_file, in_df):
         """
         Function to convert
 
+        :param sat_config_file: Filename of config file containing satellite parameters.
         :param in_df: Dataframe containing the simulation configuration.
         :return: list of Body objects with name, mass, location, and initial
             velocity set.
@@ -550,27 +550,63 @@ class BenrulesRealTimeSim:
         read_sat_masses = []
         read_planet_names = []
         read_sat_names = []
+        read_sat_mans = []
+
+        # Load satellite config
+        config = read_excel(sat_config_file, sheet_name=None):
+        for satellite_page in config.values():
+
+            # Load initial values
+            read_sat_names.append(
+                str(satellite_page["Name"][0]))
+            read_sat_masses.append(
+                np.array([np.float64(satellite_page["Mass"][0])]))
+            # TODO: START LOCATION BASED ON ALTITUDE read_sat_masses.append()
+            read_sat_masses.append(
+                np.array([np.float64(satellite_page["VXStart"][0]),
+                          np.float64(satellite_page["VYStart"][0]),
+                          np.float64(satellite_page["VZStart"][0])])
+
+            # Populate satellite maneuver matrices
+            satellite_maneuvers_raw = []
+            satellite_maneuvers_raw.append(satellite_page["MStart"])
+            satellite_maneuvers_raw.append(satellite_page["DeltaVX"])
+            satellite_maneuvers_raw.append(satellite_page["DeltaVY"])
+            satellite_maneuvers_raw.append(satellite_page["DeltaVZ"])
+            satellite_maneuvers_count = satellite_maneuvers_raw[0][len(satellite_maneuvers_raw[0]) - 1] + 1
+            satellite_maneuvers = dok_matrix((satellite_maneuvers_count, 3), dtype=np.float32)
+
+            for index, maneuver in enumerate(satellite_maneuvers_raw[0]):
+                satellite_maneuvers[maneuver, 0] = satellite_maneuvers_raw[1][index]
+                satellite_maneuvers[maneuver, 1] = satellite_maneuvers_raw[2][index]
+                satellite_maneuvers[maneuver, 2] = satellite_maneuvers_raw[3][index]
+
+            read_sat_mans.append(satellite_maneuvers)
+
+
+        # Load planet configs
         for index, row in in_df.iterrows():
             # Check if satellite or other.
             # If satellite, then set predicting name to choose the right
             # neural network.
-            if row["satellite?"] == "yes":
-                self._satellite_predicting_name = str(row["body_name"])
-                read_sat_pos.append(
-                    np.array([np.float64(row["location_x"]),
-                              np.float64(row["location_y"]),
-                              np.float64(row["location_z"])])
-                )
-                read_sat_vel.append(
-                    np.array([np.float64(row["velocity_x"]),
-                              np.float64(row["velocity_y"]),
-                              np.float64(row["velocity_z"])])
-                )
-                read_sat_masses.append(
-                    np.array([np.float64(row["body_mass"])])
-                )
-                read_sat_names.append(str(row["body_name"]))
-            else:
+            #if row["satellite?"] == "yes":
+                #self._satellite_predicting_name = str(row["body_name"])
+                #read_sat_pos.append(
+                #    np.array([np.float64(row["location_x"]),
+                #              np.float64(row["location_y"]),
+                #              np.float64(row["location_z"])])
+                #)
+                #read_sat_vel.append(
+                #    np.array([np.float64(row["velocity_x"]),
+                #              np.float64(row["velocity_y"]),
+                #              np.float64(row["velocity_z"])])
+                #)
+                #read_sat_masses.append(
+                #    np.array([np.float64(row["body_mass"])])
+                #)
+                #read_sat_names.append(str(row["body_name"]))
+            #else:
+            if row["satellite?"] != "yes":
                 read_planet_pos.append(
                     np.array([np.float64(row["location_x"]),
                               np.float64(row["location_y"]),
