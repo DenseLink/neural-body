@@ -375,17 +375,17 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                     0]) / zoom + sunx
                 scaled_y_pos = (current_positions[:, 1] - current_positions[0][
                     1]) / zoom + suny
-                scaled_xi_pos = (current_positions[1:5, 0] - current_positions[0][
+                scaled_xi_pos = (current_positions[:, 0] - current_positions[0][
                     0]) / zoom_i * 8 + sun_i_x
-                scaled_yi_pos = (current_positions[1:5, 1] - current_positions[0][
+                scaled_yi_pos = (current_positions[:, 1] - current_positions[0][
                     0]) / zoom_i * 8 + sun_i_y
 
-                scaled_x_pos = np.append(scaled_x_pos,scaled_xi_pos)
-                scaled_y_pos = np.append(scaled_y_pos,scaled_yi_pos)
+                #scaled_x_pos = np.append(scaled_x_pos,scaled_xi_pos)
+                #scaled_y_pos = np.append(scaled_y_pos,scaled_yi_pos)
 
 
-                scaled_x_pos = scaled_x_pos.astype(int)
-                scaled_y_pos = scaled_y_pos.astype(int)
+                scaled_x_pos = scaled_xi_pos.astype(int)
+                scaled_y_pos = scaled_yi_pos.astype(int)
                 scaled_xi_pos = scaled_xi_pos.astype(int)
                 scaled_yi_pos = scaled_yi_pos.astype(int)
 
@@ -401,7 +401,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 if pause == 0:
                     # shifts all data points within the lists to the left to
                     # make room for the new trail data point
-                    for j in range(0, len(x_track) - 1):
+                    for j in range(0, len(scaled_x_pos) - 1):
                         for i in range(0, tail_length - 1):
                             x_track[j][i] = x_track[j][i + 1]
                             y_track[j][i] = y_track[j][i + 1]
@@ -417,15 +417,35 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                             for j in range(1, tail_length - 1):
                                 i = tail_length - j
                                 if x_track[k][j - 1] != 0:
+                                    if abs(x_track[k][j] - sun_i_x) < 125 and abs(
+                                            y_track[k][j] - sun_i_y) < 125:
+                                        pygame.draw.line(
+                                            screen,
+                                            (255 - 255 * (i / tail_length),
+                                             255 - 255 * (i / tail_length),
+                                             255 - 255 * (i / tail_length)),
+                                            [x_track[k][j], y_track[k][j]],
+                                            [x_track[k][j - 1], y_track[k][j - 1]],
+                                            1)
                                     pygame.draw.line(
                                         screen,
                                         (255 - 255 * (i / tail_length),
                                          255 - 255 * (i / tail_length),
                                          255 - 255 * (i / tail_length)),
-                                        [x_track[k][j], y_track[k][j]],
-                                        [x_track[k][j - 1], y_track[k][j - 1]],
+                                        [(x_track[k][j] - sun_i_x)/8 + sunx, (y_track[k][j] - sun_i_y)/8 + suny],
+                                        [(x_track[k][j - 1] - sun_i_x)/8 + sunx, (y_track[k][j - 1] - sun_i_y)/8 + suny],
                                         1)
-
+                    for k in range(len(scaled_x_pos) - 1):
+                        pygame.draw.circle(screen, (75, 75, 255),
+                                           [(scaled_x_pos[k] - sun_i_x)/8 + sunx,
+                                            (scaled_y_pos[k] - sun_i_y)/8 + suny],
+                                           2)
+                        if abs(scaled_x_pos[k] - sun_i_x) < 125 and abs(scaled_y_pos[k] - sun_i_y) < 125:
+                            pygame.draw.circle(screen, (75, 75, 255),
+                                               [scaled_x_pos[k] ,
+                                                scaled_y_pos[k]],
+                                               5)
+                    """
                     pygame.draw.circle(screen, (0, 255, 0),
                                        [scaled_x_pos[1], scaled_y_pos[1]], 2)
                     pygame.draw.circle(screen, (255, 255, 0), [scaled_x_pos[2], scaled_y_pos[2]], 2)
@@ -448,7 +468,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                     pygame.draw.circle(screen, (0, 255, 255), [scaled_xi_pos[1], scaled_yi_pos[1]], 5)
                     pygame.draw.circle(screen, (255, 255, 255), [scaled_xi_pos[2], scaled_yi_pos[2]], 5)
                     pygame.draw.circle(screen, (0, 255, 0), [scaled_xi_pos[3], scaled_yi_pos[3]], 5)
-
+                    """
                 else:
                     pygame.draw.circle(
                         screen, (255, 255, 0), [scaled_x_pos[2], suny], 5
@@ -477,6 +497,8 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                     if nasa == "No":
                         pygame.draw.circle(screen, (255, 102, 255),
                                            [scaled_x_pos[8], suny], 5)
+
+
 
                     pygame.draw.circle(screen, (255, 255, 0), [scaled_xi_pos[1], sun_i_y],
                                        5)
@@ -565,7 +587,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 else:
                     pygame.display.flip()
                 # clock.tick(1)  # screen refresh rate
-                time.sleep(0.04)
+                time.sleep(1 / simulation.max_fps)
 
 
 def print_key(screen):  # scr_width, scr_height
