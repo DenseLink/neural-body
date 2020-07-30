@@ -282,7 +282,35 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
             if past_input != "":
                 start_string = past_input
                 del simulation
-                #TODO: Add delete statement to clear out any previous simulations.
+                pygame.draw.rect(screen,
+                                 (0, 0, 0),
+                                 pygame.Rect(
+                                     int(scr_width / 2.6),
+                                     int(scr_height / 2.7),
+                                     int(scr_width / 1.8),
+                                     int(scr_height / 5)
+                                 ))
+                pygame.draw.rect(screen,
+                                 (255, 255, 255),
+                                 pygame.Rect(
+                                     int(scr_width / 2.6),
+                                     int(scr_height / 2.7),
+                                     int(scr_width / 1.8),
+                                     int(scr_height / 5)
+                                 ),
+                                 2)
+                text_handler(screen,
+                             'Processing, Please wait',
+                             int(scr_width / 2.2),
+                             int(scr_height / 2.2),
+                             35,
+                             255)
+                pygame.display.update(pygame.Rect(
+                    int(scr_width / 2.6),
+                    int(scr_height / 2.7),
+                    int(scr_width / 1.8),
+                    int(scr_height / 5)
+                ))
             simulation = BenrulesRealTimeSim(
                 time_step=time_step,
                 in_config_df=pd.read_csv(start_string)
@@ -502,8 +530,14 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                     text_handler(screen,
                                  'Processing, Please wait',
                                  int(scr_width / 2.2),
-                                 int(scr_height / 2.2),
+                                 int(scr_height / 2.28),
                                  35,
+                                 255)
+                    text_handler(screen,
+                                 '(Press ESC to Cancel)',
+                                 int(scr_width / 1.83),
+                                 int(scr_height / 1.95),
+                                 20,
                                  255)
                     pygame.display.update(pygame.Rect(
                         int(scr_width / 2.6),
