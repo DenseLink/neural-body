@@ -457,69 +457,29 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                                                    [scaled_x_pos[k] ,
                                                     scaled_y_pos[k]],
                                                    5)
-                    """
-                    pygame.draw.circle(screen, (0, 255, 0),
-                                       [scaled_x_pos[1], scaled_y_pos[1]], 2)
-                    pygame.draw.circle(screen, (255, 255, 0), [scaled_x_pos[2], scaled_y_pos[2]], 2)
-                    pygame.draw.circle(screen, (0, 255, 255), [scaled_x_pos[3], scaled_y_pos[3]], 2)
-                    pygame.draw.circle(screen, (255, 255, 255), [scaled_x_pos[4], scaled_y_pos[4]], 2)
-                    pygame.draw.circle(screen, (255, 0, 0), [scaled_x_pos[5], scaled_y_pos[5]], 5)
-                    pygame.draw.circle(screen, (100, 50, 220), [scaled_x_pos[6], scaled_y_pos[6]], 5)
-                    pygame.draw.circle(screen, (73, 155, 55), [scaled_x_pos[7], scaled_y_pos[7]], 5)
-                    pygame.draw.circle(screen, (55, 75, 95), [scaled_x_pos[9], scaled_y_pos[9]], 5)
-                    pygame.draw.circle(screen, (55, 75, 95), [scaled_x_pos[10], scaled_y_pos[10]], 5)
-                    pygame.draw.circle(screen, (55, 75, 95), [scaled_x_pos[11], scaled_y_pos[11]], 5)
-                    if nasa == "No":
-                        pygame.draw.circle(screen, (255, 102, 255), [scaled_x_pos[8], scaled_y_pos[8]],
-                                           5)
-                    pygame.draw.circle(screen, (55, 75, 95),
-                                       [scaled_x_pos[10], scaled_y_pos[10]], 5)
-                    pygame.draw.circle(screen, (55, 75, 95),
-                                       [scaled_x_pos[11], scaled_y_pos[11]], 5)
-                    pygame.draw.circle(screen, (255, 255, 0), [scaled_xi_pos[0], scaled_yi_pos[0]], 5)
-                    pygame.draw.circle(screen, (0, 255, 255), [scaled_xi_pos[1], scaled_yi_pos[1]], 5)
-                    pygame.draw.circle(screen, (255, 255, 255), [scaled_xi_pos[2], scaled_yi_pos[2]], 5)
-                    pygame.draw.circle(screen, (0, 255, 0), [scaled_xi_pos[3], scaled_yi_pos[3]], 5)
-                    """
+
                 else:
-                    pygame.draw.circle(
-                        screen, (255, 255, 0), [scaled_x_pos[2], suny], 5
-                    )
-                    pygame.draw.circle(
-                        screen, (0, 255, 255), [scaled_x_pos[3], suny], 5
-                    )
-                    pygame.draw.circle(
-                        screen, (255, 255, 255), [scaled_x_pos[4], suny], 5
-                    )
-                    pygame.draw.circle(
-                        screen, (255, 0, 0), [scaled_x_pos[5], suny], 5
-                    )
-                    pygame.draw.circle(
-                        screen, (0, 255, 0), [scaled_x_pos[1], suny], 5
-                    )
-                    pygame.draw.circle(
-                        screen, (100, 50, 220), [scaled_x_pos[6], suny], 5
-                    )
-                    pygame.draw.circle(
-                        screen, (73, 155, 55), [scaled_x_pos[7], suny], 5
-                    )
-                    pygame.draw.circle(
-                        screen, (55, 75, 95), [scaled_x_pos[9], suny], 5
-                    )
-                    if nasa == "No":
-                        pygame.draw.circle(screen, (255, 102, 255),
-                                           [scaled_x_pos[8], suny], 5)
+                    temp_y_pos = np.sort(current_positions[:, 1])
+                    for i in range(len(temp_y_pos)):
+                        k = np.where(current_positions[:, 1] == temp_y_pos[i])[0][0]
+                        if k != 8 or nasa == "No":
+                            size_planet = 2
+                            if k > 4:
+                                size_planet = 5
 
+                            color = (255, 255, 255)
+                            if k < len(planet_colors):
+                                color = planet_colors[k]
 
-
-                    pygame.draw.circle(screen, (255, 255, 0), [scaled_xi_pos[1], sun_i_y],
-                                       5)
-                    pygame.draw.circle(screen, (0, 255, 255), [scaled_xi_pos[2], sun_i_y],
-                                       5)
-                    pygame.draw.circle(screen, (255, 255, 255), [scaled_xi_pos[3], sun_i_y],
-                                       5)
-                    pygame.draw.circle(screen, (0, 255, 0), [scaled_xi_pos[0], sun_i_y], 5)
-
+                            pygame.draw.circle(screen, color,
+                                               [(scaled_x_pos[k] - sun_i_x)/8 + sunx,
+                                                suny],
+                                               size_planet)
+                            if abs(scaled_x_pos[k] - sun_i_x) < 125 and abs(scaled_y_pos[k] - sun_i_y) < 125:
+                                pygame.draw.circle(screen, color,
+                                                   [scaled_x_pos[k] ,
+                                                    sun_i_y],
+                                                   5)
                 # Updates the display with the new frame
                 states = menu(
                     screen,
