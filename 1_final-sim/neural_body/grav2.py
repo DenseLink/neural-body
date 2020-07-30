@@ -278,7 +278,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
             current_working_directory = os.path.dirname(
                 os.path.realpath(__file__))
             start_string = current_working_directory + \
-                           "/sim_configs/sat1_sim_config.csv"
+                           "/sim_configs/TestConfig.xlsx"
             if past_input != "":
                 start_string = past_input
                 del simulation
@@ -312,8 +312,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                     int(scr_height / 5)
                 ))
             simulation = BenrulesRealTimeSim(
-                time_step=time_step,
-                in_config_df=pd.read_csv(start_string)
+                sat_config_file=start_string
             )
             past_input = ""
             # Set offset so objects orbit the correct point.
@@ -921,7 +920,7 @@ def menu(screen, states, scr_width, scr_height, numDays):
                                 try:
                                     input_text = current_working_directory + \
                                                  input_text
-                                    temp_df = pd.read_csv(input_text)
+                                    temp_df = pd.read_excel(input_text)
                                     # If at this point, read error has not been thrown.
                                     #del simulation
                                     # simulation = BenrulesRealTimeSim(

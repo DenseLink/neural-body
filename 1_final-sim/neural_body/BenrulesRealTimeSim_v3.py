@@ -29,8 +29,26 @@ import concurrent.futures.thread
 from threading import Thread
 import threading
 import sys
-from pynput import keyboard
+from collections import deque
 
+# Check if DISPLAY has been detected.  If not, assume WSL with pycharm and grab
+# display connection.  Needed for pynput import.
+# Only needed for launching from pycharm.
+try:
+    print(os.environ["DISPLAY"])
+except KeyError as error:
+    # If at this point, DISPLAY doesn't exist and needs to be set.
+    line_list = []
+    with open('/etc/resolv.conf') as f:
+        for line in f:
+            pass
+        last_line = line
+        line_list = last_line.split(' ')
+        f.close()
+    # Set the display
+    os.environ["DISPLAY"] = line_list[-1].rstrip() + ":0"
+
+from pynput import keyboard
 import time
 
 
@@ -49,11 +67,12 @@ class BenrulesRealTimeSim:
     :ivar _nn: NNModelLoader object instance that contains the neural network
         loaded in Tensorflow.
     """
-    # Nested Classes
+
     @staticmethod
     def _future_calc_single_bod_acc_vectorized(planet_pos,
                                                sat_pos,
-                                               masses):
+                                               masses,
+                                               burn_vec):
         """
         This is a prototype version of the acceleration vector adder.  For
         it to work with an arbitrary number of bodies, assume the positions of
@@ -85,6 +104,10 @@ class BenrulesRealTimeSim:
         acceleration_np = g_const * ((diff_mat.transpose((0, 2, 1)) * (
             np.reciprocal(r ** 3, out=np.zeros_like(r),
                           where=(r != 0.0))).T) @ masses)
+        # Add burn maneuvers to satellites at end of acceleration matrix.
+        temp_burn_vec = burn_vec.T.reshape(3, burn_vec.shape[0], 1)
+        acceleration_np[:, -sat_pos.shape[0]:, :] = \
+            acceleration_np[:, -sat_pos.shape[0]:, :] + temp_burn_vec
         return acceleration_np
 
     def _future_compute_new_pos_vectorized(self, planet_pos, planet_vel,
@@ -92,7 +115,7 @@ class BenrulesRealTimeSim:
                                            time_step, neural_net,
                                            num_in_items_seq_lstm,
                                            num_out_seq_lstm,
-                                           result_queue,
+                                           result_queue, burn_vec,
                                            ignore_nn=False):
         """
         After getting acceleration from vectorized single_bod_acceleration,
@@ -121,10 +144,12 @@ class BenrulesRealTimeSim:
             for i in range(0, num_out_seq_lstm):
                 # Grab the accelerations acting on each body based on current
                 # body positions.
+                # Also use i to index the burn vector
                 acceleration_np = self._future_calc_single_bod_acc_vectorized(
                     planet_pos=new_planet_pos[-1],
                     sat_pos=new_sat_pos[-1],
-                    masses=masses
+                    masses=masses,
+                    burn_vec=burn_vec[i]
                 )
                 # Initialize the velocity matrix
                 velocity_np = np.concatenate(
@@ -160,6 +185,11 @@ class BenrulesRealTimeSim:
                 # Set all positions relative to the sun assumed to be at index 0
                 new_planet_pos[-1] = new_planet_pos[-1][:, :] - new_planet_pos[-1][0, :]
                 new_sat_pos[-1] = new_sat_pos[-1][:, :] - new_planet_pos[-1][0, :]
+                # Check if burn maneuver occurred.  If it did, then set
+                # z value to something other than 0
+                if np.count_nonzero(burn_vec[i]) > 0:
+                    new_sat_pos[i + 1][:, -1] = np.count_nonzero(burn_vec[i],
+                                                                 axis=1)
             # Remove first values in lists that initialized them.
             new_planet_pos.pop(0)
             new_planet_vel.pop(0)
@@ -183,7 +213,8 @@ class BenrulesRealTimeSim:
                 acceleration_np = self._future_calc_single_bod_acc_vectorized(
                     planet_pos=new_planet_pos[-1],
                     sat_pos=new_sat_pos[i], # Account for nn filling list
-                    masses=masses
+                    masses=masses,
+                    burn_vec=burn_vec[i]
                 )
                 # Initialize the velocity matrix.
                 # Only run calculations on planets
@@ -265,6 +296,11 @@ class BenrulesRealTimeSim:
                     new_planet_pos[-1][:, :] - new_planet_pos[-1][0, :]
                 new_sat_pos[i + 1] = \
                     new_sat_pos[i + 1][:, :] - new_planet_pos[-1][0, :]
+                # Check if burn maneuver occurred.  If it did, then set
+                # z value to something other than 0
+                if np.count_nonzero(burn_vec[i]) > 0:
+                    new_sat_pos[i+1][:, -1] = np.count_nonzero(burn_vec[i],
+                                                              axis=1)
             # After for loop, remove initial values.
             new_planet_pos.pop(0)
             new_planet_vel.pop(0)
@@ -386,23 +422,66 @@ class BenrulesRealTimeSim:
     #     print('Future cache complete')
     #     return
 
+    @staticmethod
+    def _create_acc_burn_vec(curr_time_step, num_out_steps_lstm,
+                             sat_maneuver_queues):
+        """
+        Function to create a vector of time steps where each item in the
+        vector is a matrix of satellites and additional burn values to use
+        during the single body acceleration calculations.
+        """
+        # Calculate range of time steps the future thread will compute.
+        curr_ts_range = range(
+            curr_time_step,
+            curr_time_step + num_out_steps_lstm
+        )
+        # Create 3D burn array that has dimensions (ts, sats, 3)
+        burn_vec = np.full(
+            (len(curr_ts_range), len(sat_maneuver_queues), 3),
+            fill_value=np.float64(0),
+            dtype=np.float64
+        )
+        # Loop over all time steps in the range and figure out if there are
+        # any burns for each time step.
+        for ts_idx, ts in enumerate(curr_ts_range):
+            # Loop over each satellite and change burn_vec as needed from 0.0
+            for sat_idx in range(0,len(sat_maneuver_queues)):
+                # Make sure queue is not empty.
+                if len(sat_maneuver_queues[sat_idx]) > 0:
+                    # If the current time step has a maneuver for this sat, add
+                    # it to the burn vector
+                    if sat_maneuver_queues[sat_idx][0][0] == ts:
+                        burn_vec[ts_idx, sat_idx, :] = \
+                            sat_maneuver_queues[sat_idx].popleft()[1]
+        return burn_vec
+
     def _maintain_future_cache(self, output_queue, initial_planet_pos,
                                initial_planet_vel, initial_sat_pos,
                                initial_sat_vel, initial_sat_acc, masses,
                                time_step, nn_path, num_in_steps_lstm,
                                num_out_steps_lstm, keep_future_running,
-                               ignore_nn):
+                               sat_maneuver_queues, ignore_nn):
+
+        # Local variable to keep track of the current simulation time step.
+        # Assumes simulator initialized with enough time steps for the LSTM
+        # network.
+        curr_time_step = num_in_steps_lstm + 1
         # Load neural net to run inference with.
         neural_net = tf.keras.models.load_model(nn_path)
-        # Lists to cache calculations before they are pushed to the queue
+        # Lists to cache calculations before they are pushed to the output
+        # queue which the simulator retrieves values from.
         planet_pos_history = []
         planet_vel_history = []
         sat_pos_history = []
         sat_vel_history = []
         sat_acc_history = []
-
         # Create another queue that the computing thread can add to.
         result_queue = Queue(maxsize=5)
+
+        # Calculate burn maneuver vector to add to acceleration calcs.
+        burn_vec = self._create_acc_burn_vec(curr_time_step,
+                                             num_out_steps_lstm,
+                                             sat_maneuver_queues)
         # Start a thread to initialize the lists.
         future = Thread(
             target=self._future_compute_new_pos_vectorized,
@@ -418,6 +497,7 @@ class BenrulesRealTimeSim:
                 num_in_steps_lstm,
                 num_out_steps_lstm,
                 result_queue,
+                burn_vec,
                 ignore_nn
             ),
             daemon=True
@@ -433,9 +513,13 @@ class BenrulesRealTimeSim:
         sat_pos_history.extend(results[2])
         sat_vel_history.extend(results[3])
         sat_acc_history.extend(results[4])
-        # Terminate current thread
-        #del future
+        # Increment time step
+        curr_time_step = curr_time_step + num_out_steps_lstm
         # Start another thread and run the main process loop
+        # Calculate burn maneuver vector to add to acceleration calcs.
+        burn_vec = self._create_acc_burn_vec(curr_time_step,
+                                             num_out_steps_lstm,
+                                             sat_maneuver_queues)
         future = Thread(
             target=self._future_compute_new_pos_vectorized,
             args=(
@@ -450,6 +534,7 @@ class BenrulesRealTimeSim:
                 num_in_steps_lstm,
                 num_out_steps_lstm,
                 result_queue,
+                burn_vec,
                 ignore_nn
             ),
             daemon=True
@@ -472,6 +557,12 @@ class BenrulesRealTimeSim:
                 sat_pos_history.extend(results[2])
                 sat_vel_history.extend(results[3])
                 sat_acc_history.extend(results[4])
+                # Increment time step counter
+                curr_time_step = curr_time_step + num_out_steps_lstm
+                # Calculate burn maneuver vector to add to acceleration calcs.
+                burn_vec = self._create_acc_burn_vec(curr_time_step,
+                                                     num_out_steps_lstm,
+                                                     sat_maneuver_queues)
                 # Start new future thread to compute more
                 future = Thread(
                     target=self._future_compute_new_pos_vectorized,
@@ -487,6 +578,7 @@ class BenrulesRealTimeSim:
                         num_in_steps_lstm,
                         num_out_steps_lstm,
                         result_queue,
+                        burn_vec,
                         ignore_nn
                     ),
                     daemon=True
@@ -531,7 +623,7 @@ class BenrulesRealTimeSim:
         print('Future cache complete')
         return
 
-    def _parse_sim_config(self, sat_config_file=None, in_df=None):
+    def _parse_sim_config(self, sat_config_file=None, planet_config_df=None):
         """
         Function to convert
 
@@ -552,43 +644,86 @@ class BenrulesRealTimeSim:
         read_sat_masses = []
         read_planet_names = []
         read_sat_names = []
-        read_sat_mans = []
+        # Create list of queues to store the maneuvers for each satellite.
+        sat_maneuver_queues = []
+
+        # Read in the planets and their configurations.
+        # Load planet configs
+        for index, row in planet_config_df.iterrows():
+            read_planet_pos.append(
+                np.array([np.float64(row["location_x"]),
+                          np.float64(row["location_y"]),
+                          np.float64(row["location_z"])])
+            )
+            read_planet_vel.append(
+                np.array([np.float64(row["velocity_x"]),
+                          np.float64(row["velocity_y"]),
+                          np.float64(row["velocity_z"])])
+            )
+            read_planet_masses.append(
+                np.array([np.float64(row["body_mass"])])
+            )
+            read_planet_names.append(str(row["body_name"]))
+
+        # Get the position data for earth and use to set the positions of the
+        # satellites with altitudes above earth.
+        try:
+            earth_idx = read_planet_names.index('earth')
+        except:
+            print('Could not find earth in planet config file.')
+        # Only using x and y for now for easier transformations.
+        earth_loc = read_planet_pos[earth_idx][0:2]
+        # Calculate unit vector for earth's location.
+        earth_loc_unit = earth_loc / np.linalg.norm(earth_loc)
 
         # Load satellite config
-        #config = pd.read_excel(sat_config_file, sheet_name=None):
-        #for satellite_page in config.values():
+        #sat_config_location = self._current_working_directory + "/"
+        config = pd.read_excel(sat_config_file, sheet_name=None)
 
-        # Load initial values
-        #    read_sat_names.append(
-        #        str(satellite_page["Name"][0])
-        #    )
-        #    read_sat_masses.append(
-        #        np.array([np.float64(satellite_page["Mass"][0])])
-        #    )
-        #    read_sat_masses.append(
-        #        np.array([np.float64(0),
-        #                  np.float64(satellite_page["Altitude"][0]),
-        #                  np.float64(0)]
-        #    )
-        #    read_sat_masses.append(
-        #        np.array([np.float64(satellite_page["VXStart"][0]),
-        #                  np.float64(satellite_page["VYStart"][0]),
-        #                  np.float64(satellite_page["VZStart"][0])]
-        #    )
-
+        for satellite_page in config.values():
+            # Load initial values
+            read_sat_names.append(
+               str(satellite_page["Name"][0])
+            )
+            read_sat_masses.append(
+               np.array([np.float64(satellite_page["Mass"][0])])
+            )
+            # Calculate absolute position of satellite
+            temp_alt = int(satellite_page["Altitude"][0])
+            alt_vec = temp_alt * earth_loc_unit
+            sat_pos = earth_loc + alt_vec
+            read_sat_pos.append(
+                [np.float64(sat_pos[0]),
+                 np.float64(sat_pos[1]),
+                 np.float64(0)]
+            )
+            # Calculate the satellite velocity perpendicular to location
+            # vector going clockwise.
+            trans_mat = np.array([[0, 1],[-1, 0]])
+            vel_unit = trans_mat @ earth_loc_unit
+            temp_speed = float(satellite_page["StartSpeed"][0])
+            temp_vel = temp_speed * vel_unit
+            # Add to velocity list and add z dimension back in.
+            read_sat_vel.append(
+               np.array([np.float64(temp_vel[0]),
+                         np.float64(temp_vel[1]),
+                         np.float64(0)])
+            )
             # Populate satellite manuever list
-        #    sat_mans = []
-        #    for index, maneuver in enumerate(satellite_page["MStart"]):
-        #        sat_mans.append(
-        #            [maneuver,
-        #            np.array(
-        #                [np.float64(satellite_page["DeltaVX"][index]),
-        #                np.float64(satellite_page["DeltaVY"][index]),
-        #                np.float64(satellite_page["DeltaVZ"][index])]
-        #            )]
-        #        )
-        #    read_sat_mans.append(sat_mans)
+            sat_mans = deque()
+            for index, maneuver in enumerate(satellite_page["MStart"]):
+                temp_man = [
+                   int(maneuver),
+                   np.array(
+                       [np.float64(satellite_page["DeltaVX"][index]),
+                        np.float64(satellite_page["DeltaVY"][index]),
+                        np.float64(satellite_page["DeltaVZ"][index])]
+                   )
+                ]
+                sat_mans.append(temp_man)
+            sat_maneuver_queues.append(sat_mans)
 
+        #TODO: Remove later if above reading method works well.
             # Populate satellite maneuver matrix
         #    satellite_maneuvers_raw = []
         #    satellite_maneuvers_raw.append(satellite_page["MStart"])
@@ -605,44 +740,6 @@ class BenrulesRealTimeSim:
 
         #    read_sat_mans.append(satellite_maneuvers)
 
-
-        # Load planet configs
-        for index, row in in_df.iterrows():
-            # Check if satellite or other.
-            # If satellite, then set predicting name to choose the right
-            # neural network.
-            if row["satellite?"] == "yes":
-                self._satellite_predicting_name = str(row["body_name"])
-                read_sat_pos.append(
-                    np.array([np.float64(row["location_x"]),
-                              np.float64(row["location_y"]),
-                              np.float64(row["location_z"])])
-                )
-                read_sat_vel.append(
-                    np.array([np.float64(row["velocity_x"]),
-                              np.float64(row["velocity_y"]),
-                              np.float64(row["velocity_z"])])
-                )
-                read_sat_masses.append(
-                    np.array([np.float64(row["body_mass"])])
-                )
-                read_sat_names.append(str(row["body_name"]))
-            else:
-            #if row["satellite?"] != "yes":
-                read_planet_pos.append(
-                    np.array([np.float64(row["location_x"]),
-                              np.float64(row["location_y"]),
-                              np.float64(row["location_z"])])
-                )
-                read_planet_vel.append(
-                    np.array([np.float64(row["velocity_x"]),
-                              np.float64(row["velocity_y"]),
-                              np.float64(row["velocity_z"])])
-                )
-                read_planet_masses.append(
-                    np.array([np.float64(row["body_mass"])])
-                )
-                read_planet_names.append(str(row["body_name"]))
 
         # Set counters to track the current time step of the simulator and
         # maximum time step the simulator has reached.  This will allow us
@@ -742,6 +839,7 @@ class BenrulesRealTimeSim:
                   self._len_lstm_in_seq,
                   self._len_lstm_out_seq,
                   self._keep_future_running,
+                  sat_maneuver_queues,
                   ignore_nn
                   )
         )
@@ -757,7 +855,7 @@ class BenrulesRealTimeSim:
         self._max_fps = self._out_queue_max_size / duration
         print(f'System max supported frame-rate is: {self._max_fps}')
 
-    def __init__(self, in_config_df, time_step=800):
+    def __init__(self, sat_config_file):
         """
         Simulation initialization function.
 
@@ -769,6 +867,8 @@ class BenrulesRealTimeSim:
             neural network that will be loaded with Tensorflow in the
             NeuralNet class.
         """
+        # Set the base simulation time step duration
+        self._time_step = 800
         # Grab the current working to use for referencing data files
         self._current_working_directory = \
             os.path.dirname(os.path.realpath(__file__))
@@ -781,8 +881,6 @@ class BenrulesRealTimeSim:
         # the length of the sequence necessary for input into the LSTM.
         self._len_lstm_in_seq = 4
         self._len_lstm_out_seq = 10
-        # Amount of time that has passed in a single time step in seconds.
-        self._time_step = time_step
         # Grab info for creating background producer / consumer
         self._num_processes = cpu_count()
         # Create processing queues that producer / consumer will take
@@ -792,11 +890,18 @@ class BenrulesRealTimeSim:
         # Shared memory space to signal termination of threads when simulator's
         # destructor is called.
         self._keep_future_running = Value('I', 1)
-        # Test list to append fake processed values to from the producer.
-        self._test_output_list = []
+        # Read in planet config file separate from the sat config.
+        try:
+            in_planet_df = pd.read_csv(
+                self._current_working_directory + '/sim_configs/' +
+                "planet_config.csv"
+            )
+        except FileNotFoundError as error:
+            print('Unable to find the planet config file.')
         # Setup the initial set of bodies in the simulation by parsing from
         # config dataframe.
-        self._parse_sim_config(in_df=in_config_df)
+        self._parse_sim_config(planet_config_df=in_planet_df,
+                               sat_config_file=sat_config_file)
 
         # Create archive file to store sim data with necessary datasets and
         # and groups.
