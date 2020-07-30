@@ -339,13 +339,13 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                     if curr_time_step % 2 == 0:
                         current_positions = simulation. \
                             get_next_sim_state_v2()
-                        numDays += 1
+
 
                 if speed == 1 and pause == 0:
                     # Advance simulation every time_step
                     current_positions = simulation. \
                         get_next_sim_state_v2()
-                    numDays += 1
+
 
                 if speed == 2 and pause == 0:
                     # Advance simulation twice per time_step
@@ -353,7 +353,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                         get_next_sim_state_v2()
                     current_positions = simulation. \
                         get_next_sim_state_v2()
-                    numDays += 2
+
 
                 if speed == 4 and pause == 0:
                     # Advance simulation 4 times every time_step
@@ -365,7 +365,9 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                         get_next_sim_state_v2()
                     current_positions = simulation. \
                         get_next_sim_state_v2()
-                    numDays += 4
+
+                timePassed = simulation.current_time_step * simulation.time_step_duration
+                numDays = int(timePassed / 86400)
 
                 # Calculate the relative position of each body to the sun.
                 # mercury
@@ -561,6 +563,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 time.sleep(1 / simulation.max_fps)
 
 
+
 def print_key(screen):  # scr_width, scr_height
     """
         Method to display a planet key
@@ -569,23 +572,28 @@ def print_key(screen):  # scr_width, scr_height
         **List of input parameters:**
         :param screen: window created by pygame used to display application
     """
-    pygame.draw.circle(screen, (255, 255, 0), [850, 70], 4)
+
+    planet_colors = [(255, 136, 0), (196, 182, 108), (242, 197, 107),
+                     (11, 170, 255), (179, 67, 30), (252, 156, 66),
+                     (255, 194, 89), (108, 230, 219), (162, 141, 166), (108, 164, 204)]
+
+    pygame.draw.circle(screen, planet_colors[2], [850, 70], 4)
     text_handler(screen, "- Venus", 857, 65, 11, 255)
-    pygame.draw.circle(screen, (0, 255, 255), [850, 90], 4)
+    pygame.draw.circle(screen, planet_colors[3], [850, 90], 4)
     text_handler(screen, "- Earth", 857, 85, 11, 255)
-    pygame.draw.circle(screen, (255, 255, 255), [850, 110], 4)
+    pygame.draw.circle(screen, planet_colors[4], [850, 110], 4)
     text_handler(screen, "- Mars", 857, 105, 11, 255)
-    pygame.draw.circle(screen, (255, 0, 0), [850, 130], 4)
+    pygame.draw.circle(screen, planet_colors[5], [850, 130], 4)
     text_handler(screen, "- Jupiter", 857, 125, 11, 255)
-    pygame.draw.circle(screen, (0, 255, 0), [850, 50], 4)
+    pygame.draw.circle(screen, planet_colors[1], [850, 50], 4)
     text_handler(screen, "- Mercury", 857, 45, 11, 255)
-    pygame.draw.circle(screen, (100, 50, 220), [850, 150], 4)
+    pygame.draw.circle(screen, planet_colors[6], [850, 150], 4)
     text_handler(screen, "- Saturn", 857, 145, 11, 255)
-    pygame.draw.circle(screen, (73, 155, 55), [850, 170], 4)
+    pygame.draw.circle(screen, planet_colors[7], [850, 170], 4)
     text_handler(screen, "- Uranus", 857, 165, 11, 255)
-    pygame.draw.circle(screen, (55, 75, 95), [850, 190], 4)
+    pygame.draw.circle(screen, planet_colors[9], [850, 190], 4)
     text_handler(screen, "- Neptune", 857, 185, 11, 255)
-    pygame.draw.circle(screen, (255, 102, 255), [850, 210], 4)
+    pygame.draw.circle(screen, planet_colors[8], [850, 210], 4)
     text_handler(screen, "- Pluto", 857, 205, 11, 255)
 
 
