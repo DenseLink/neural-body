@@ -438,15 +438,16 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                                         [(x_track[k][j] - sun_i_x)/8 + sunx, (y_track[k][j] - sun_i_y)/8 + suny],
                                         [(x_track[k][j - 1] - sun_i_x)/8 + sunx, (y_track[k][j - 1] - sun_i_y)/8 + suny],
                                         1)
-                    for k in range(len(scaled_x_pos) - 1):
+                    for k in range(len(scaled_x_pos)):
                         if k != 8 or nasa == "No":
                             size_planet = 2
                             if k > 4:
                                 size_planet = 5
+
                             color = (255, 255, 255)
                             if k < len(planet_colors):
                                 color = planet_colors[k]
-
+                            print(color)
                             pygame.draw.circle(screen, color,
                                                [(scaled_x_pos[k] - sun_i_x)/8 + sunx,
                                                 (scaled_y_pos[k] - sun_i_y)/8 + suny],
