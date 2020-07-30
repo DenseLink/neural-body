@@ -240,6 +240,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
         past_input = input_text
         textbox_active = 0
         input_text = ""
+        simulation = None
         while (not (input_text != "" and textbox_active == 0)) and keep_running:
 
             pause = 0
@@ -280,7 +281,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                            "/sim_configs/sat1_sim_config.csv"
             if past_input != "":
                 start_string = past_input
-                #del simulation
+                del simulation
                 #TODO: Add delete statement to clear out any previous simulations.
             simulation = BenrulesRealTimeSim(
                 time_step=time_step,
@@ -852,11 +853,14 @@ def menu(screen, states, scr_width, scr_height, numDays):
                                 try:
                                     input_text = current_working_directory + \
                                                  input_text
-                                    simulation = BenrulesRealTimeSim(
-                                        time_step=time_step,
-                                        in_config_df=pd.read_csv(input_text)
-                                    )
-                                except:
+                                    temp_df = pd.read_csv(input_text)
+                                    # If at this point, read error has not been thrown.
+                                    #del simulation
+                                    # simulation = BenrulesRealTimeSim(
+                                    #     time_step=time_step,
+                                    #     in_config_df=pd.read_csv(input_text)
+                                    # )
+                                except FileNotFoundError:
                                     valid_File = 2
                                     print("An error is thrown, v = 2")
                                     input_text = ""

@@ -9,22 +9,22 @@ neural_network_dev/simulator/1_Attempt at nbody sim/nBody-master/__pycache__
 
 
 # ignore PyCharm config in demo simulator
-0_demo-sim/.idea/
-0_demo-sim/__pycache__/
-0_demo-sim/neural_body/__pycache__/
-neural_network_dev/simulator/3_benrules-realtime_v2/__pycache__/
-1_final-sim/neural_body/__pycache__/
-1_final-sim/neural_body/__pycache__/
-1_final-sim/.idea
+0_demo-sim/.idea/*
+0_demo-sim/__pycache__/*
+0_demo-sim/neural_body/__pycache__/*
+neural_network_dev/simulator/3_benrules-realtime_v2/__pycache__/*
+1_final-sim/neural_body/__pycache__/*
+1_final-sim/neural_body/__pycache__/*
+1_final-sim/.idea/*
 
 # Ignore data output and input directories
-neural_network_dev/simulator/2_benrules_v2/0_modified_sim_before_use/output/
-neural_network_dev/simulator/2_benrules_v2/0_Data_Generation_Notebooks/input_data/
-neural_network_dev/simulator/2_benrules_v2/0_modified_sim_before_use/computed_data/
-neural_network_dev/simulator/2_benrules_v2/0_Data_Generation_Notebooks/output/
-neural_network_dev/simulator/2_benrules_v2/0_modified_sim_before_use/sim_cache/
-neural_network_dev/model_deployments/1_lstm_v1/input_data/
-1_final-sim/neural_body/sim_archives/
+neural_network_dev/simulator/2_benrules_v2/0_modified_sim_before_use/output/*
+neural_network_dev/simulator/2_benrules_v2/0_Data_Generation_Notebooks/input_data/*
+neural_network_dev/simulator/2_benrules_v2/0_modified_sim_before_use/computed_data/*
+neural_network_dev/simulator/2_benrules_v2/0_Data_Generation_Notebooks/output/*
+neural_network_dev/simulator/2_benrules_v2/0_modified_sim_before_use/sim_cache/*
+neural_network_dev/model_deployments/1_lstm_v1/input_data/*
+1_final-sim/neural_body/sim_archives/*
 
 # Compiled source #
 ###################
