@@ -29,6 +29,7 @@ import concurrent.futures.thread
 from threading import Thread
 import threading
 import sys
+from pynput import keyboard
 
 import time
 
@@ -1276,8 +1277,17 @@ class BenrulesRealTimeSim:
         return self._current_time_step
 
     @property
+    def time_step_duration(self):
+        return self._time_step
+
+    @property
     def body_names(self):
         return self._body_names
+
+    @staticmethod
+    def _on_press(key):
+        if key == keyboard.Key.esc:
+            return False
 
     @current_time_step.setter
     def current_time_step(self, in_time_step):
@@ -1290,6 +1300,9 @@ class BenrulesRealTimeSim:
         step.
         """
 
+        # Store the old time step in case we need to reset.
+        old_ts = self._current_time_step
+
         # Make sure we can't go back before the big bang.
         # Need to keep at least enough time steps for the LSTM network.
         if in_time_step <= self._len_lstm_in_seq:
@@ -1297,14 +1310,19 @@ class BenrulesRealTimeSim:
         # If time goes beyond the max time the simulator has reached, advance
         # the simulator to that time.
         if in_time_step > self._max_time_step_reached:
-            while self._max_time_step_reached < in_time_step:
-                sim_positions = self.get_next_sim_state_v2()
-            # Wait for future cache to recover from fast-forward.
-            # while self._output_queue.qsize() < self._out_queue_max_size:
-            #     time.sleep(3)
-            while not self._output_queue.full():
-                time.sleep(3)
-        # If the time is between 0 and the max, set the current time step to 
+            with keyboard.Listener(on_press=self._on_press) as listener:
+                while self._max_time_step_reached < in_time_step:
+                    sim_positions = self.get_next_sim_state_v2()
+                    if not listener.running:
+                        self._current_time_step = old_ts
+                        break
+                while not self._output_queue.full():
+                    if not listener.running:
+                        self._current_time_step = old_ts
+                        break
+                    time.sleep(3)
+            return
+        # If the time is between 0 and the max, set the current time step to
         # the given time step.
         if (in_time_step >= self._len_lstm_in_seq) and \
                 (in_time_step <= self._max_time_step_reached):
