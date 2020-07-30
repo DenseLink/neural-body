@@ -505,6 +505,7 @@ class BenrulesRealTimeSim:
                         sat_acc_history.pop(0)
                     ]
                     output_queue.put(output_list)
+
             # If the pre-q filled up, then just keep on trying to push
             # values to the queue.  Will pause here until queue has taken
             # more values.
@@ -519,7 +520,7 @@ class BenrulesRealTimeSim:
 
         # If at this point, main loop broke.  Join rest of threads.
         future.join()
-        print("Threads in background")
+        print("\n Threads in background")
         main_thread = threading.current_thread()
         for t in threading.enumerate():
             if t is main_thread:
@@ -746,9 +747,15 @@ class BenrulesRealTimeSim:
         )
         self._future_queue_process.daemon = True
         self._future_queue_process.start()
+        # Time how long it takes to fill the queue and set an appropriate
+        # framerate so the queue doesn't get drained too quick.
+        start = time.time()
         # Sleep until the queue is filled.
         while self._output_queue.qsize() < self._out_queue_max_size:
-            time.sleep(3)
+            time.sleep(0.1)
+        duration = time.time() - start
+        self._max_fps = self._out_queue_max_size / duration
+        print(f'System max supported frame-rate is: {self._max_fps}')
 
     def __init__(self, in_config_df, time_step=800):
         """
@@ -831,7 +838,7 @@ class BenrulesRealTimeSim:
             while not self._output_queue.empty():
                 temp = self._output_queue.get_nowait()
         except:
-            print("Exception!")
+            pass
 
         self._future_queue_process.terminate()
         print('Attempted to terminate background process.')
@@ -1279,6 +1286,10 @@ class BenrulesRealTimeSim:
     @property
     def time_step_duration(self):
         return self._time_step
+
+    @property
+    def max_fps(self):
+        return self._max_fps
 
     @property
     def body_names(self):
