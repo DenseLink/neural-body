@@ -447,7 +447,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                             color = (255, 255, 255)
                             if k < len(planet_colors):
                                 color = planet_colors[k]
-                            print(color)
+
                             pygame.draw.circle(screen, color,
                                                [(scaled_x_pos[k] - sun_i_x)/8 + sunx,
                                                 (scaled_y_pos[k] - sun_i_y)/8 + suny],
