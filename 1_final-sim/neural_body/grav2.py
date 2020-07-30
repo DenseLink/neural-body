@@ -388,6 +388,9 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 scaled_y_pos = scaled_yi_pos.astype(int)
                 scaled_xi_pos = scaled_xi_pos.astype(int)
                 scaled_yi_pos = scaled_yi_pos.astype(int)
+                planet_colors = [(255, 136, 0),(196, 182, 108),(242, 197, 107),
+                                 (11, 170, 255),(179, 67, 30),(252, 156, 66),
+                                 (255, 194, 89),(108, 230, 219),(162, 141, 166),(108, 164, 204)]
 
                 # Setting the stage.
                 screen.fill((0, 0, 0))
@@ -436,15 +439,23 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                                         [(x_track[k][j - 1] - sun_i_x)/8 + sunx, (y_track[k][j - 1] - sun_i_y)/8 + suny],
                                         1)
                     for k in range(len(scaled_x_pos) - 1):
-                        pygame.draw.circle(screen, (75, 75, 255),
-                                           [(scaled_x_pos[k] - sun_i_x)/8 + sunx,
-                                            (scaled_y_pos[k] - sun_i_y)/8 + suny],
-                                           2)
-                        if abs(scaled_x_pos[k] - sun_i_x) < 125 and abs(scaled_y_pos[k] - sun_i_y) < 125:
-                            pygame.draw.circle(screen, (75, 75, 255),
-                                               [scaled_x_pos[k] ,
-                                                scaled_y_pos[k]],
-                                               5)
+                        if k != 8 or nasa == "No":
+                            size_planet = 2
+                            if k > 4:
+                                size_planet = 5
+                            color = (255, 255, 255)
+                            if k < len(planet_colors):
+                                color = planet_colors[k]
+
+                            pygame.draw.circle(screen, color,
+                                               [(scaled_x_pos[k] - sun_i_x)/8 + sunx,
+                                                (scaled_y_pos[k] - sun_i_y)/8 + suny],
+                                               size_planet)
+                            if abs(scaled_x_pos[k] - sun_i_x) < 125 and abs(scaled_y_pos[k] - sun_i_y) < 125:
+                                pygame.draw.circle(screen, color,
+                                                   [scaled_x_pos[k] ,
+                                                    scaled_y_pos[k]],
+                                                   5)
                     """
                     pygame.draw.circle(screen, (0, 255, 0),
                                        [scaled_x_pos[1], scaled_y_pos[1]], 2)
