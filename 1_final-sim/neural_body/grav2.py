@@ -76,9 +76,6 @@ def main():
     ))
 
     orbits(screen, num_planets, tail_length, clock, scr_width, scr_height)
-    #TODO: Craig added for troubleshooting.  Remove.
-    print("Out of orbits")
-
 
 def sun(screen, x, y):
     """
@@ -326,7 +323,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
             sun_img = pygame.transform.scale(sun_img, (10, 10))
 
             # Get next simulator state (positioning of all objects).
-            current_positions = simulation.get_next_sim_state_v2()
+            current_positions, slow_down = simulation.get_next_sim_state_v2()
             x_track = [[0] * tail_length for i in range(len(current_positions) + 5)]
             y_track = [[0] * tail_length for i in range(len(current_positions) + 5)]
 
@@ -337,34 +334,39 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 if speed == 0.5 and pause == 0:
                     # Only advance simulation every other time_step.
                     if curr_time_step % 2 == 0:
-                        current_positions = simulation. \
-                            get_next_sim_state_v2()
-
+                        current_positions, slow_down = \
+                            simulation.get_next_sim_state_v2()
 
                 if speed == 1 and pause == 0:
                     # Advance simulation every time_step
-                    current_positions = simulation. \
-                        get_next_sim_state_v2()
-
+                    current_positions, slow_down = \
+                        simulation.get_next_sim_state_v2()
 
                 if speed == 2 and pause == 0:
                     # Advance simulation twice per time_step
-                    current_positions = simulation. \
-                        get_next_sim_state_v2()
-                    current_positions = simulation. \
-                        get_next_sim_state_v2()
-
+                    current_positions, slow_down = \
+                        simulation.get_next_sim_state_v2()
+                    current_positions, slow_down = \
+                        simulation.get_next_sim_state_v2()
 
                 if speed == 4 and pause == 0:
                     # Advance simulation 4 times every time_step
-                    current_positions = simulation. \
-                        get_next_sim_state_v2()
-                    current_positions = simulation. \
-                        get_next_sim_state_v2()
-                    current_positions = simulation. \
-                        get_next_sim_state_v2()
-                    current_positions = simulation. \
-                        get_next_sim_state_v2()
+                    current_positions, slow_down = \
+                        simulation.get_next_sim_state_v2()
+                    current_positions, slow_down = \
+                        simulation.get_next_sim_state_v2()
+                    current_positions, slow_down = \
+                        simulation.get_next_sim_state_v2()
+                    current_positions, slow_down = \
+                        simulation.get_next_sim_state_v2()
+
+                # The simulator can burst for moments, but might need to slow
+                # down if running out of output cache.
+                if slow_down == True:
+                    speed = 1
+
+                # Set the framerate
+                time.sleep(1/simulation.max_fps)
 
                 timePassed = simulation.current_time_step * simulation.time_step_duration
                 numDays = int(timePassed / 86400)
@@ -560,7 +562,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 else:
                     pygame.display.flip()
                 # clock.tick(1)  # screen refresh rate
-                time.sleep(1 / simulation.max_fps)
+                #time.sleep(1 / simulation.max_fps)
 
 
 
@@ -1275,5 +1277,4 @@ def menu_text(screen, scr_width, scr_height):
 
 if __name__ == "__main__":
     main()
-    print('out of main')
     sys.exit()

@@ -311,7 +311,7 @@ class BenrulesRealTimeSim:
         result_list = [new_planet_pos, new_planet_vel, new_sat_pos,
                        new_sat_vel, new_sat_acc]
         result_queue.put(result_list)
-        return new_planet_pos, new_planet_vel, new_sat_pos, new_sat_vel, new_sat_acc
+        #return new_planet_pos, new_planet_vel, new_sat_pos, new_sat_vel, new_sat_acc
 
     # def _maintain_future_cache(self, output_queue, initial_planet_pos,
     #                            initial_planet_vel, initial_sat_pos,
@@ -541,7 +541,7 @@ class BenrulesRealTimeSim:
         )
         future.start()
         # Run main program loop that generates threads
-        pre_q_max_size = 2000
+        pre_q_max_size = 5000
         q_max_size = self._out_queue_max_size
         while keep_future_running.value == 1:
             if keep_future_running == 0:
@@ -601,7 +601,7 @@ class BenrulesRealTimeSim:
             # If the pre-q filled up, then just keep on trying to push
             # values to the queue.  Will pause here until queue has taken
             # more values.
-            if (len(planet_pos_history) > pre_q_max_size):
+            if (len(planet_pos_history) > pre_q_max_size + 500):
                 time.sleep(1)
         # Flush the entire result queue so background threads can terminate.
         try:
@@ -612,15 +612,15 @@ class BenrulesRealTimeSim:
 
         # If at this point, main loop broke.  Join rest of threads.
         future.join()
-        print("\n Threads in background")
+        #print("\n Threads in background")
         main_thread = threading.current_thread()
         for t in threading.enumerate():
             if t is main_thread:
                 continue
-            print(t.getName())
+            #print(t.getName())
             #t.join()
         print()
-        print('Future cache complete')
+        #print('Future cache complete')
         return
 
     def _parse_sim_config(self, sat_config_file=None, planet_config_df=None):
@@ -722,24 +722,6 @@ class BenrulesRealTimeSim:
                 ]
                 sat_mans.append(temp_man)
             sat_maneuver_queues.append(sat_mans)
-
-        #TODO: Remove later if above reading method works well.
-            # Populate satellite maneuver matrix
-        #    satellite_maneuvers_raw = []
-        #    satellite_maneuvers_raw.append(satellite_page["MStart"])
-        #    satellite_maneuvers_raw.append(satellite_page["DeltaVX"])
-        #    satellite_maneuvers_raw.append(satellite_page["DeltaVY"])
-        #    satellite_maneuvers_raw.append(satellite_page["DeltaVZ"])
-        #    satellite_maneuvers_count = satellite_maneuvers_raw[0][len(satellite_maneuvers_raw[0]) - 1] + 1
-        #    satellite_maneuvers = dok_matrix((satellite_maneuvers_count, 3), dtype=np.float32)
-
-        #    for index, maneuver in enumerate(satellite_maneuvers_raw[0]):
-        #        satellite_maneuvers[maneuver, 0] = satellite_maneuvers_raw[1][index]
-        #        satellite_maneuvers[maneuver, 1] = satellite_maneuvers_raw[2][index]
-        #        satellite_maneuvers[maneuver, 2] = satellite_maneuvers_raw[3][index]
-
-        #    read_sat_mans.append(satellite_maneuvers)
-
 
         # Set counters to track the current time step of the simulator and
         # maximum time step the simulator has reached.  This will allow us
@@ -853,6 +835,8 @@ class BenrulesRealTimeSim:
             time.sleep(0.1)
         duration = time.time() - start
         self._max_fps = self._out_queue_max_size / duration
+        if self._max_fps > 50:
+            self._max_fps = 50
         print(f'System max supported frame-rate is: {self._max_fps}')
 
     def __init__(self, sat_config_file):
@@ -867,6 +851,8 @@ class BenrulesRealTimeSim:
             neural network that will be loaded with Tensorflow in the
             NeuralNet class.
         """
+        # Lock to take control of stdout
+        self._lock = Lock()
         # Set the base simulation time step duration
         self._time_step = 800
         # Grab the current working to use for referencing data files
@@ -934,24 +920,16 @@ class BenrulesRealTimeSim:
         self._latest_ts_in_archive = 0
 
     def __del__(self):
-        print('simulator deconstructor called')
+        # Signal the background process to stop looping.
         self._keep_future_running.value = 0
-        print('Set background loop condition')
         # Flush the entire output queue so background process can terminate.
-        print('Flushing the output queue')
         try:
             while not self._output_queue.empty():
                 temp = self._output_queue.get_nowait()
         except:
             pass
-
+        # Make double sure background process has terminated.
         self._future_queue_process.terminate()
-        print('Attempted to terminate background process.')
-        # if self._future_queue_process.is_alive():
-        #     print('attempting to join process')
-        #     self._future_queue_process.join()
-        #     print('process joined')
-
         return
 
     def _calc_single_bod_acc_vectorized(self):
@@ -1296,10 +1274,6 @@ class BenrulesRealTimeSim:
             # feed the LSTM.
             if self._curr_cache_index == self._max_cache_size:
                 self._flush_cache_to_archive()
-            # Compute and predict next positions of all bodies.
-            # Keeping here for backup
-            #self._compute_gravity_step_vectorized(ignore_nn=True)
-
             # Get next simulation state from the future queue and parse
             # out the various values from the list in the queue.
             next_state = self._output_queue.get()
@@ -1374,10 +1348,15 @@ class BenrulesRealTimeSim:
             # Advance to the next time step.
             self._current_time_step += 1
             self._curr_cache_index += 1
-
-        # Return dictionary with planet name as key and a list with each planet
-        # name containing the coordinates
-        return simulation_positions
+        # Print statement to monitor queue health.
+        #print(f'Output queue size{self._output_queue.qsize()}')
+        # If the output queue is starting to get dangerously low, signal front
+        # end to slow down simulation speed.
+        slow_down = False
+        if self._output_queue.qsize() < 20:
+            slow_down = True
+        # Return numpy array with the positions of all bodies in the simulation
+        return simulation_positions, slow_down
 
     @property
     def current_time_step(self):
