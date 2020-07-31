@@ -81,6 +81,7 @@ def main():
 
     orbits(screen, num_planets, tail_length, clock, scr_width, scr_height)
 
+
 def sun(screen, x, y):
     """
         Function to place the sun image on the screen
@@ -242,7 +243,10 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
         textbox_active = 0
         input_text = ""
         simulation = None
-        while (not (input_text != "" and textbox_active == 0)) and keep_running:
+        while (
+                not (
+                        input_text != "" and textbox_active == 0)) and \
+                keep_running:
 
             pause = 0
             view = 0
@@ -253,7 +257,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
             input2_text = ""
             pluto_real = 1
             nasa = "Yes"
-            numDays = 0
+            num_days = 0
 
             # Factor to setup view magnification for all planets.
             # Ranges from 15 to show all planets down to 1 to show only through
@@ -328,10 +332,15 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
 
             # Get next simulator state (positioning of all objects).
             current_positions, slow_down = simulation.get_next_sim_state_v2()
-            x_track = [[0] * tail_length for i in range(len(current_positions) + 5)]
-            y_track = [[0] * tail_length for i in range(len(current_positions) + 5)]
+            x_track = [[0] * tail_length for i in
+                       range(len(current_positions) + 5)]
+            y_track = [[0] * tail_length for i in
+                       range(len(current_positions) + 5)]
 
-            while (not (input_text != "" and textbox_active == 0)) and keep_running:
+            while (
+                    not (
+                            input_text != "" and textbox_active == 0)) and \
+                    keep_running:
                 # the functions below will be replaced by neural net output
                 curr_time_step += 1
 
@@ -370,10 +379,11 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                     speed = 1
 
                 # Set the framerate
-                time.sleep(1/simulation.max_fps)
+                time.sleep(1 / simulation.max_fps)
 
-                timePassed = simulation.current_time_step * simulation.time_step_duration
-                numDays = int(timePassed / 86400)
+                timePassed = simulation.current_time_step * simulation.\
+                    time_step_duration
+                num_days = int(timePassed / 86400)
 
                 # Calculate the relative position of each body to the sun.
                 # mercury
@@ -382,22 +392,22 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                     0]) / zoom + sunx
                 scaled_y_pos = (current_positions[:, 1] - current_positions[0][
                     1]) / zoom + suny
-                scaled_xi_pos = (current_positions[:, 0] - current_positions[0][
-                    0]) / zoom_i * 8 + sun_i_x
-                scaled_yi_pos = (current_positions[:, 1] - current_positions[0][
-                    0]) / zoom_i * 8 + sun_i_y
-
-                #scaled_x_pos = np.append(scaled_x_pos,scaled_xi_pos)
-                #scaled_y_pos = np.append(scaled_y_pos,scaled_yi_pos)
-
+                scaled_xi_pos = (current_positions[:, 0] -
+                                 current_positions[0][
+                                     0]) / zoom_i * 8 + sun_i_x
+                scaled_yi_pos = (current_positions[:, 1] -
+                                 current_positions[0][
+                                     0]) / zoom_i * 8 + sun_i_y
 
                 scaled_x_pos = scaled_xi_pos.astype(int)
                 scaled_y_pos = scaled_yi_pos.astype(int)
                 scaled_xi_pos = scaled_xi_pos.astype(int)
                 scaled_yi_pos = scaled_yi_pos.astype(int)
-                planet_colors = [(255, 136, 0),(196, 182, 108),(242, 197, 107),
-                                 (11, 170, 255),(179, 67, 30),(252, 156, 66),
-                                 (255, 194, 89),(108, 230, 219),(162, 141, 166),(108, 164, 204)]
+                planet_colors = [(255, 136, 0), (196, 182, 108),
+                                 (242, 197, 107),
+                                 (11, 170, 255), (179, 67, 30), (252, 156, 66),
+                                 (255, 194, 89), (108, 230, 219),
+                                 (162, 141, 166), (108, 164, 204)]
 
                 # Setting the stage.
                 screen.fill((0, 0, 0))
@@ -411,40 +421,74 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 if pause == 0:
                     # shifts all data points within the lists to the left to
                     # make room for the new trail data point
-                    for j in range(0, len(scaled_x_pos) - 1):
+                    for j in range(0, len(scaled_x_pos)):
                         for i in range(0, tail_length - 1):
                             x_track[j][i] = x_track[j][i + 1]
                             y_track[j][i] = y_track[j][i + 1]
                         if abs(scaled_x_pos[j]) < 10000:
-                            x_track[j][tail_length-1] = scaled_x_pos[j]
-                            y_track[j][tail_length-1] = scaled_y_pos[j]
+                            x_track[j][tail_length - 1] = scaled_x_pos[j]
+                            y_track[j][tail_length - 1] = scaled_y_pos[j]
+
+                sm_disp_left = int(scr_width / 60)
+                sm_disp_right = int(scr_width / 60) + int(scr_width / 3.05)
+                sm_disp_top = int(scr_height / 1.9)
+                sm_disp_bottom = int(scr_height / 1.9) + int(scr_height / 2.23)
+
+                lg_disp_left = int(scr_width / 2.8)
+                lg_disp_right = int(scr_width / 2.8) + int(scr_height / 1.6)
+                lg_disp_top = int(scr_width / 60)
+                lg_disp_bottom = int(scr_width / 60) + int(scr_height / 1.05)
+
+                int(scr_width / 2.8),
+                int(scr_width / 60),
+                int(scr_width / 1.60),
+                int(scr_height / 1.05)
 
                 if view == 0:
                     # Iterates through the 2D list and draws the planet's
                     # trails
-                    for k in range(len(x_track) - 1):
+                    for k in range(len(x_track)):
                         if k != 8 or nasa == "No":
                             for j in range(1, tail_length - 1):
                                 i = tail_length - j
                                 if x_track[k][j - 1] != 0:
-                                    if abs(x_track[k][j] - sun_i_x) < 125 and abs(
-                                            y_track[k][j] - sun_i_y) < 125:
+                                    if (sm_disp_left <
+                                        x_track[k][j] < sm_disp_right) and \
+                                            (sm_disp_top <
+                                             y_track[k][j] < sm_disp_bottom):
                                         pygame.draw.line(
                                             screen,
                                             (255 - 255 * (i / tail_length),
                                              255 - 255 * (i / tail_length),
                                              255 - 255 * (i / tail_length)),
                                             [x_track[k][j], y_track[k][j]],
-                                            [x_track[k][j - 1], y_track[k][j - 1]],
+                                            [x_track[k][j - 1],
+                                             y_track[k][j - 1]],
                                             1)
-                                    pygame.draw.line(
-                                        screen,
-                                        (255 - 255 * (i / tail_length),
-                                         255 - 255 * (i / tail_length),
-                                         255 - 255 * (i / tail_length)),
-                                        [(x_track[k][j] - sun_i_x)/8 + sunx, (y_track[k][j] - sun_i_y)/8 + suny],
-                                        [(x_track[k][j - 1] - sun_i_x)/8 + sunx, (y_track[k][j - 1] - sun_i_y)/8 + suny],
-                                        1)
+                                    if (lg_disp_left <
+                                        ((x_track[k][
+                                             j] - sun_i_x) / 8 + sunx) <
+                                        lg_disp_right) and \
+                                            (lg_disp_top <
+                                             ((y_track[k][
+                                                 j] - sun_i_y) / 8 + suny) <
+                                             lg_disp_bottom):
+                                        pygame.draw.line(
+                                            screen,
+                                            (255 - 255 * (i / tail_length),
+                                             255 - 255 * (i / tail_length),
+                                             255 - 255 * (i / tail_length)),
+                                            [(x_track[k][
+                                                  j] - sun_i_x) / 8 + sunx, (
+                                                     y_track[k][
+                                                         j] - sun_i_y) / 8 +
+                                             suny],
+                                            [(x_track[k][
+                                                  j - 1] - sun_i_x) / 8 + sunx,
+                                             (y_track[k][
+                                                  j - 1] - sun_i_y) / 8 +
+                                             suny],
+                                            1)
                     for k in range(len(scaled_x_pos)):
                         if k != 8 or nasa == "No":
                             size_planet = 2
@@ -454,21 +498,37 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                             color = (255, 255, 255)
                             if k < len(planet_colors):
                                 color = planet_colors[k]
-
-                            pygame.draw.circle(screen, color,
-                                               [(scaled_x_pos[k] - sun_i_x)/8 + sunx,
-                                                (scaled_y_pos[k] - sun_i_y)/8 + suny],
-                                               size_planet)
-                            if abs(scaled_x_pos[k] - sun_i_x) < 125 and abs(scaled_y_pos[k] - sun_i_y) < 125:
+                            if (lg_disp_left < ((scaled_x_pos[
+                                                     k] - sun_i_x) / 8 +
+                                                sunx) < lg_disp_right) and \
+                                    (lg_disp_top <
+                                     ((scaled_y_pos[
+                                           k] - sun_i_y) / 8 +
+                                      suny) < lg_disp_bottom):
                                 pygame.draw.circle(screen, color,
-                                                   [scaled_x_pos[k] ,
+                                                   [(scaled_x_pos[
+                                                         k] - sun_i_x) / 8 +
+                                                    sunx,
+                                                    (scaled_y_pos[
+                                                         k] - sun_i_y) / 8 +
+                                                    suny],
+                                                   size_planet)
+                            if (sm_disp_left < scaled_x_pos[
+                                k] < sm_disp_right) and \
+                                    (sm_disp_top <
+                                     scaled_y_pos[k] < sm_disp_bottom):
+                                pygame.draw.circle(screen, color,
+                                                   [scaled_x_pos[k],
                                                     scaled_y_pos[k]],
                                                    5)
 
                 else:
                     temp_y_pos = np.sort(current_positions[:, 1])
                     for i in range(len(temp_y_pos)):
-                        k = np.where(current_positions[:, 1] == temp_y_pos[i])[0][0]
+                        k = \
+                            np.where(current_positions[:, 1] == temp_y_pos[i])[
+                                0][
+                                0]
                         if k != 8 or nasa == "No":
                             size_planet = 2
                             if k > 4:
@@ -479,12 +539,14 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                                 color = planet_colors[k]
 
                             pygame.draw.circle(screen, color,
-                                               [(scaled_x_pos[k] - sun_i_x)/8 + sunx,
+                                               [(scaled_x_pos[
+                                                     k] - sun_i_x) / 8 + sunx,
                                                 suny],
                                                size_planet)
-                            if abs(scaled_x_pos[k] - sun_i_x) < 125 and abs(scaled_y_pos[k] - sun_i_y) < 125:
+                            if abs(scaled_x_pos[k] - sun_i_x) < 125 and abs(
+                                    scaled_y_pos[k] - sun_i_y) < 125:
                                 pygame.draw.circle(screen, color,
-                                                   [scaled_x_pos[k] ,
+                                                   [scaled_x_pos[k],
                                                     sun_i_y],
                                                    5)
                 # Updates the display with the new frame
@@ -495,7 +557,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                      textbox2_active, input2_text],
                     scr_width,
                     scr_height,
-                    numDays
+                    num_days
                 )
                 pause = states[0]
                 speed = states[2]
@@ -508,8 +570,10 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 input2_text = states[12]
 
                 if (input2_text != "" and input2_active == 0):
-                    x_track = [[0] * tail_length for i in range(len(current_positions) + 5)]
-                    y_track = [[0] * tail_length for i in range(len(current_positions) + 5)]
+                    x_track = [[0] * tail_length for i in
+                               range(len(current_positions) + 5)]
+                    y_track = [[0] * tail_length for i in
+                               range(len(current_positions) + 5)]
                     print("beginning processing")
                     pygame.draw.rect(screen,
                                      (0, 0, 0),
@@ -551,8 +615,9 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                                         // simulation.time_step_duration)
                     simulation.current_time_step = sim_time_step
                     print("processing finished")
-                    timePassed = simulation.current_time_step * simulation.time_step_duration
-                    numDays = int(timePassed / 86400)
+                    timePassed = simulation.current_time_step * simulation.\
+                        time_step_duration
+                    num_days = int(timePassed / 86400)
                     input2_text = ""
 
                 view = states[1]
@@ -582,7 +647,8 @@ def print_key(screen):  # scr_width, scr_height
 
     planet_colors = [(255, 136, 0), (196, 182, 108), (242, 197, 107),
                      (11, 170, 255), (179, 67, 30), (252, 156, 66),
-                     (255, 194, 89), (108, 230, 219), (162, 141, 166), (108, 164, 204)]
+                     (255, 194, 89), (108, 230, 219), (162, 141, 166),
+                     (108, 164, 204)]
 
     pygame.draw.circle(screen, planet_colors[2], [850, 70], 4)
     text_handler(screen, "- Venus", 857, 65, 11, 255)
@@ -700,20 +766,24 @@ def menu(screen, states, scr_width, scr_height, numDays):
     elif numDays > 999:
         text_handler(screen, str(numDays), 398, 51, 14, 255)
     if input_active != 1 and input2_active != 1:
-        if play_pause[0] + 200 > click_x > play_pause[0] and play_pause[1] + 30 > \
+        if play_pause[0] + 200 > click_x > play_pause[0] and play_pause[
+            1] + 30 > \
                 click_y > play_pause[1]:
-            text_handler(screen, 'Pause/ Play', play_pause[0], play_pause[1], 30,
+            text_handler(screen, 'Pause/ Play', play_pause[0], play_pause[1],
+                         30,
                          255)
             if action_flag == 1:
                 pause = abs(pause - 1)
 
-        elif toggle[0] + 200 > click_x > toggle[0] and toggle[1] + 30 > click_y > \
+        elif toggle[0] + 200 > click_x > toggle[0] and toggle[
+            1] + 30 > click_y > \
                 toggle[1]:
             text_handler(screen, 'Toggle View', toggle[0], toggle[1], 30, 255)
             if action_flag == 1:
                 view = abs(view - 1)
 
-        elif adjust[0] + 260 > click_x > adjust[0] and adjust[1] + 30 > click_y > \
+        elif adjust[0] + 260 > click_x > adjust[0] and adjust[
+            1] + 30 > click_y > \
                 adjust[1]:
             text_handler(screen, 'Adjust Speed', adjust[0], adjust[1], 30, 255)
             text_handler(screen, "(" + str(speed) + "x)", int(scr_width / 4.3),
@@ -722,15 +792,19 @@ def menu(screen, states, scr_width, scr_height, numDays):
                 speed = speed * 2
                 if speed > 4:
                     speed = 0.5
-        elif upload[0] + 250 > click_x > upload[0] and upload[1] + 30 > click_y > \
+        elif upload[0] + 250 > click_x > upload[0] and upload[
+            1] + 30 > click_y > \
                 upload[1]:
-            text_handler(screen, 'New Simulation', upload[0], upload[1], 30, 255)
+            text_handler(screen, 'New Simulation', upload[0], upload[1], 30,
+                         255)
             if action_flag == 1:
                 input_active = 1
                 action_flag = 0
-        elif nasa_right[0] + 310 > click_x > nasa_right[0] and nasa_right[1] + 30 \
+        elif nasa_right[0] + 310 > click_x > nasa_right[0] and nasa_right[
+            1] + 30 \
                 > click_y > nasa_right[1]:
-            text_handler(screen, 'Is NASA Right?', nasa_right[0], nasa_right[1],
+            text_handler(screen, 'Is NASA Right?', nasa_right[0],
+                         nasa_right[1],
                          30, 255)
             text_handler(screen, "(" + nasa + ")", int(scr_width / 3.85),
                          nasa_right[1], 30, 255)
@@ -745,9 +819,11 @@ def menu(screen, states, scr_width, scr_height, numDays):
             text_handler(screen, 'Show Planet Key', key_menu_option[0],
                          key_menu_option[1], 30, 255)
             print_key(screen)
-        elif day_select[0] + 250 > click_x > day_select[0] and day_select[1] + 30 \
+        elif day_select[0] + 250 > click_x > day_select[0] and day_select[
+            1] + 30 \
                 > click_y > day_select[1]:
-            text_handler(screen, 'Travel to A Day', day_select[0], day_select[1],
+            text_handler(screen, 'Travel to A Day', day_select[0],
+                         day_select[1],
                          30, 255)
             if action_flag == 1:
                 input2_active = 1
@@ -787,14 +863,18 @@ def menu(screen, states, scr_width, scr_height, numDays):
                         if not key == "SimConfig":
                             raise FileNotFoundError
                         # Make sure only a single column with the UseNeuralNet
-                        if (len(curr_sheet.columns) > 1) or not (curr_sheet.columns[0] == "UseNeuralNet"):
+                        if (len(curr_sheet.columns) > 1) or not (
+                                curr_sheet.columns[0] == "UseNeuralNet"):
                             raise FileNotFoundError
                         if (
-                                not(
-                                    curr_sheet['UseNeuralNet'][0] == 'yes' or
-                                    curr_sheet['UseNeuralNet'][0] == 'Yes' or
-                                    curr_sheet['UseNeuralNet'][0] == 'no' or
-                                    curr_sheet['UseNeuralNet'][0] == 'No'
+                                not (
+                                        curr_sheet['UseNeuralNet'][
+                                            0] == 'yes' or
+                                        curr_sheet['UseNeuralNet'][
+                                            0] == 'Yes' or
+                                        curr_sheet['UseNeuralNet'][
+                                            0] == 'no' or
+                                        curr_sheet['UseNeuralNet'][0] == 'No'
                                 )
                         ):
                             raise FileNotFoundError
@@ -823,7 +903,8 @@ def menu(screen, states, scr_width, scr_height, numDays):
             except FileNotFoundError:
                 messagebox.showerror(
                     title='Config File Warning',
-                    message='Incompatible or missing config file.  Try another.'
+                    message='Incompatible or missing config file.  Try '
+                            'another. '
                 )
                 input_text = ""
                 textbox_active = 0
@@ -833,213 +914,10 @@ def menu(screen, states, scr_width, scr_height, numDays):
                 textbox_active = 0
                 pause = 0
 
-        # stops the explorer from endlessly opening, and destroy closes the box.
+        # stops the explorer from endlessly opening, and destroy closes the
+        # box.
         input_active = 0
         root.destroy()
-
-        # current_working_directory = os.path.dirname(
-        #     os.path.realpath(__file__)) + "/sim_configs/"
-        # pause = 1
-        # prompt = "Please type the name of the init file within"
-        #
-        # pygame.draw.rect(screen,
-        #                  (0, 0, 0),
-        #                  pygame.Rect(
-        #                      int(scr_width / 2.6),
-        #                      int(scr_height / 2.7),
-        #                      int(scr_width / 1.8),
-        #                      int(scr_height / 5)
-        #                  )
-        #                  )
-        # pygame.draw.rect(screen,
-        #                  (255, 255, 255),
-        #                  pygame.Rect(
-        #                      int(scr_width / 2.6),
-        #                      int(scr_height / 2.7),
-        #                      int(scr_width / 1.8),
-        #                      int(scr_height / 5)
-        #                  ),
-        #                  2)
-        # # start close
-        # pygame.draw.rect(screen,
-        #                  (200, 0, 0),
-        #                  pygame.Rect(
-        #                      int(scr_width / 1.124),
-        #                      int(scr_height / 2.7),
-        #                      int(scr_width / 20),
-        #                      int(scr_height / 26)
-        #                  )
-        #                  )
-        # pygame.draw.rect(screen,
-        #                  (255, 255, 255),
-        #                  pygame.Rect(
-        #                      int(scr_width / 1.124),
-        #                      int(scr_height / 2.7),
-        #                      int(scr_width / 20),
-        #                      int(scr_height / 26)
-        #                  ),
-        #                  2)
-        # text_handler(screen,
-        #              "X",
-        #              int(scr_width / 1.101),
-        #              int(scr_height / 2.65),
-        #              18,
-        #              255)
-        # if (int(scr_width / 1.124) < click_x < int(scr_width / 1.124) +
-        #     int(scr_width / 20)) and (int(scr_height / 2.7) < click_y <
-        #                               int(scr_height / 2.7) + int(
-        #             scr_height / 26)) and action_flag == 1:
-        #     print("clicked x")
-        #     input_text = ""
-        #     input_active = 0
-        #     textbox_active = 0
-        #     pause = 0
-        #     valid_File = 1
-        # # stop close
-        # pygame.draw.rect(screen,
-        #                  (255, 255, 255),
-        #                  pygame.Rect(
-        #                      int(scr_width / 2.51),
-        #                      int(scr_height / 2.2),
-        #                      int(scr_width / 1.9),
-        #                      int(scr_height / 15)
-        #                  ),
-        #                  2)
-        # text_handler(screen,
-        #              prompt,
-        #              int(scr_width / 2.6) + 10,
-        #              int(scr_height / 2.7) + 10,
-        #              18,
-        #              255)
-        # text_handler(screen,
-        #              current_working_directory,
-        #              int(scr_width / 2.6) + 10,
-        #              int(scr_height / 2.5) + 10,
-        #              9,
-        #              255)
-        # if int(scr_width / 2.51) + int(scr_width / 1.9) > click_x > \
-        #         int(scr_width / 2.51) and int(scr_height / 2.2) + \
-        #         int(scr_height / 15) > click_y > int(scr_height / 2.2):
-        #     if action_flag == 1:
-        #         textbox_active = 1
-        #         action_flag = 0
-        #     pygame.draw.rect(screen, (100, 100, 100),
-        #                      pygame.Rect(int(scr_width / 2.51) + 1,
-        #                                  int(scr_height / 2.2) + 1,
-        #                                  int(scr_width / 1.9) - 1,
-        #                                  int(scr_height / 15) - 1))
-        # if textbox_active == 1:
-        #     valid_File = 0
-        #
-        #     if (int(scr_width / 2.6) > click_x or click_x >
-        #         int(scr_width / 2.6) + int(scr_width / 1.8)) or (int(
-        #         scr_height / 2.7) > click_y or click_y > int(scr_height /
-        #                                                      2.7) + int(
-        #         scr_height / 5)) and action_flag == 1:
-        #         print("clicked outside")
-        #         input_text = ""
-        #         input_active = 0
-        #         textbox_active = 0
-        #         pause = 0
-        #         valid_File = 1
-        #
-        #     while valid_File == 0 or valid_File == 2:
-        #         action_flag, click_now, click_x, click_y = click_handler(
-        #             click_now)
-        #         if (int(scr_width / 1.124) < click_x < int(scr_width / 1.124) +
-        #             int(scr_width / 20)) and (int(scr_height / 2.7) < click_y <
-        #                                       int(scr_height / 2.7) + int(
-        #                     scr_height / 26)) and action_flag == 1:
-        #             print("clicked x")
-        #             input_text = ""
-        #             input_active = 0
-        #             textbox_active = 0
-        #             pause = 0
-        #             valid_File = 1
-        #         pygame.display.update(pygame.Rect(
-        #             int(scr_width / 2.6),
-        #             int(scr_height / 2.7),
-        #             int(scr_width / 1.8),
-        #             int(scr_height / 5)
-        #         ))
-        #         pygame.draw.rect(screen, (100, 100, 100),
-        #                          pygame.Rect(int(scr_width / 2.51) + 1,
-        #                                      int(scr_height / 2.2) + 1,
-        #                                      int(scr_width / 1.9) - 1,
-        #                                      int(scr_height / 15) - 1))
-        #         events = pygame.event.get()
-        #
-        #         for event in events:
-        #             if event.type == pygame.KEYDOWN:
-        #                 err_msg = ""
-        #                 if input_active == 1:
-        #
-        #                     if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
-        #                         time_step = 86400 * speed
-        #                         try:
-        #                             input_text = current_working_directory + \
-        #                                          input_text
-        #                             temp_df = pd.read_excel(input_text)
-        #                             # If at this point, read error has not been thrown.
-        #                             #del simulation
-        #                             # simulation = BenrulesRealTimeSim(
-        #                             #     time_step=time_step,
-        #                             #     in_config_df=pd.read_csv(input_text)
-        #                             # )
-        #                         except FileNotFoundError:
-        #                             valid_File = 2
-        #                             print("An error is thrown, v = 2")
-        #                             input_text = ""
-        #                             err_msg = "Invalid file, please try again!"
-        #
-        #                         else:
-        #                             valid_File = 1
-        #                             print("Is a valid file, v = 1")
-        #                             input_active = 0
-        #                             textbox_active = 0
-        #                             pause = 0
-        #                     elif event.key == pygame.K_BACKSPACE:
-        #                         input_text = input_text[:-1]
-        #                         err_msg = ""
-        #                         pygame.display.update(pygame.Rect(
-        #                             int(scr_width / 2.6) + 10,
-        #                             int(scr_height / 1.9) + 9,
-        #                             10,
-        #                             20
-        #                         ))
-        #                     else:
-        #                         input_text += event.unicode
-        #                         err_msg = ""
-        #                         pygame.display.update(pygame.Rect(
-        #                             int(scr_width / 2.6) + 10,
-        #                             int(scr_height / 1.9) + 9,
-        #                             10,
-        #                             20
-        #                         ))
-        #                     keys = pygame.key.get_pressed()
-        #                     if (keys[pygame.K_RCTRL] or keys[pygame.K_LCTRL]) and keys[pygame.K_v]:
-        #                         root = tk.Tk()
-        #                         # keep the window from showing
-        #                         root.withdraw()
-        #                         input_text += root.clipboard_get()
-        #                 text_handler(screen,
-        #                              err_msg,
-        #                              int(scr_width / 2.6) + 10,
-        #                              int(scr_height / 1.9) + 9,
-        #                              20,
-        #                              255)
-        #         if valid_File != 1:
-        #             text_handler(screen, input_text + "|",
-        #                          int(scr_width / 2.51) + 3,
-        #                          int(scr_height / 2.17) + 3, 30, 255)
-        #         # if valid_File == 2:
-        #
-        # else:
-        #     temp_text = input_text
-        #     if len(input_text) > 30:
-        #         temp_text = input2_text[-30:]
-        #     text_handler(screen, temp_text, int(scr_width / 2.51) + 3,
-        #                  int(scr_height / 2.17) + 3, 30, 255)
 
     # Option to travel to a specific day selected
     if input2_active == 1:
@@ -1143,7 +1021,8 @@ def menu(screen, states, scr_width, scr_height, numDays):
             for event in events:
                 if event.type == pygame.KEYDOWN:
                     if input2_active == 1:
-                        if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
+                        if event.key == pygame.K_RETURN or event.key == pygame\
+                                .K_KP_ENTER:
                             try:
                                 temp_num = int(input2_text)
                             except:
