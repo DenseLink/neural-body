@@ -22,8 +22,8 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 # Global arguments for both the setup config and the sphinx config.
 name='neural_body'
-version='1.0.0'
-release='0.1.0'
+version='1.1.0'
+release='0.1.2'
 
 setup(
     # This is the name of your project. The first time you publish this
@@ -128,12 +128,12 @@ setup(
     #
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['pandas', 'numpy', 'tensorflow', 'pygame==2.0.0.dev10'],  # Optional
+    install_requires=['pandas==1.1.0', 'numpy<1.18.5, >=1.16.0', 'tensorflow==2.3.0', 'pygame==2.0.0.dev10', 'xlrd', 'h5py', 'pynput'],  # Optional
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.
     package_data={  # Optional
-        'neural_body': ['*.csv', '*.png', '*.h5', 'nn/*.h5', 'img/*.png', 'sim_configs/*.csv'],  # include these files and file extensions in the neural_body package
+        'neural_body': ['*.csv', '*.png', '*.h5', 'nn/*.h5', 'img/*.png', 'sim_configs/*', 'sim_archives/*'],  # include these files and file extensions in the neural_body package
     },
 
     # Although 'package_data' is the preferred approach, in some case you may
