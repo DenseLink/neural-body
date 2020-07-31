@@ -6,6 +6,10 @@ from neural_body.BenrulesRealTimeSim_v3 import BenrulesRealTimeSim
 import os
 import time
 import tkinter as tk
+from tkinter import *
+from tkinter import filedialog
+from tkinter import messagebox
+import math
 
 # Set audio driver to avoid ALSA errors
 os.environ['SDL_AUDIODRIVER'] = 'dsp'
@@ -747,210 +751,302 @@ def menu(screen, states, scr_width, scr_height, numDays):
             if action_flag == 1:
                 input2_active = 1
 
+    # Asking for new simulation config file.
     if input_active == 1:
         current_working_directory = os.path.dirname(
             os.path.realpath(__file__)) + "/sim_configs/"
         pause = 1
-        prompt = "Please type the name of the init file within"
-
-        pygame.draw.rect(screen,
-                         (0, 0, 0),
-                         pygame.Rect(
-                             int(scr_width / 2.6),
-                             int(scr_height / 2.7),
-                             int(scr_width / 1.8),
-                             int(scr_height / 5)
-                         )
-                         )
-        pygame.draw.rect(screen,
-                         (255, 255, 255),
-                         pygame.Rect(
-                             int(scr_width / 2.6),
-                             int(scr_height / 2.7),
-                             int(scr_width / 1.8),
-                             int(scr_height / 5)
-                         ),
-                         2)
-        # start close
-        pygame.draw.rect(screen,
-                         (200, 0, 0),
-                         pygame.Rect(
-                             int(scr_width / 1.124),
-                             int(scr_height / 2.7),
-                             int(scr_width / 20),
-                             int(scr_height / 26)
-                         )
-                         )
-        pygame.draw.rect(screen,
-                         (255, 255, 255),
-                         pygame.Rect(
-                             int(scr_width / 1.124),
-                             int(scr_height / 2.7),
-                             int(scr_width / 20),
-                             int(scr_height / 26)
-                         ),
-                         2)
-        text_handler(screen,
-                     "X",
-                     int(scr_width / 1.101),
-                     int(scr_height / 2.65),
-                     18,
-                     255)
-        if (int(scr_width / 1.124) < click_x < int(scr_width / 1.124) +
-            int(scr_width / 20)) and (int(scr_height / 2.7) < click_y <
-                                      int(scr_height / 2.7) + int(
-                    scr_height / 26)) and action_flag == 1:
-            print("clicked x")
-            input_text = ""
+        root = Tk()
+        root.withdraw()
+        root.filename = filedialog.askopenfilename(
+            initialdir=current_working_directory,
+            title="Select a File",
+            filetypes=(
+                ("xlsx files", "*.xlsx"),
+                ("all files", "*.*")
+            )
+        )
+        # If cancel is selected, then just return back to simulator.
+        if not root.filename:
             input_active = 0
             textbox_active = 0
             pause = 0
-            valid_File = 1
-        # stop close
-        pygame.draw.rect(screen,
-                         (255, 255, 255),
-                         pygame.Rect(
-                             int(scr_width / 2.51),
-                             int(scr_height / 2.2),
-                             int(scr_width / 1.9),
-                             int(scr_height / 15)
-                         ),
-                         2)
-        text_handler(screen,
-                     prompt,
-                     int(scr_width / 2.6) + 10,
-                     int(scr_height / 2.7) + 10,
-                     18,
-                     255)
-        text_handler(screen,
-                     current_working_directory,
-                     int(scr_width / 2.6) + 10,
-                     int(scr_height / 2.5) + 10,
-                     9,
-                     255)
-        if int(scr_width / 2.51) + int(scr_width / 1.9) > click_x > \
-                int(scr_width / 2.51) and int(scr_height / 2.2) + \
-                int(scr_height / 15) > click_y > int(scr_height / 2.2):
-            if action_flag == 1:
-                textbox_active = 1
-                action_flag = 0
-            pygame.draw.rect(screen, (100, 100, 100),
-                             pygame.Rect(int(scr_width / 2.51) + 1,
-                                         int(scr_height / 2.2) + 1,
-                                         int(scr_width / 1.9) - 1,
-                                         int(scr_height / 15) - 1))
-        if textbox_active == 1:
-            valid_File = 0
+        else:
+            # Try opening the file and reading.  If successful, then pass
+            # directory onto simulator.
+            try:
+                input_text = root.filename
+                temp_sheets = pd.read_excel(input_text, sheet_name=None)
+                # Loop over all sheets and make sure it is a
+                # valid config file.
+                for key_idx, key in enumerate(temp_sheets):
+                    curr_sheet = temp_sheets[key]
+                    if key_idx == 0:
+                        # Make sure first sheet is the sim config.
+                        if not key == "SimConfig":
+                            raise FileNotFoundError
+                        # Make sure only a single column with the UseNeuralNet
+                        if (len(curr_sheet.columns) > 1) or not (curr_sheet.columns[0] == "UseNeuralNet"):
+                            raise FileNotFoundError
+                        if (
+                                not(
+                                    curr_sheet['UseNeuralNet'][0] == 'yes' or
+                                    curr_sheet['UseNeuralNet'][0] == 'Yes' or
+                                    curr_sheet['UseNeuralNet'][0] == 'no' or
+                                    curr_sheet['UseNeuralNet'][0] == 'No'
+                                )
+                        ):
+                            raise FileNotFoundError
+                    if key_idx > 0:
+                        expected_cols = [
+                            'Name',
+                            'Mass',
+                            'Altitude',
+                            'StartSpeed',
+                            'MStart',
+                            'DeltaVX',
+                            'DeltaVY',
+                            'DeltaVZ'
+                        ]
+                        if not all(expected_cols == curr_sheet.columns):
+                            raise FileNotFoundError
+                        # Check each column to make sure a value exists.
+                        if math.isnan(curr_sheet['Mass'][0]):
+                            raise FileNotFoundError
+                        if math.isnan(curr_sheet['Altitude'][0]):
+                            raise FileNotFoundError
+                        if math.isnan(curr_sheet['StartSpeed'][0]):
+                            raise FileNotFoundError
+                        if math.isnan(curr_sheet['MStart'][0]):
+                            raise FileNotFoundError
+                        if math.isnan(curr_sheet['DeltaVX'][0]):
+                            raise FileNotFoundError
+                        if math.isnan(curr_sheet['DeltaVY'][0]):
+                            raise FileNotFoundError
+                        if math.isnan(curr_sheet['DeltaVZ'][0]):
+                            raise FileNotFoundError
 
-            if (int(scr_width / 2.6) > click_x or click_x >
-                int(scr_width / 2.6) + int(scr_width / 1.8)) or (int(
-                scr_height / 2.7) > click_y or click_y > int(scr_height /
-                                                             2.7) + int(
-                scr_height / 5)) and action_flag == 1:
-                print("clicked outside")
+
+            except FileNotFoundError:
+                messagebox.showerror(
+                    title='Config File Warning',
+                    message='Incompatible or missing config file.  Try another.'
+                )
                 input_text = ""
+                textbox_active = 0
+                pause = 0
+            else:
                 input_active = 0
                 textbox_active = 0
                 pause = 0
-                valid_File = 1
 
-            while valid_File == 0 or valid_File == 2:
-                action_flag, click_now, click_x, click_y = click_handler(
-                    click_now)
-                if (int(scr_width / 1.124) < click_x < int(scr_width / 1.124) +
-                    int(scr_width / 20)) and (int(scr_height / 2.7) < click_y <
-                                              int(scr_height / 2.7) + int(
-                            scr_height / 26)) and action_flag == 1:
-                    print("clicked x")
-                    input_text = ""
-                    input_active = 0
-                    textbox_active = 0
-                    pause = 0
-                    valid_File = 1
-                pygame.display.update(pygame.Rect(
-                    int(scr_width / 2.6),
-                    int(scr_height / 2.7),
-                    int(scr_width / 1.8),
-                    int(scr_height / 5)
-                ))
-                pygame.draw.rect(screen, (100, 100, 100),
-                                 pygame.Rect(int(scr_width / 2.51) + 1,
-                                             int(scr_height / 2.2) + 1,
-                                             int(scr_width / 1.9) - 1,
-                                             int(scr_height / 15) - 1))
-                events = pygame.event.get()
+        # stops the explorer from endlessly opening, and destroy closes the box.
+        input_active = 0
+        root.destroy()
 
-                for event in events:
-                    if event.type == pygame.KEYDOWN:
-                        err_msg = ""
-                        if input_active == 1:
-
-                            if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
-                                time_step = 86400 * speed
-                                try:
-                                    input_text = current_working_directory + \
-                                                 input_text
-                                    temp_df = pd.read_excel(input_text)
-                                    # If at this point, read error has not been thrown.
-                                    #del simulation
-                                    # simulation = BenrulesRealTimeSim(
-                                    #     time_step=time_step,
-                                    #     in_config_df=pd.read_csv(input_text)
-                                    # )
-                                except FileNotFoundError:
-                                    valid_File = 2
-                                    print("An error is thrown, v = 2")
-                                    input_text = ""
-                                    err_msg = "Invalid file, please try again!"
-
-                                else:
-                                    valid_File = 1
-                                    print("Is a valid file, v = 1")
-                                    input_active = 0
-                                    textbox_active = 0
-                                    pause = 0
-                            elif event.key == pygame.K_BACKSPACE:
-                                input_text = input_text[:-1]
-                                err_msg = ""
-                                pygame.display.update(pygame.Rect(
-                                    int(scr_width / 2.6) + 10,
-                                    int(scr_height / 1.9) + 9,
-                                    10,
-                                    20
-                                ))
-                            else:
-                                input_text += event.unicode
-                                err_msg = ""
-                                pygame.display.update(pygame.Rect(
-                                    int(scr_width / 2.6) + 10,
-                                    int(scr_height / 1.9) + 9,
-                                    10,
-                                    20
-                                ))
-                            keys = pygame.key.get_pressed()
-                            if (keys[pygame.K_RCTRL] or keys[pygame.K_LCTRL]) and keys[pygame.K_v]:
-                                root = tk.Tk()
-                                # keep the window from showing
-                                root.withdraw()
-                                input_text += root.clipboard_get()
-                        text_handler(screen,
-                                     err_msg,
-                                     int(scr_width / 2.6) + 10,
-                                     int(scr_height / 1.9) + 9,
-                                     20,
-                                     255)
-                if valid_File != 1:
-                    text_handler(screen, input_text + "|",
-                                 int(scr_width / 2.51) + 3,
-                                 int(scr_height / 2.17) + 3, 30, 255)
-                # if valid_File == 2:
-
-        else:
-            temp_text = input_text
-            if len(input_text) > 30:
-                temp_text = input2_text[-30:]
-            text_handler(screen, temp_text, int(scr_width / 2.51) + 3,
-                         int(scr_height / 2.17) + 3, 30, 255)
+        # current_working_directory = os.path.dirname(
+        #     os.path.realpath(__file__)) + "/sim_configs/"
+        # pause = 1
+        # prompt = "Please type the name of the init file within"
+        #
+        # pygame.draw.rect(screen,
+        #                  (0, 0, 0),
+        #                  pygame.Rect(
+        #                      int(scr_width / 2.6),
+        #                      int(scr_height / 2.7),
+        #                      int(scr_width / 1.8),
+        #                      int(scr_height / 5)
+        #                  )
+        #                  )
+        # pygame.draw.rect(screen,
+        #                  (255, 255, 255),
+        #                  pygame.Rect(
+        #                      int(scr_width / 2.6),
+        #                      int(scr_height / 2.7),
+        #                      int(scr_width / 1.8),
+        #                      int(scr_height / 5)
+        #                  ),
+        #                  2)
+        # # start close
+        # pygame.draw.rect(screen,
+        #                  (200, 0, 0),
+        #                  pygame.Rect(
+        #                      int(scr_width / 1.124),
+        #                      int(scr_height / 2.7),
+        #                      int(scr_width / 20),
+        #                      int(scr_height / 26)
+        #                  )
+        #                  )
+        # pygame.draw.rect(screen,
+        #                  (255, 255, 255),
+        #                  pygame.Rect(
+        #                      int(scr_width / 1.124),
+        #                      int(scr_height / 2.7),
+        #                      int(scr_width / 20),
+        #                      int(scr_height / 26)
+        #                  ),
+        #                  2)
+        # text_handler(screen,
+        #              "X",
+        #              int(scr_width / 1.101),
+        #              int(scr_height / 2.65),
+        #              18,
+        #              255)
+        # if (int(scr_width / 1.124) < click_x < int(scr_width / 1.124) +
+        #     int(scr_width / 20)) and (int(scr_height / 2.7) < click_y <
+        #                               int(scr_height / 2.7) + int(
+        #             scr_height / 26)) and action_flag == 1:
+        #     print("clicked x")
+        #     input_text = ""
+        #     input_active = 0
+        #     textbox_active = 0
+        #     pause = 0
+        #     valid_File = 1
+        # # stop close
+        # pygame.draw.rect(screen,
+        #                  (255, 255, 255),
+        #                  pygame.Rect(
+        #                      int(scr_width / 2.51),
+        #                      int(scr_height / 2.2),
+        #                      int(scr_width / 1.9),
+        #                      int(scr_height / 15)
+        #                  ),
+        #                  2)
+        # text_handler(screen,
+        #              prompt,
+        #              int(scr_width / 2.6) + 10,
+        #              int(scr_height / 2.7) + 10,
+        #              18,
+        #              255)
+        # text_handler(screen,
+        #              current_working_directory,
+        #              int(scr_width / 2.6) + 10,
+        #              int(scr_height / 2.5) + 10,
+        #              9,
+        #              255)
+        # if int(scr_width / 2.51) + int(scr_width / 1.9) > click_x > \
+        #         int(scr_width / 2.51) and int(scr_height / 2.2) + \
+        #         int(scr_height / 15) > click_y > int(scr_height / 2.2):
+        #     if action_flag == 1:
+        #         textbox_active = 1
+        #         action_flag = 0
+        #     pygame.draw.rect(screen, (100, 100, 100),
+        #                      pygame.Rect(int(scr_width / 2.51) + 1,
+        #                                  int(scr_height / 2.2) + 1,
+        #                                  int(scr_width / 1.9) - 1,
+        #                                  int(scr_height / 15) - 1))
+        # if textbox_active == 1:
+        #     valid_File = 0
+        #
+        #     if (int(scr_width / 2.6) > click_x or click_x >
+        #         int(scr_width / 2.6) + int(scr_width / 1.8)) or (int(
+        #         scr_height / 2.7) > click_y or click_y > int(scr_height /
+        #                                                      2.7) + int(
+        #         scr_height / 5)) and action_flag == 1:
+        #         print("clicked outside")
+        #         input_text = ""
+        #         input_active = 0
+        #         textbox_active = 0
+        #         pause = 0
+        #         valid_File = 1
+        #
+        #     while valid_File == 0 or valid_File == 2:
+        #         action_flag, click_now, click_x, click_y = click_handler(
+        #             click_now)
+        #         if (int(scr_width / 1.124) < click_x < int(scr_width / 1.124) +
+        #             int(scr_width / 20)) and (int(scr_height / 2.7) < click_y <
+        #                                       int(scr_height / 2.7) + int(
+        #                     scr_height / 26)) and action_flag == 1:
+        #             print("clicked x")
+        #             input_text = ""
+        #             input_active = 0
+        #             textbox_active = 0
+        #             pause = 0
+        #             valid_File = 1
+        #         pygame.display.update(pygame.Rect(
+        #             int(scr_width / 2.6),
+        #             int(scr_height / 2.7),
+        #             int(scr_width / 1.8),
+        #             int(scr_height / 5)
+        #         ))
+        #         pygame.draw.rect(screen, (100, 100, 100),
+        #                          pygame.Rect(int(scr_width / 2.51) + 1,
+        #                                      int(scr_height / 2.2) + 1,
+        #                                      int(scr_width / 1.9) - 1,
+        #                                      int(scr_height / 15) - 1))
+        #         events = pygame.event.get()
+        #
+        #         for event in events:
+        #             if event.type == pygame.KEYDOWN:
+        #                 err_msg = ""
+        #                 if input_active == 1:
+        #
+        #                     if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
+        #                         time_step = 86400 * speed
+        #                         try:
+        #                             input_text = current_working_directory + \
+        #                                          input_text
+        #                             temp_df = pd.read_excel(input_text)
+        #                             # If at this point, read error has not been thrown.
+        #                             #del simulation
+        #                             # simulation = BenrulesRealTimeSim(
+        #                             #     time_step=time_step,
+        #                             #     in_config_df=pd.read_csv(input_text)
+        #                             # )
+        #                         except FileNotFoundError:
+        #                             valid_File = 2
+        #                             print("An error is thrown, v = 2")
+        #                             input_text = ""
+        #                             err_msg = "Invalid file, please try again!"
+        #
+        #                         else:
+        #                             valid_File = 1
+        #                             print("Is a valid file, v = 1")
+        #                             input_active = 0
+        #                             textbox_active = 0
+        #                             pause = 0
+        #                     elif event.key == pygame.K_BACKSPACE:
+        #                         input_text = input_text[:-1]
+        #                         err_msg = ""
+        #                         pygame.display.update(pygame.Rect(
+        #                             int(scr_width / 2.6) + 10,
+        #                             int(scr_height / 1.9) + 9,
+        #                             10,
+        #                             20
+        #                         ))
+        #                     else:
+        #                         input_text += event.unicode
+        #                         err_msg = ""
+        #                         pygame.display.update(pygame.Rect(
+        #                             int(scr_width / 2.6) + 10,
+        #                             int(scr_height / 1.9) + 9,
+        #                             10,
+        #                             20
+        #                         ))
+        #                     keys = pygame.key.get_pressed()
+        #                     if (keys[pygame.K_RCTRL] or keys[pygame.K_LCTRL]) and keys[pygame.K_v]:
+        #                         root = tk.Tk()
+        #                         # keep the window from showing
+        #                         root.withdraw()
+        #                         input_text += root.clipboard_get()
+        #                 text_handler(screen,
+        #                              err_msg,
+        #                              int(scr_width / 2.6) + 10,
+        #                              int(scr_height / 1.9) + 9,
+        #                              20,
+        #                              255)
+        #         if valid_File != 1:
+        #             text_handler(screen, input_text + "|",
+        #                          int(scr_width / 2.51) + 3,
+        #                          int(scr_height / 2.17) + 3, 30, 255)
+        #         # if valid_File == 2:
+        #
+        # else:
+        #     temp_text = input_text
+        #     if len(input_text) > 30:
+        #         temp_text = input2_text[-30:]
+        #     text_handler(screen, temp_text, int(scr_width / 2.51) + 3,
+        #                  int(scr_height / 2.17) + 3, 30, 255)
 
     if input2_active == 1:
         pause = 1
