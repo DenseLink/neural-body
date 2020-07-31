@@ -674,11 +674,17 @@ class BenrulesRealTimeSim:
         # Calculate unit vector for earth's location.
         earth_loc_unit = earth_loc / np.linalg.norm(earth_loc)
 
-        # Load satellite config
+        # Load satellite and sim config
+        ignore_nn = True
         #sat_config_location = self._current_working_directory + "/"
         config = pd.read_excel(sat_config_file, sheet_name=None)
 
-        for satellite_page in config.values():
+        for page_idx, satellite_page in enumerate(config.values()):
+            if page_idx == 0:
+                nn_response = str(satellite_page["UseNeuralNet"][0])
+                if (nn_response == 'yes') or (nn_response == "Yes"):
+                    ignore_nn = False
+                continue
             # Load initial values
             read_sat_names.append(
                str(satellite_page["Name"][0])
@@ -807,7 +813,6 @@ class BenrulesRealTimeSim:
             self._curr_cache_size += 1
 
         # Try starting background processes
-        ignore_nn = False
         self._future_queue_process = Process(
             target=self._maintain_future_cache,
             args=(self._output_queue,
