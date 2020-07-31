@@ -690,6 +690,8 @@ class BenrulesRealTimeSim:
             )
             # Calculate absolute position of satellite
             temp_alt = int(satellite_page["Altitude"][0])
+            rad_earth = 6371000
+            temp_alt = temp_alt + rad_earth
             alt_vec = temp_alt * earth_loc_unit
             sat_pos = earth_loc + alt_vec
             read_sat_pos.append(
@@ -712,15 +714,16 @@ class BenrulesRealTimeSim:
             # Populate satellite manuever list
             sat_mans = deque()
             for index, maneuver in enumerate(satellite_page["MStart"]):
-                temp_man = [
-                   int(maneuver),
-                   np.array(
-                       [np.float64(satellite_page["DeltaVX"][index]),
-                        np.float64(satellite_page["DeltaVY"][index]),
-                        np.float64(satellite_page["DeltaVZ"][index])]
-                   )
-                ]
-                sat_mans.append(temp_man)
+                if not math.isnan(maneuver):
+                    temp_man = [
+                       int(maneuver),
+                       np.array(
+                           [np.float64(satellite_page["DeltaVX"][index]),
+                            np.float64(satellite_page["DeltaVY"][index]),
+                            np.float64(satellite_page["DeltaVZ"][index])]
+                       )
+                    ]
+                    sat_mans.append(temp_man)
             sat_maneuver_queues.append(sat_mans)
 
         # Set counters to track the current time step of the simulator and
