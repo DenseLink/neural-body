@@ -279,7 +279,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
             current_working_directory = os.path.dirname(
                 os.path.realpath(__file__))
             start_string = current_working_directory + \
-                           "/sim_configs/TestConfig.xlsx"
+                           "/sim_configs/launch_sat_config.xlsx"
             if past_input != "":
                 start_string = past_input
                 del simulation
@@ -816,14 +816,6 @@ def menu(screen, states, scr_width, scr_height, numDays):
                         if math.isnan(curr_sheet['Altitude'][0]):
                             raise FileNotFoundError
                         if math.isnan(curr_sheet['StartSpeed'][0]):
-                            raise FileNotFoundError
-                        if math.isnan(curr_sheet['MStart'][0]):
-                            raise FileNotFoundError
-                        if math.isnan(curr_sheet['DeltaVX'][0]):
-                            raise FileNotFoundError
-                        if math.isnan(curr_sheet['DeltaVY'][0]):
-                            raise FileNotFoundError
-                        if math.isnan(curr_sheet['DeltaVZ'][0]):
                             raise FileNotFoundError
 
 
