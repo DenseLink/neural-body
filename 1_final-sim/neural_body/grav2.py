@@ -546,9 +546,13 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                         int(scr_width / 1.8),
                         int(scr_height / 5)
                     ))
-                    simulation.current_time_step = int(input2_text)
+                    # Convert inputted day to simulation time step.
+                    sim_time_step = int((int(input2_text) * 86400)
+                                        // simulation.time_step_duration)
+                    simulation.current_time_step = sim_time_step
                     print("processing finished")
-                    numDays = int(input2_text)
+                    timePassed = simulation.current_time_step * simulation.time_step_duration
+                    numDays = int(timePassed / 86400)
                     input2_text = ""
 
                 view = states[1]
@@ -565,9 +569,6 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                     del simulation
                 else:
                     pygame.display.flip()
-                # clock.tick(1)  # screen refresh rate
-                #time.sleep(1 / simulation.max_fps)
-
 
 
 def print_key(screen):  # scr_width, scr_height
@@ -1040,6 +1041,7 @@ def menu(screen, states, scr_width, scr_height, numDays):
         #     text_handler(screen, temp_text, int(scr_width / 2.51) + 3,
         #                  int(scr_height / 2.17) + 3, 30, 255)
 
+    # Option to travel to a specific day selected
     if input2_active == 1:
         pause = 1
 
