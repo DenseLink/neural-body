@@ -381,7 +381,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 # Set the framerate
                 time.sleep(1 / simulation.max_fps)
 
-                timePassed = simulation.current_time_step * simulation.\
+                timePassed = simulation.current_time_step * simulation. \
                     time_step_duration
                 num_days = int(timePassed / 86400)
 
@@ -467,11 +467,11 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                                             1)
                                     if (lg_disp_left <
                                         ((x_track[k][
-                                             j] - sun_i_x) / 8 + sunx) <
+                                              j] - sun_i_x) / 8 + sunx) <
                                         lg_disp_right) and \
                                             (lg_disp_top <
                                              ((y_track[k][
-                                                 j] - sun_i_y) / 8 + suny) <
+                                                   j] - sun_i_y) / 8 + suny) <
                                              lg_disp_bottom):
                                         pygame.draw.line(
                                             screen,
@@ -574,7 +574,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                                range(len(current_positions) + 5)]
                     y_track = [[0] * tail_length for i in
                                range(len(current_positions) + 5)]
-                    print("beginning processing")
+
                     pygame.draw.rect(screen,
                                      (0, 0, 0),
                                      pygame.Rect(
@@ -614,8 +614,8 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                     sim_time_step = int((int(input2_text) * 86400)
                                         // simulation.time_step_duration)
                     simulation.current_time_step = sim_time_step
-                    print("processing finished")
-                    timePassed = simulation.current_time_step * simulation.\
+
+                    timePassed = simulation.current_time_step * simulation. \
                         time_step_duration
                     num_days = int(timePassed / 86400)
                     input2_text = ""
@@ -899,7 +899,6 @@ def menu(screen, states, scr_width, scr_height, numDays):
                         if math.isnan(curr_sheet['StartSpeed'][0]):
                             raise FileNotFoundError
 
-
             except FileNotFoundError:
                 messagebox.showerror(
                     title='Config File Warning',
@@ -979,7 +978,6 @@ def menu(screen, states, scr_width, scr_height, numDays):
             int(scr_width / 20)) and (int(scr_height / 2.7) < click_y <
                                       int(scr_height / 2.7) + int(
                     scr_height / 26)) and action_flag == 1:
-            print("clicked x")
             input2_text = ""
             input2_active = 0
             textbox2_active = 0
@@ -1021,13 +1019,12 @@ def menu(screen, states, scr_width, scr_height, numDays):
             for event in events:
                 if event.type == pygame.KEYDOWN:
                     if input2_active == 1:
-                        if event.key == pygame.K_RETURN or event.key == pygame\
+                        if event.key == pygame.K_RETURN or event.key == pygame \
                                 .K_KP_ENTER:
                             try:
                                 temp_num = int(input2_text)
                             except:
                                 valid_File = 2
-                                print("An error is thrown, v = 2")
                                 text_handler(screen,
                                              "Invalid number, please try "
                                              "again!",
