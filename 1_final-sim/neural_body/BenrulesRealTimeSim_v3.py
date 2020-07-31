@@ -127,8 +127,6 @@ class BenrulesRealTimeSim:
         # Get the number of planets and satellites
         num_planets = planet_pos.shape[0]
         num_sats = sat_pos.shape[0]
-        # num_in_items_seq_lstm = sat_vel.shape[0]
-        # num_out_seq_lstm = 10
 
         if ignore_nn == True:
             # If not using neural network, compute everything as many times as
@@ -809,7 +807,7 @@ class BenrulesRealTimeSim:
             self._curr_cache_size += 1
 
         # Try starting background processes
-        ignore_nn = False
+        ignore_nn = True
         self._future_queue_process = Process(
             target=self._maintain_future_cache,
             args=(self._output_queue,
@@ -857,13 +855,17 @@ class BenrulesRealTimeSim:
         # Lock to take control of stdout
         self._lock = Lock()
         # Set the base simulation time step duration
-        self._time_step = 800
+        # 1 hour = 3600
+        # 3 hour = 10800
+        # 6 hour = 21600
+        # 12 hour = 43200
+        self._time_step = 21600
         # Grab the current working to use for referencing data files
         self._current_working_directory = \
             os.path.dirname(os.path.realpath(__file__))
         # Create neural network object that lets us run neural network
         # predictions as well.
-        nn_name = 'my_model 99_95 8532.h5'
+        nn_name = '157epochs_6hr-ts.h5'
         self._nn_path = self._current_working_directory + "/nn/" + nn_name
         # Create neural net to use with future queue process
         # Since we are using an LSTM network, we will need to initialize the
@@ -1280,6 +1282,10 @@ class BenrulesRealTimeSim:
             # Get next simulation state from the future queue and parse
             # out the various values from the list in the queue.
             next_state = self._output_queue.get()
+            # Check if orbits are getting outrageously large.  If so, just set to
+            # 10^25.  Numpy fancy indexing!!
+            default_orbit = np.float64(10e25)
+            next_state[2][next_state[2] > default_orbit] = default_orbit
             # Add the new state to all the caches.
             self._planet_pos_cache[self._curr_cache_index, :, :] = \
                 next_state[0]
@@ -1351,6 +1357,8 @@ class BenrulesRealTimeSim:
             # Advance to the next time step.
             self._current_time_step += 1
             self._curr_cache_index += 1
+
+
         # Print statement to monitor queue health.
         #print(f'Output queue size{self._output_queue.qsize()}')
         # If the output queue is starting to get dangerously low, signal front
