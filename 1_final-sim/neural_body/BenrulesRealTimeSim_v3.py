@@ -807,7 +807,7 @@ class BenrulesRealTimeSim:
             self._curr_cache_size += 1
 
         # Try starting background processes
-        ignore_nn = True
+        ignore_nn = False
         self._future_queue_process = Process(
             target=self._maintain_future_cache,
             args=(self._output_queue,
@@ -865,7 +865,7 @@ class BenrulesRealTimeSim:
             os.path.dirname(os.path.realpath(__file__))
         # Create neural network object that lets us run neural network
         # predictions as well.
-        nn_name = '157epochs_6hr-ts.h5'
+        nn_name = '200epochs_6hr-ts.h5'
         self._nn_path = self._current_working_directory + "/nn/" + nn_name
         # Create neural net to use with future queue process
         # Since we are using an LSTM network, we will need to initialize the

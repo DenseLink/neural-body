@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="d3254425-238f-4cb5-9e43-c79fd66e98f7" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/2_benrules_v2.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../1_final-sim/neural_body/BenrulesRealTimeSim_v3.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../../1_final-sim/neural_body/BenrulesRealTimeSim_v3.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../1_final-sim/neural_body/nn/157epochs_6hr-ts.h5" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../1_final-sim/neural_body/nn/174epochs_3hr-ts.h5" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../1_final-sim/neural_body/nn/my_model 99_92 13786.h5" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../1_final-sim/neural_body/nn/my_model 99_95 8532.h5" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../1_final-sim/neural_body/nn/saved_model 99_39 99987.pb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../1_final-sim/neural_body/nn/saved_model 99_67.pb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../1_final-sim/neural_body/nn/saved_model 99_78 40957.pb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../1_final-sim/neural_body/nn/saved_model_99_78_41701.pb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/0_Data_Generation_Notebooks/.ipynb_checkpoints/benrules_v2_simcache_to_df_converter-checkpoint.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/0_Data_Generation_Notebooks/.ipynb_checkpoints/benrules_v2_simcache_to_df_converter-checkpoint.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/0_Data_Generation_Notebooks/benrules_v2_simcache_to_df_converter.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/0_Data_Generation_Notebooks/benrules_v2_simcache_to_df_converter.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/0_modified_sim_before_use/benrules_v2_driver.py" beforeDir="false" afterPath="$PROJECT_DIR$/0_modified_sim_before_use/benrules_v2_driver.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/0_modified_sim_before_use/benrules_v2_simmod.py" beforeDir="false" afterPath="$PROJECT_DIR$/0_modified_sim_before_use/benrules_v2_simmod.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../.." />
+  </component>
+  <component name="ProjectId" id="1fSLeo4pHCy455OowmnjHK3Arm8" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="d3254425-238f-4cb5-9e43-c79fd66e98f7" name="Default Changelist" comment="" />
+      <created>1596206644062</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1596206644062</updated>
+      <workItem from="1596206645328" duration="275000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="2" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="-1080" y="110" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1596206920652">
+      <screen x="-1080" y="-484" width="1080" height="1880" />
+    </state>
+    <state x="-1080" y="110" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1920.1040/-1080.-484.1080.1880@-1080.-484.1080.1880" timestamp="1596206920652" />
+  </component>
+</project>

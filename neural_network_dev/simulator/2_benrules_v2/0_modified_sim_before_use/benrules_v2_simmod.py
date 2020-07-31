@@ -298,11 +298,15 @@ class benrules_v2:
         self.current_loc_np = self.current_loc_np + displacement_np
         if current_step % self.report_frequency == 0:
             # Assume cache index was already incremented in the velocity function.
-            self.dis_np[self._curr_cache_index, :, :] = displacement_np
+
+            #self.dis_np[self._curr_cache_index, :, :] = displacement_np
             # Calculate and save position relative to sun.
             sun_pos = self.current_loc_np[0]
             pos_rel_sun_np = self.current_loc_np[:] - sun_pos
             self.pos_np[self._curr_cache_index, :, :] = pos_rel_sun_np
+            # Calculate the raw displacement using the current and past positions.
+            if self._curr_cache_index > 0:
+                self.dis_np[self._curr_cache_index-1, :, :] = self.pos_np[self._curr_cache_index, :, :] - self.pos_np[self._curr_cache_index-1, :, :]
 
 
     def _update_location(self, current_step=0):

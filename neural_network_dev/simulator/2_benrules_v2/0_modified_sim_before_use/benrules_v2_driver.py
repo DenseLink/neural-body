@@ -9,8 +9,8 @@ from random import randint
 def main():
     # Setup simulation settings
     time_step = 720
-    number_of_steps = 1200000
-    report_frequency = 30
+    number_of_steps = 200000
+    report_frequency = 5
 
     # Grab a random state of the universe to start from.
     # Read in the binary numpy files storing the acceleration,
@@ -146,6 +146,13 @@ def main():
                 additional_bodies=[satellite]
             )
             current_sim.run_simulation()
+            # Remove last element of each cache to account for displacement
+            # missing from last value in cache.
+            current_sim.acc_np = current_sim.acc_np[:-1].copy()
+            current_sim.vel_np = current_sim.vel_np[:-1].copy()
+            current_sim.pos_np = current_sim.pos_np[:-1].copy()
+            current_sim.dis_np = current_sim.dis_np[:-1].copy()
+
             # Create group in hdf5 file for the current sim
             sim_group = f.create_group('sim_' + str(index))
             sim_group.create_dataset('acc', data=current_sim.acc_np)
