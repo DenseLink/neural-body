@@ -1562,6 +1562,7 @@ class BenrulesRealTimeSim:
                     sim_positions = self.get_next_sim_state_v2()
                     if not listener.running:
                         self._current_time_step = old_ts
+                        sim_positions = self.get_next_sim_state_v2()
                         break
                 while not self._output_queue.full():
                     if not listener.running:
