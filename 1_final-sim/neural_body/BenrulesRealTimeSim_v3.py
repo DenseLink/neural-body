@@ -92,7 +92,6 @@ from collections import deque # Used for burn maneuvers
 # Imports for multiprocessing producer/consumer data model.
 from multiprocessing import Process, Queue, Lock, cpu_count, Value
 from threading import Thread
-import threading
 
 # Check if DISPLAY has been detected.  If not, assume WSL with pycharm and grab
 # display connection.  Needed for pynput import.
@@ -113,6 +112,10 @@ except KeyError as error:
 
 # Need to run above before importing pynput
 from pynput import keyboard
+# Tkinter for progress bar
+from tkinter import *
+from tkinter import ttk
+
 
 class BenrulesRealTimeSim:
     """
@@ -1535,6 +1538,22 @@ class BenrulesRealTimeSim:
         if key == keyboard.Key.esc:
             return False
 
+    @staticmethod
+    def _indeterminate_progress_bar():
+        # Create tkinter window to show progress.
+        root = Tk()
+        root.title('Simulator Processing')
+        root.geometry("300x100")
+        # Create ttk progress bar widget.
+        my_progress = ttk.Progressbar(root,
+                                      orient=HORIZONTAL,
+                                      length=200,
+                                      mode='indeterminate')
+        my_progress.pack(pady=20)
+        root.mainloop()
+        # Close progress screen
+        root.withdraw()
+
     @current_time_step.setter
     def current_time_step(self, in_time_step):
         """
@@ -1557,18 +1576,63 @@ class BenrulesRealTimeSim:
         # If time goes beyond the max time the simulator has reached, advance
         # the simulator to that time.
         if in_time_step > self._max_time_step_reached:
+            # # Launch processing progress bar
+            # progress_bar = Thread(target=self._indeterminate_progress_bar())
+            # # Shared variable to signal progress bar.
+            # close_progress_bar = Value('I', 1)
+            # Create tkinter window to show progress.
+            root = Tk()
+            root.title('Simulator Processing')
+            screen_height = root.winfo_screenheight()
+            screen_width = root.winfo_screenwidth()
+            window_height = 50
+            window_width = 1000
+            geometry = "%sx%s+%s+%s" % (window_width,
+                                        window_height,
+                                        int(screen_width/2 - window_width/2),
+                                        int(2))
+            root.geometry(geometry)
+            root.overrideredirect(True)
+            root.resizable(width=FALSE, height=FALSE)
+            # Create ttk progress bar widget.
+            my_progress = ttk.Progressbar(root,
+                                          orient=HORIZONTAL,
+                                          length=window_width - 40,
+                                          mode='determinate')
+            my_progress.pack(pady=20)
             with keyboard.Listener(on_press=self._on_press) as listener:
                 while self._max_time_step_reached < in_time_step:
+                    progress_val = int(
+                        ((self._max_time_step_reached +
+                          self._output_queue.qsize()) /
+                         (in_time_step + self._out_queue_max_size)) * 100
+                    )
+                    my_progress['value'] = progress_val
+                    root.update()
                     sim_positions = self.get_next_sim_state_v2()
                     if not listener.running:
                         self._current_time_step = old_ts
                         sim_positions = self.get_next_sim_state_v2()
+                        root.quit()
+                        root.withdraw()
                         break
                 while not self._output_queue.full():
+                    progress_val = int(
+                        ((self._max_time_step_reached +
+                          self._output_queue.qsize()) /
+                         (in_time_step + self._out_queue_max_size)) * 100
+                    )
+                    my_progress['value'] = progress_val
+                    root.update()
                     if not listener.running:
                         self._current_time_step = old_ts
+                        root.quit()
+                        root.withdraw()
                         break
-                    time.sleep(3)
+                    time.sleep(0.5)
+            # Close progress
+            root.quit()
+            root.withdraw()
             return
         # If the time is between 0 and the max, set the current time step to
         # the given time step.
