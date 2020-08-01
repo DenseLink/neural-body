@@ -1,0 +1,789 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>neural_body package &#8212; Neural_Body_Simulator  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="neural-body-package">
+<h1>neural_body package<a class="headerlink" href="#neural-body-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-neural_body.BenrulesRealTimeSim_v3">
+<span id="neural-body-benrulesrealtimesim-v3-module"></span><h2>neural_body.BenrulesRealTimeSim_v3 module<a class="headerlink" href="#module-neural_body.BenrulesRealTimeSim_v3" title="Permalink to this headline">¶</a></h2>
+<p>Real-Time basic simulator for planetary motions with neural network
+inference for prediction of an arbitrary number of satellites.</p>
+<p>This module contains the BenrulesRealTimeSim class, which creates a real time
+simulator of the sun, planets, pluto, and an arbitrary number of satellites.
+The initial simulation was forked from benrules2 on Github at the below link.
+<a class="reference external" href="https://gist.github.com/benrules2/220d56ea6fe9a85a4d762128b11adfba">https://gist.github.com/benrules2/220d56ea6fe9a85a4d762128b11adfba</a>
+This simulator simulated a system for a fixed number of time steps and output
+the results to a custom class and dictionary.</p>
+<p>v2 of the simulator converted it to a real time simulator using a Pandas
+dataframe to track simulation history and rewind back in time.  It also used
+a feed-forward neural network that predicted the location of a specifically
+trained body given the positions of every other body.  It also used
+dictionaries to store current simulation states and calculated steps from
+acceleration to velocity to displacement using loops.  Overall, this presented
+the below challenges:
+1. High memory usage.  Since the simulation for all time was stored to a</p>
+<blockquote>
+<div>Pandas Dataframe in memory, this meant that as the simulation ran, the
+memory usage would continually grow.</div></blockquote>
+<ol class="arabic simple" start="2">
+<li>Slow simulation computations.  Many of the calculations used double and
+triple nested loops to calculte gravitational influence on a body and
+convert from the acceleration to velocity and velocity to displacement
+domains.</li>
+<li>CPU idle time.  Since all calculations were done at run time, the simulator
+would sit at idle rather than continuing to perform calculations in the
+background.</li>
+</ol>
+<p>v3, while taking inspiration from the original benrules simulator,
+no longer resembles the original.  v3 is extensible to an arbitrary number of
+satellites in the simulation.  The LSTM neural net it uses relies on the body
+acceleration and current velocities to predict where the body will go for the
+next 20 time steps.  The current behavior of the neural net is strange, which
+is why in the config files, there is an option to turn it off and rely on the
+simulator only.  Much more feature engineering, data generation, and
+hyperparameter tuning is needed to accurately mimic orbital behavior.
+One of the main challenges that arose as well with the LSTM network is slower
+inference time.  Without background processing and predicting multiple time
+steps at each inference, performance would be sub 3 fps.  Because of this
+challenge and the v2 challenges, the below changes were made to v3.
+1. Instead of using a Pandas dataframe that could require large amounts of</p>
+<blockquote>
+<div>memory with longer simulation durations, a new cache-archive system was
+developed to exchange simulation tracking between a numpy array that stores
+a sequence of 100 values in memory and an hdf5 file that stores a total
+record of the simulation so far.  As time jumps are performed, trackers and
+functions handle the flushing of new values from the cache to the archive
+and loading of time steps from the archive.  Having a history stored in
+numpy arrays also helps with vectorized computation since time steps don’t
+need to be copied to other data structures for use in calculations.</div></blockquote>
+<ol class="arabic simple" start="2">
+<li>Slow simulation computations were addressed by fully vectorizing all
+simulation computations using numpy linear algebra and getting rid of all
+computation loops.  This vectorization was done while maintaining the
+capability to add an arbitrary number of bodies to the simulation.
+Slow inference time with the neural network was addressed by trying to
+predict 20 time steps ahead given a sequence of 4 time steps as input to
+an LSTM network.  This enabled 1 inference cycle to produce 20 time steps.</li>
+<li>Since the simulator is inherently a serial problem (in order to predict
+the next state, we must know the previous stat), the best option to address
+performance was to ensure a producer/consumer model was uses to
+continually run a producer in a background process that calculated future
+time steps even while the simulation is paused or when there is available
+CPU time on another processor.  Main simulation calculations were moved to
+an external process that calculates future time steps.  This process
+maintains a pre-queue of about 5000 future time steps.  It feeds a queue
+of 100 time steps between the background process and the main simulator that
+provides positions to the front end.  In order to reliably keep the main
+queue filled, the background process continually tries to keep the main
+queue filled with values from the pre-queue.  It is able to continually
+perform this task since the calculations filling the pre-queue are launched
+and performed in a separate thread.  This help mitigate the
+degradation of the buffer that the main queue provides.</li>
+</ol>
+<p>In addition to the above improvements, benchmarking and queue monitoring occur
+to ensure that the system runs at a steady pace that the simulator can keep
+up with.  The user can burst to 2X or 1X, but if the queue begins to degrade,
+the simulator will automatically revert back to 1X.  This is mainly for when
+the neural network is used.  When not using the neural network, the simulator
+will usually revert to a max framerate of 50 fps and even when running at
+faster speeds, keep up without throttling back.</p>
+<dl class="class">
+<dt id="neural_body.BenrulesRealTimeSim_v3.BenrulesRealTimeSim">
+<em class="property">class </em><code class="descclassname">neural_body.BenrulesRealTimeSim_v3.</code><code class="descname">BenrulesRealTimeSim</code><span class="sig-paren">(</span><em>sat_config_file</em><span class="sig-paren">)</span><a class="headerlink" href="#neural_body.BenrulesRealTimeSim_v3.BenrulesRealTimeSim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class containing real-time simulator for planet motions an an arbitrary
+number of satellites.  Can operate with and without a neural net to
+predict the motions of the satellites.</p>
+<p>Instance Variables:
+:ivar lock: Shared lock for stdout when troubleshooting or printing</p>
+<blockquote>
+<div>messages from background processes.</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><strong>time_step</strong> – Duration of time step the simulator is running on.</li>
+<li><strong>current_working_directory</strong> – Current location of simuator script.</li>
+<li><strong>nn_path</strong> – Path to the .h5 file containing the LSTM neural net.</li>
+<li><strong>len_lstm_in_seq</strong> – Number of time steps in the input sequence to the
+LSTM network.</li>
+<li><strong>len_lstm_out_seq</strong> – Number of time steps that can be predicted by the
+LSTM network in a single inference.</li>
+<li><strong>num_processes</strong> – Max number of processes the CPU can handle.</li>
+<li><strong>out_queue_max_size</strong> – Max size of the queue carrying information from
+the background simulation process and the functions that serve position
+data to the front end.</li>
+<li><strong>output_queue</strong> – The queue that receives data from the background
+simulation process as the producer and the functions that serve
+position data to the front end as consumers.</li>
+<li><strong>keep_future_running</strong> – Shared state integer that signals the while
+loop that runs the background simulation to stop, close out all threads
+and flush all queues.</li>
+<li><strong>in_planet_df</strong> – Dataframe containing the initial planet data to launch
+the simulator.</li>
+<li><strong>sim_archive_location</strong> – Location to store the .hdf5 file that contains
+all the cache data from the simulator for the entire simulation.</li>
+<li><strong>latest_ts_in_archive</strong> – The latest time step stored currently in the
+hdf5 archive file.</li>
+<li><a class="reference internal" href="#neural_body.BenrulesRealTimeSim_v3.BenrulesRealTimeSim.current_time_step" title="neural_body.BenrulesRealTimeSim_v3.BenrulesRealTimeSim.current_time_step"><strong>current_time_step</strong></a> – The current time step required to be served by the
+simulator.  Controls whether to grab data from archive, queue, or
+the future queue.</li>
+<li><strong>max_time_step_reached</strong> – The maximum time step the simulator has ever
+served to the front end.</li>
+<li><strong>curr_cache_size</strong> – Current size of the in-memory caches.</li>
+<li><strong>max_cache_size</strong> – Max allowed size of the in-memory caches.</li>
+<li><strong>latest_ts_in_cache</strong> – Latest time step stored in the current cache
+state.</li>
+<li><strong>num_planets</strong> – Number of planets being simulated.</li>
+<li><strong>num_sats</strong> – Number of satellites loaded into the simualtion.</li>
+<li><strong>planet_pos_cache</strong> – Numpy array that caches the positions of all
+planets for the max size of the cache.</li>
+<li><strong>planet_vel_cache</strong> – Numpy array that caches the velocities of all
+planets for the max size of the cache.</li>
+<li><strong>sat_pos_cache</strong> – Numpy array that caches the positions of all
+satellites for the max size of the cache.</li>
+<li><strong>sat_vel_cache</strong> – Numpy array that caches the velocities of all
+satellites for the max size of the cache.</li>
+<li><strong>sat_acc_cache</strong> – Numpy array that caches the accelerations of all
+satellites for the max size of the cache.</li>
+<li><strong>masses</strong> – Numpy array containing the masses of all bodies in the
+system.</li>
+<li><a class="reference internal" href="#neural_body.BenrulesRealTimeSim_v3.BenrulesRealTimeSim.body_names" title="neural_body.BenrulesRealTimeSim_v3.BenrulesRealTimeSim.body_names"><strong>body_names</strong></a> – A list containing the names of all bodies in the system.</li>
+<li><strong>future_queue_process</strong> – Object containing the background process that
+is continually calculating future time steps.</li>
+<li><a class="reference internal" href="#neural_body.BenrulesRealTimeSim_v3.BenrulesRealTimeSim.max_fps" title="neural_body.BenrulesRealTimeSim_v3.BenrulesRealTimeSim.max_fps"><strong>max_fps</strong></a> – After simulation initialization, contains the maximum
+framerate the current system running the simulation can run at.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="neural_body.BenrulesRealTimeSim_v3.BenrulesRealTimeSim.body_names">
+<code class="descname">body_names</code><a class="headerlink" href="#neural_body.BenrulesRealTimeSim_v3.BenrulesRealTimeSim.body_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Getter that returns a list of the names of all bodies in the
+simualtion.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Return body_names:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body">List with the names of all bodies in the system.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="neural_body.BenrulesRealTimeSim_v3.BenrulesRealTimeSim.current_time_step">
+<code class="descname">current_time_step</code><a class="headerlink" href="#neural_body.BenrulesRealTimeSim_v3.BenrulesRealTimeSim.current_time_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Getter that retrieves the current time step the simulator is at.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Return current_time_step:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body">Current time step the simulator is at.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="neural_body.BenrulesRealTimeSim_v3.BenrulesRealTimeSim.get_next_sim_state_v2">
+<code class="descname">get_next_sim_state_v2</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#neural_body.BenrulesRealTimeSim_v3.BenrulesRealTimeSim.get_next_sim_state_v2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that serves the positions of all bodies in the next time step
+based on the internally tracked time step.</p>
+<p>Based on the current time step, this function will either retrieve
+values from the future queue that has new, calculated time steps,
+retrieve values from the cache directly, or fill the cache
+with values from the archive file and retrieve from the new, filled
+cache.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><ul class="simple">
+<li>Numpy array with positions of all bodies in the simulation.</li>
+<li>Boolean variable telling the front end to slow down request
+rate to allow background simulation process to fill back up.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="neural_body.BenrulesRealTimeSim_v3.BenrulesRealTimeSim.max_fps">
+<code class="descname">max_fps</code><a class="headerlink" href="#neural_body.BenrulesRealTimeSim_v3.BenrulesRealTimeSim.max_fps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Getter that returns the calculated max framerate the current system
+can run at safely while maintaining future time step calculations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return max_fps:</th><td class="field-body">Max framerate the current simulation can run at
+steadily.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="neural_body.BenrulesRealTimeSim_v3.BenrulesRealTimeSim.time_step_duration">
+<code class="descname">time_step_duration</code><a class="headerlink" href="#neural_body.BenrulesRealTimeSim_v3.BenrulesRealTimeSim.time_step_duration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Getter that retrieves the duration of the time step in seconds that
+the simulation uses to calculate new positions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Return time_step_duration:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body">Duration of the simulation time step in
+seconds.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-neural_body.grav2">
+<span id="neural-body-grav2-module"></span><h2>neural_body.grav2 module<a class="headerlink" href="#module-neural_body.grav2" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="neural_body.grav2.boxes">
+<code class="descclassname">neural_body.grav2.</code><code class="descname">boxes</code><span class="sig-paren">(</span><em>screen</em>, <em>scr_width</em>, <em>scr_height</em><span class="sig-paren">)</span><a class="headerlink" href="#neural_body.grav2.boxes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that places UI divider boxes on the screen
+Function to draw the boundries of the three areas of the application.
+These being the menu, solar system view, and inner planet view. These
+views are static and rendered first, putting them at the bottom of the
+visual instnaces
+<strong>List of input parameters:</strong>
+:param screen: the usable area for drawing within the application</p>
+<blockquote>
+<div>window</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>scr_width</strong> – the width of the screen in pixels. This will always
+be an integer used for object placement math.</li>
+<li><strong>scr_height</strong> – the height of the screen in pixels. This will always
+be an integer used for object placement math.</li>
+<li><strong>scr_height</strong> – the height of the screen in pixels. This will always
+be an integer used for object placement math.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="neural_body.grav2.click_handler">
+<code class="descclassname">neural_body.grav2.</code><code class="descname">click_handler</code><span class="sig-paren">(</span><em>click_now</em><span class="sig-paren">)</span><a class="headerlink" href="#neural_body.grav2.click_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to capture characteristics of user clicks
+Function to easily capture mouse location and actions. click_now is
+used to prevent clicks from being repeated each time the simulation
+screen is re-rendered.
+<strong>List of input parameters:</strong>
+:param click_now: contains an integer of either 0 or 1 that denotes</p>
+<blockquote>
+<div>whether or not the mouse was pressed down during the previous
+program cycle in order to handle sustained presses</div></blockquote>
+<p><strong>List of returned values:</strong>
+:returns:
+- action_flag - Flag is set to 0 if the click is a continued press,</p>
+<blockquote>
+<div>1 if the click is new</div></blockquote>
+<ul class="simple">
+<li>click_now - Set to 0 if the left mouse button is released, 1 if
+pressed</li>
+<li>click_x - The inetger x-coordinate of the mouse</li>
+<li>click_y - The integer y-coordinate of the mouse</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="neural_body.grav2.main">
+<code class="descclassname">neural_body.grav2.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#neural_body.grav2.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main function of the program, where all of the fun begins. Basic
+environment attributes are set such as the screen dimensions, number
+of planets (total on screen, main view plus inner planet view), the
+planet tail length, and the program clock</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="neural_body.grav2.menu">
+<code class="descclassname">neural_body.grav2.</code><code class="descname">menu</code><span class="sig-paren">(</span><em>screen</em>, <em>states</em>, <em>scr_width</em>, <em>scr_height</em>, <em>numDays</em><span class="sig-paren">)</span><a class="headerlink" href="#neural_body.grav2.menu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that will display main menu, as well as handles actions to the
+menu. If mouse is hovering over menu item the text for that menu item
+will change from grey to white. If clicked on or hovered over, menu
+item will activate.
+<strong>Methods used:</strong>
+- text_handler - displays text on the screen
+- pygame.draw - draws rectangles on the screen to separate parts of</p>
+<blockquote>
+<div>the application.</div></blockquote>
+<p><strong>List of input parameters:</strong>
+:param screen: window created by pygame used to display application
+:param states: A list of the current states of the system, see list</p>
+<blockquote>
+<div>of states below</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>scr_width</strong> – An in that represents the width of the screen</li>
+<li><strong>scr_height</strong> – An int that represents the height of the screen</li>
+<li><strong>numDays</strong> – An int that represents how many Earth days have passed
+in the simulation</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>List of Menu Selection Areas:</strong>
+- play_pause - List that contains the length and width parameters</p>
+<blockquote>
+<div>for the play/pause menu option</div></blockquote>
+<ul class="simple">
+<li><dl class="first docutils">
+<dt>toggle - List that contains the length and width parameters for</dt>
+<dd>the view toggle menu option</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>adjust - List that contains the length and width parameters for</dt>
+<dd>the speed adjustment menu option</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>upload - List that contains the length and width parameters for</dt>
+<dd>the file upload menu option</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>nasa_right - List that contains the length and width parameters</dt>
+<dd>for the display pluto menu option</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>key_menu_option - List that contains the length and width</dt>
+<dd>parameters for the display key menu option</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>day_select - List that contains the length and width parameters</dt>
+<dd>for the point in time selection menu option</dd>
+</dl>
+</li>
+</ul>
+<p><strong>List of states of the application:</strong>
+- pause - An int that specifies whether or not the simulation runs,</p>
+<blockquote>
+<div>0 means it’s running, 1 means it is paused</div></blockquote>
+<ul class="simple">
+<li><dl class="first docutils">
+<dt>view - An int that determines what view is displayed, 0 for</dt>
+<dd>overhead view, 1 for side view</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>speed - An int that determines the speed of the simulation,</dt>
+<dd>1x, 2x, 4x, etc</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>rev - An int that would determine if the simulation is running</dt>
+<dd>in reverse or not, not currently implemented</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>click_now - An int that determines whether the mouse is being</dt>
+<dd>clicked, 0 means no click, 1 means click</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>input_active - An int that determines whether the file input</dt>
+<dd>text box shows, 0, means no show, 1 means it will show</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>nasa - String that activates pluto, Yes, means NASA is correct,</dt>
+<dd>and pluto is not a planet, No means NASA is incorrect and pluto
+is a planet</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>input2_active - An int that displays the travel to a day</dt>
+<dd>textbox, 0 means no show, 1 means it shows</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>textbox2_active - An int that determines whether the travel to</dt>
+<dd>textbox is showing, 0 means no, 1 means yes</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>input2_text - String that determines what day will be traveled</dt>
+<dd>to after the travel to day is determined</dd>
+</dl>
+</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">returns the above list of states to feed information to the
+program for control of specific features</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="neural_body.grav2.menu_text">
+<code class="descclassname">neural_body.grav2.</code><code class="descname">menu_text</code><span class="sig-paren">(</span><em>screen</em>, <em>scr_width</em>, <em>scr_height</em><span class="sig-paren">)</span><a class="headerlink" href="#neural_body.grav2.menu_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to place menu option text on the screen
+Function to display the base text of the menu on the screen. All
+values start out as light grey but are overlaid with
+white text by another method when moused over
+<strong>List of input parameters:</strong>
+:param screen: the usable area for drawing within the application</p>
+<blockquote>
+<div>window</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>scr_width</strong> – the width of the screen in pixels. This will always
+be an integer used for object placement math.</li>
+<li><strong>scr_height</strong> – the height of the screen in pixels. This will
+always be an integer used for object placement math.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="neural_body.grav2.orbits">
+<code class="descclassname">neural_body.grav2.</code><code class="descname">orbits</code><span class="sig-paren">(</span><em>screen</em>, <em>num_planets</em>, <em>tail_length</em>, <em>clock</em>, <em>scr_width</em>, <em>scr_height</em><span class="sig-paren">)</span><a class="headerlink" href="#neural_body.grav2.orbits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that runs the simulation. Handles function calls to display
+all visual elements and determine orbital locations.
+This class operates as the master of the program, containing the
+infinite loop that the program relies on in order to function. All
+important interactions between the various components of the program
+are routed through this class, and many vital mathematic operations
+reside within it. Because global variables are not used, this class
+acts as an intermediate to pass variables as parameters and receive
+them back as returned values.
+Methods used:
+- pygame.draw.circle - replicates the planets drawn on the screen
+- text_handler - names each of the replicated planets
+- BenrulesRealTimeSim - creates a real time simulator of the sun,</p>
+<blockquote>
+<div>planets, and pluto.</div></blockquote>
+<ul class="simple">
+<li>pygame.image.load - loads an image from a file</li>
+<li>pygame.transform.scale - scales an image to a specified width and
+height</li>
+<li>get_next_sim_state_v2 - updates the dictionary of current simulation
+data to the next time_step</li>
+<li>screen.fill - changes the color of the entire pygame canvas</li>
+<li>screen.blit - method to display a supplied image on the scren as
+output</li>
+<li>pygame.draw.line - pygame method used to draw a line, here is used to
+draw the trails</li>
+<li>pygame.draw.circle - pygame method used to draw circles, here used to
+represent the planets</li>
+<li>current_time_step - Setter function used to change the point in time
+of the simulation</li>
+<li>pygame.event.get() - method to handle a user interaction event</li>
+<li>pygame.quit() - Pygame method used to quit running pygame</li>
+<li>sys.exit() - Method used to exit the program</li>
+<li>pygame.display.flip() - method to refresh the pygame display</li>
+<li>clock.tick(60) - method used to set a frame rate of 60 frames per
+second</li>
+</ul>
+<p><strong>List of input parameters:</strong>
+:param num_planets: Int representing the number of planet bodies on the</p>
+<blockquote>
+<div>entire screen, inner planets view + solar system view</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tail_length</strong> – Int representing the length of the tail to follow
+behind the orbiting planets</li>
+<li><strong>clock</strong> – a local variable storing a copy of the pygame clock time</li>
+<li><strong>screen</strong> – window created by pygame used to display application</li>
+<li><strong>scr_width</strong> – An in that represents the width of the screen</li>
+<li><strong>scr_height</strong> – An int that represents the height of the screen</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>List of internal variables:</strong>
+- input_text - string containing user-entered filepath for a new init</p>
+<blockquote>
+<div>file</div></blockquote>
+<ul class="simple">
+<li>past_input - string used to store input_text between when it is reset
+and when it needs to be used to call a file</li>
+<li>textbox_active - Int that determines whether the input textbox is to
+be displayed, 0 if no, 1 if yes</li>
+<li>pause - An int that specifies whether or not the simulation runs, 0
+means it’s running, 1 means it is paused</li>
+<li>view - An int that determines what view is displayed, 0 for overhead
+view, 1 for side view</li>
+<li>speed - An int that determines the speed of the simulation, 1x, 2x,
+4x, etc</li>
+<li>click_now - An int that determines whether the mouse is being clicked
+, 0 means no click, 1 means click</li>
+<li>input_active - An int that determines whether the file input text box
+shows, 0, means no show, 1 means it will show</li>
+<li>nasa - String that activates pluto, Yes, means NASA is correct, and
+pluto is not a planet, No means NASA is incorrect and pluto is a
+planet</li>
+<li>input2_active - An int that displays the travel to a day textbox, 0
+means no show, 1 means it shows</li>
+<li>textbox2_active - An int that determines whether the travel to
+textbox is showing, 0 means no, 1 means yes</li>
+<li>input2_text - String that determines what day will be traveled to
+after the travel to day is determined</li>
+<li>zoom - Int used to scaled the planets to fit on the screen</li>
+<li>zoom_factor - Int used to scale the zoom to give varying views of the
+solar system if changed</li>
+<li>zoom_i - Int used to scale the inner planets coordinates to fit on
+the screen</li>
+<li>num_planets - Number of total bodies being displayed on the screen,
+whole solar system view + inner planets view</li>
+<li>time_step - Int used to determine length of time between</li>
+<li>curr_time_step - Int that represents how many time steps have passed
+in the simulation</li>
+<li>start_string - String containing the default path for an init file</li>
+<li>simulation -  An object encompassing an n-body simulation that
+predicts a single body dependent on the state of all other simulated
+bodies in the system.</li>
+<li>sunx - Int representing the x coordinate of the sun image</li>
+<li>suny - Int representing the y coordinate of the sun image</li>
+<li>sun_i_x - Int representing the x coordinate of the sun image for the
+inner planets view</li>
+<li>sun_i_y - Int representing the x coordinate of the sun image for the
+inner planets view</li>
+<li>sun_img - Object used to hold the image of the sun that is printed to
+the screen</li>
+<li>current_positions - Dictionary that contains the name and a list of
+x, y coordinates for each non-predicted planet</li>
+<li>current_positions - Dictionary that contains the name and list of
+x, y coordinates for the predicted planet(s)</li>
+<li>x1 - X coordinate relative to the printed sun image for Mercury</li>
+<li>xi1 - X coordinate relative to the printed sun image for Mercury for
+the inner planets view</li>
+<li>y1 - Y coordinate relative to the printed sun image for Mercury</li>
+<li>yi1 - Y coordinate relative to the printed sun image for Mercury for
+the inner planets view</li>
+<li>x2 - X coordinate relative to the printed sun image for Venus</li>
+<li>xi2 - X coordinate relative to the printed sun image for Venus for
+the inner planets view</li>
+<li>y2 - Y coordinate relative to the printed sun image for Venus</li>
+<li>yi2 - Y coordinate relative to the printed sun image for Venus for
+the inner planets view</li>
+<li>x3 - X coordinate relative to the printed sun image for Earth</li>
+<li>xi3 - X coordinate relative to the printed sun image for Earth for
+the inner planets view</li>
+<li>y3 - Y coordinate relative to the printed sun image for Earth</li>
+<li>yi3 - Y coordinate relative to the printed sun image for Earth for
+the inner planets view</li>
+<li>x4 - X coordinate relative to the printed sun image for Mars</li>
+<li>xi4 - X coordinate relative to the printed sun image for Mars for
+the inner planets view</li>
+<li>y4 - Y coordinate relative to the printed sun image for Mars</li>
+<li>yi4 - X coordinate relative to the printed sun image for Mars for
+the inner planets view</li>
+<li>x5 - X coordinate relative to the printed sun image for Jupiter</li>
+<li>y5 - Y coordinate relative to the printed sun image for Jupiter</li>
+<li>x6 - X coordinate relative to the printed sun image for Saturn</li>
+<li>y6 - Y coordinate relative to the printed sun image for Saturn</li>
+<li>x7 - X coordinate relative to the printed sun image for Uranus</li>
+<li>y7 - Y coordinate relative to the printed sun image for Uranus</li>
+<li>x8 - X coordinate relative to the printed sun image for Pluto</li>
+<li>y8 - Y coordinate relative to the printed sun image for Pluto</li>
+<li>x9 - X coordinate relative to the printed sun image for Neptune</li>
+<li>y9 - Y coordinate relative to the printed sun image for Neptune</li>
+<li>x_track[] - List that contains the x coordinates for the planets to
+print the trails</li>
+<li>y_track[] - List that contains the y coordinates fot the planets to
+print the trails</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="neural_body.grav2.print_key">
+<code class="descclassname">neural_body.grav2.</code><code class="descname">print_key</code><span class="sig-paren">(</span><em>screen</em><span class="sig-paren">)</span><a class="headerlink" href="#neural_body.grav2.print_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to display a planet key
+Method that displays a key of planet colors and names when selected in
+order to aid in user planet idenntification
+<strong>List of input parameters:</strong>
+:param screen: window created by pygame used to display application</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="neural_body.grav2.sun">
+<code class="descclassname">neural_body.grav2.</code><code class="descname">sun</code><span class="sig-paren">(</span><em>screen</em>, <em>x</em>, <em>y</em><span class="sig-paren">)</span><a class="headerlink" href="#neural_body.grav2.sun" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to place the sun image on the screen
+A simple function for loading the sun image and placing it on the
+screen at a given coordinate. The size is static
+<strong>List of input parameters:</strong>
+:param screen: window created by pygame used to display application
+:param x: the integer x-coordinate pixel value where the sun should be</p>
+<blockquote>
+<div>placed</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>y</strong> – the integer y-coordinate pixel value where the sun should be
+placed</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="neural_body.grav2.text_handler">
+<code class="descclassname">neural_body.grav2.</code><code class="descname">text_handler</code><span class="sig-paren">(</span><em>screen</em>, <em>text</em>, <em>scr_x</em>, <em>scr_y</em>, <em>size</em>, <em>color</em><span class="sig-paren">)</span><a class="headerlink" href="#neural_body.grav2.text_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to place text on the screen at a desired location
+Function to place custom text on the screen at any desired location.
+The color of the text is currently restricted to shades of grey and
+white to match the visual theme we are pursuing.
+<strong>List of input parameters:</strong>
+:param screen: the usable area for drawing within the application</p>
+<blockquote>
+<div>window</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>text</strong> – string of text to be displayed on the screen. One line
+only.</li>
+<li><strong>scr_x</strong> – the x coordinate for the text to be located at. Must be
+an integer</li>
+<li><strong>scr_y</strong> – the y coordinate for the text to be located at. Must be
+an integer</li>
+<li><strong>size</strong> – the size of the text to be displayed, in pixels (height).
+Must be an integer</li>
+<li><strong>color</strong> – grey shade of the output. Must be an integer between 0
+and 255.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-neural_body">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-neural_body" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Neural_Body_Simulator</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Craig Boger, Nathaniel Edgar, Cory Robertson, Andrew Sowinski, Gary Jones.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+      |
+      <a href="_sources/neural_body.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
