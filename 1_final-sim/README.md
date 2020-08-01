@@ -84,6 +84,7 @@ not.
 ![Config File Overview](https://github.com/nedgar76/neural-body/blob/final-sim/1_final-sim/readme_resources/use_neural_net_config.png?raw=true)
 
 Sheets to the right of the first sheet contain satellite configurations.
+
 ![Config File Overview](https://github.com/nedgar76/neural-body/blob/final-sim/1_final-sim/readme_resources/config_tabs.png?raw=true)
 
 The user can modify the satellite sheets and add satellite sheets with the below parameters.
@@ -97,6 +98,7 @@ The user can modify the satellite sheets and add satellite sheets with the below
 Burn maneuvers kept as time step units instead of day for programming finer-than-one-day burn maneuvers.
 
 Burn maneuvers can be appended to the MStart, DeltaVX, DeltaVY, and DeltaVZ columns as needed.
+
 ![Config File Overview](https://github.com/nedgar76/neural-body/blob/final-sim/1_final-sim/readme_resources/sat_config_cols.png?raw=true)
 
 Example config file is available for download <a href="https://github.com/nedgar76/neural-body/tree/final-sim/1_final-sim/neural_body/sim_configs" target="_blank"> here. </a>
