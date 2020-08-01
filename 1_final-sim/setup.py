@@ -23,7 +23,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 # Global arguments for both the setup config and the sphinx config.
 name='neural_body'
 version='1.1.0'
-release='0.1.3'
+release='0.1.4'
 
 setup(
     # This is the name of your project. The first time you publish this

@@ -16,6 +16,7 @@ neural_body/nn/193epochs_3hr-ts.h5
 neural_body/nn/200epochs_6hr-ts.h5
 neural_body/sim_archives/place_holder.txt
 neural_body/sim_archives/sim_archive.hdf5
+neural_body/sim_configs/INVALID CONFIG.xlsx
 neural_body/sim_configs/launch_sat_config.xlsx
 neural_body/sim_configs/planet_config.csv
 neural_body/sim_configs/sat_config_1.xlsx

@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: neural-body
-Version: 0.1.3
+Version: 0.1.4
 Summary: An n-body simulator
 Home-page: https://github.com/nedgar76/neural-body
 Author: AstroGators
@@ -52,6 +52,7 @@ Description: # Neural Body N-Body Simulator
         - xlrd
         - h5py
         - pynput
+        
         All dependencies above except for Python 3.8 should install when `pip install` is run.
         
         ### Setup
@@ -213,11 +214,12 @@ Description: # Neural Body N-Body Simulator
            degradation of the buffer that the main queue provides.
         
         In addition to the above improvements, benchmarking and queue monitoring are used
-        to ensure that the system runs at a steady pace that the simulator can keep
+        to ensure that the system runs at a steady pace so that the simulator can keep
         up with frame requests.  The user can burst to 2X or 4X, but if the queue begins to degrade,
         the simulator will automatically revert back to 1X.  This is mainly for when
         the neural network is used.  When not using the neural network, the simulator
         will usually set to a max framerate of 50 fps.
+        
         ---
         ## Team
         The AstroGators formed as a result of the "CIS4930 - Performant Python Programming" 
@@ -232,8 +234,8 @@ Description: # Neural Body N-Body Simulator
         - Andrew Sowinski
         
         Nathaniel was team captain and worked on the burn maneuver system.  Craig was 
-        responsible for the simulator backend design, data engineering for the neural
-        net, and assisted with the neural nets.  Gary was the resident LSTM expert and 
+        responsible for the simulator backend design and data engineering for the neural
+        net.  Gary was the resident LSTM expert and 
         worked on training and tuning of the LSTM neural network along with the previous 
         generation feed-forward neural net.  Andrew was the front-end and PyGame expert.
         Cory performed integration work between back end and front end along with 
