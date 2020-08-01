@@ -15,13 +15,13 @@ to ignore the neural network in the config file.  The user might opt to do this
 since LSTM neural network inference is computationally intensive.  Raw physics
 calculations are vectorized and should be more performant.
 
-Below is a Google Colab notebook that shows the output of a training run for the 
-neural network that predicts Mars' position.  Code that generated the training 
-data and performed preprocessing is not included.  Data file is also not included.
-The link is purely to view code, learning curves, and results.
+This is an example of the Jupyter notebooks written to train LSTM networks at 
+various time steps: <a href="https://colab.research.google.com/drive/1sNubXW63ckzVu7iFL4cDOqpQ6WFg4qD7" target="_blank"> LSTM Neural Network Training </a>
 
-<a href="https://colab.research.google.com/drive/19-pUEmro6ajxLlUAPunM66i42gAaqrPz?usp=sharing" target="_blank"> LSTM Neural Network Training </a>
-<br>
+The data generation and manipulation into a format that the LSTM network could
+understand also took considerable time.  This is a link to one of the example notebooks
+that took the raw HDF5 cache files produced by a data generating simulator and 
+converted the raw data to a format the LSTM network could train on. <a href="https://github.com/nedgar76/neural-body/blob/final-sim/neural_network_dev/simulator/2_benrules_v2/0_Data_Generation_Notebooks/benrules_v2_simcache_to_df_converter.ipynb" target="_blank"> Data Processing </a>
 
 ---
 ## Table of Contents
@@ -74,23 +74,39 @@ The simulation view can be toggled from overhead to side view.
 The simulation can be sped up or slowed down.
 ![Setup Overview GIF](https://github.com/nedgar76/neural-body/blob/demo-sim/0_demo-sim/readme_resources/adjust_speed.GIF?raw=true)
 ### New Simulation
+WARNING: Obtaining stable burn maneuver sequences can take considerable time.
+Example configurations are included with the simulator for testing.
+
 Simulation config files are Excel spreadsheets where the first sheet is the
 general simulation config where the user chooses to use the neural network or 
 not. 
 
-The initial state of all bodies in the system are contained in CSV files packaged
-with the simulator.  Whichever planet is designated as the "satellite" tells the 
-simulator which neural network to use for planetary motion prediction.  This early 
-demo can only predict the motion of Mars or Pluto given the positions of the other
-planets in the system.  In later releases, the neural network will be updated to 
-accommodate predicting the motion of any body.
+![Config File Overview](https://github.com/nedgar76/neural-body/blob/final-sim/1_final-sim/readme_resources/use_neural_net_config.png?raw=true)
 
-Current Config File Options:
-- mars_sim_config.csv
-- pluto_sim_config.csv
+Sheets to the right of the first sheet contain satellite configurations.
+![Config File Overview](https://github.com/nedgar76/neural-body/blob/final-sim/1_final-sim/readme_resources/config_tabs.png?raw=true)
 
-![Config File Overview](https://github.com/nedgar76/neural-body/blob/demo-sim/0_demo-sim/readme_resources/config_overview.png?raw=true)
-![Setup Overview GIF](https://github.com/nedgar76/neural-body/blob/demo-sim/0_demo-sim/readme_resources/new_simulation.GIF?raw=true)
+The user can modify the satellite sheets and add satellite sheets with the below parameters.
+- Name: Name of the satellite.
+- Mass: Mass of the satellite in kilograms.
+- Altitude: Altitude of the satellite above earth. 
+- StartSpeed: Starting speed of the satellite in meters per second.
+- MStart: Time step the maneuver occurs.  Simulation time step is 6 hours.  For example, to run a burn at day 4, multiply by 4 to get time step 16.
+- DeltaVX, DeltaVY, DeltaVZ: X, Y, Z magnitudes of that particular burn maneuver in meters per second per second.
+
+Burn maneuvers kept as time step units instead of day for programming finer-than-one-day burn maneuvers.
+
+Burn maneuvers can be appended to the MStart, DeltaVX, DeltaVY, and DeltaVZ columns as needed.
+![Config File Overview](https://github.com/nedgar76/neural-body/blob/final-sim/1_final-sim/readme_resources/sat_config_cols.png?raw=true)
+
+Example config file is available for download <a href="https://github.com/nedgar76/neural-body/tree/final-sim/1_final-sim/neural_body/sim_configs" target="_blank"> here. </a>
+
+After you have your config file, it can be loaded into the simulator by 
+selecting "New Simulation", browsing to it and selecting the file.  After selecting,
+there will be a short delay while the simulator preps a simulation buffer.
+
+
+
 ### Is NASA Right?
 If you disagree with NASA, you can bring Pluto back as a planet.  
 ![Setup Overview GIF](https://github.com/nedgar76/neural-body/blob/demo-sim/0_demo-sim/readme_resources/is_nasa_right.GIF?raw=true)
