@@ -839,8 +839,17 @@ def menu(screen, states, scr_width, scr_height, numDays):
         current_working_directory = os.path.dirname(
             os.path.realpath(__file__)) + "/sim_configs/"
         pause = 1
+        # Setup tkinter
         root = Tk()
         root.withdraw()
+        # Display warning of nn taking longer to load.
+        messagebox.showwarning(
+            title='Neural Net Warning',
+            message='Loading a simulation that uses the neural networ can '
+                    'result in longer loading times and reduced performance.\n'
+                    '\nPlease be patient.'
+        )
+        # Open file
         root.filename = filedialog.askopenfilename(
             initialdir=current_working_directory,
             title="Select a File",
