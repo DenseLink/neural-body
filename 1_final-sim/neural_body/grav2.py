@@ -506,12 +506,12 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                                            k] - sun_i_y) / 8 +
                                       suny) < lg_disp_bottom):
                                 pygame.draw.circle(screen, color,
-                                                   [(scaled_x_pos[
+                                                   [int((scaled_x_pos[
                                                          k] - sun_i_x) / 8 +
-                                                    sunx,
-                                                    (scaled_y_pos[
+                                                    sunx),
+                                                    int((scaled_y_pos[
                                                          k] - sun_i_y) / 8 +
-                                                    suny],
+                                                    suny)],
                                                    size_planet)
                             if (sm_disp_left < scaled_x_pos[
                                 k] < sm_disp_right) and \
