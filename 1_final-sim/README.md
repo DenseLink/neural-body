@@ -222,7 +222,15 @@ Team members include:
 - Gary Jones
 - Cory Robertson
 - Andrew Sowinski
- 
+
+Nathaniel was team captain and worked on the burn maneuver system.  Craig was 
+responsible for the simulator backend design, data engineering for the neural
+net, and assisted with the neural nets.  Gary was the resident LSTM expert and 
+worked on training and tuning of the LSTM neural network along with the previous 
+generation feed-forward neural net.  Andrew was the front-end and PyGame expert.
+Cory performed integration work between back end and front end along with 
+front end timing tasks.
+
 The Github repo for this demonstration is located at: 
 <a href="https://github.com/nedgar76/neural-body/tree/final-sim/1_final-sim" target="_blank"> https://github.com/nedgar76/neural-body/tree/final-sim/1_final-sim </a>
 
