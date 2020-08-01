@@ -911,6 +911,15 @@ def menu(screen, states, scr_width, scr_height, numDays):
                 input_text = ""
                 textbox_active = 0
                 pause = 0
+            except:
+                messagebox.showerror(
+                    title='Config File Warning',
+                    message='Incompatible or missing config file.  Try '
+                            'another. '
+                )
+                input_text = ""
+                textbox_active = 0
+                pause = 0
             else:
                 input_active = 0
                 textbox_active = 0
