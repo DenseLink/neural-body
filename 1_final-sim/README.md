@@ -2,7 +2,7 @@
 
 An n-body simulator powered by a neural network.
 
-Neural Body is an n-body simulator currently as an alpha demonstration of substituting 
+Neural Body is an n-body simulator currently a demonstration of substituting 
 calculations for planetary motion with a neural network.  Currently, the neural 
 networks can predict the position of Mars or Pluto given the rest of the positions
 in the planetary system from a simulator.

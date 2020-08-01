@@ -435,7 +435,7 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                 sm_disp_bottom = int(scr_height / 1.9) + int(scr_height / 2.23)
 
                 lg_disp_left = int(scr_width / 2.8)
-                lg_disp_right = int(scr_width / 2.8) + int(scr_height / 1.6)
+                lg_disp_right = int(scr_width / 2.8) + int(scr_width / 1.6)
                 lg_disp_top = int(scr_width / 60)
                 lg_disp_bottom = int(scr_width / 60) + int(scr_height / 1.05)
 
