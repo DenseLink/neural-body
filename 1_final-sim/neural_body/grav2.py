@@ -475,9 +475,12 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                                              lg_disp_bottom):
                                         pygame.draw.line(
                                             screen,
-                                            (255 - 255 * (i / tail_length),
-                                             255 - 255 * (i / tail_length),
-                                             255 - 255 * (i / tail_length)),
+                                            (int(255 - 255 * (i / tail_length
+                                                              )),
+                                             int(255 - 255 * (i / tail_length
+                                                              )),
+                                             int(255 - 255 * (i / tail_length
+                                                              ))),
                                             [(x_track[k][
                                                   j] - sun_i_x) / 8 + sunx, (
                                                      y_track[k][
@@ -498,25 +501,25 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                             color = (255, 255, 255)
                             if k < len(planet_colors):
                                 color = planet_colors[k]
-                            if (lg_disp_left < ((scaled_x_pos[
+                            if (2 + lg_disp_left < ((scaled_x_pos[
                                                      k] - sun_i_x) / 8 +
-                                                sunx) < lg_disp_right) and \
-                                    (lg_disp_top <
+                                                sunx) < lg_disp_right - 2) and\
+                                    (2 + lg_disp_top <
                                      ((scaled_y_pos[
                                            k] - sun_i_y) / 8 +
-                                      suny) < lg_disp_bottom):
+                                      suny) < lg_disp_bottom - 2):
                                 pygame.draw.circle(screen, color,
                                                    [int((scaled_x_pos[
-                                                         k] - sun_i_x) / 8 +
-                                                    sunx),
+                                                             k] - sun_i_x) / 8 +
+                                                        sunx),
                                                     int((scaled_y_pos[
-                                                         k] - sun_i_y) / 8 +
-                                                    suny)],
+                                                             k] - sun_i_y) / 8 +
+                                                        suny)],
                                                    size_planet)
-                            if (sm_disp_left < scaled_x_pos[
-                                k] < sm_disp_right) and \
-                                    (sm_disp_top <
-                                     scaled_y_pos[k] < sm_disp_bottom):
+                            if (2 + sm_disp_left < scaled_x_pos[
+                                k] < sm_disp_right - 2) and \
+                                    (2 + sm_disp_top <
+                                     scaled_y_pos[k] < sm_disp_bottom - 2):
                                 pygame.draw.circle(screen, color,
                                                    [scaled_x_pos[k],
                                                     scaled_y_pos[k]],
@@ -538,13 +541,16 @@ def orbits(screen, num_planets, tail_length, clock, scr_width, scr_height):
                             if k < len(planet_colors):
                                 color = planet_colors[k]
 
-                            pygame.draw.circle(screen, color,
-                                               [(scaled_x_pos[
-                                                     k] - sun_i_x) / 8 + sunx,
-                                                suny],
-                                               size_planet)
-                            if abs(scaled_x_pos[k] - sun_i_x) < 125 and abs(
-                                    scaled_y_pos[k] - sun_i_y) < 125:
+                            if (2 + lg_disp_left < ((scaled_x_pos[
+                                                     k] - sun_i_x) / 8 +
+                                                sunx) < lg_disp_right - 2):
+                                pygame.draw.circle(screen, color,
+                                                   [(scaled_x_pos[
+                                                         k] - sun_i_x) / 8 + sunx,
+                                                    suny],
+                                                   size_planet)
+                            if (2 + sm_disp_left < scaled_x_pos[
+                                k] < sm_disp_right - 2):
                                 pygame.draw.circle(screen, color,
                                                    [scaled_x_pos[k],
                                                     sun_i_y],
@@ -761,7 +767,7 @@ def menu(screen, states, scr_width, scr_height, numDays):
     text_handler(screen, "Days Passed: ", 375, 33, 14, 255)
     if numDays < 100:
         text_handler(screen, str(numDays), 408, 51, 14, 255)
-    elif numDays > 100 and numDays <= 999:
+    elif numDays >= 100 and numDays <= 999:
         text_handler(screen, str(numDays), 402, 51, 14, 255)  # done
     elif numDays > 999:
         text_handler(screen, str(numDays), 398, 51, 14, 255)
