@@ -40,16 +40,19 @@ The link is purely to view code, learning curves, and results.
 - Python 3.8 or higher.
 - PyGame 2.0.0.dev10 or higher.
 - TensorFlow 2.2.0
-- Pandas 1.0.5
-- Numpy 1.19.0
+- Pandas 1.1.0
+- Numpy 1.18.4
+- xlrd
+- h5py
+- pynput
 All dependencies above except for Python 3.8 should install when `pip install` is run.
 
 ### Setup
 
 Installing from .tar.gz:
-- Download `neural_body-0.1.2.tar.gz` from the `dist` directory.
+- Download `neural_body-0.1.3.tar.gz` from the `dist` directory.
 - Navigate to local folder where download is located.
-- Use `pip install neural_body-0.1.2.tar.gz`
+- Use `pip install neural_body-0.1.3.tar.gz`
 - Use the `neural_body` command to run the simulator from terminal.
 
 Installing from PyPi:
@@ -71,6 +74,10 @@ The simulation view can be toggled from overhead to side view.
 The simulation can be sped up or slowed down.
 ![Setup Overview GIF](https://github.com/nedgar76/neural-body/blob/demo-sim/0_demo-sim/readme_resources/adjust_speed.GIF?raw=true)
 ### New Simulation
+Simulation config files are Excel spreadsheets where the first sheet is the
+general simulation config where the user chooses to use the neural network or 
+not. 
+
 The initial state of all bodies in the system are contained in CSV files packaged
 with the simulator.  Whichever planet is designated as the "satellite" tells the 
 simulator which neural network to use for planetary motion prediction.  This early 
