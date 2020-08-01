@@ -844,10 +844,7 @@ def menu(screen, states, scr_width, scr_height, numDays):
         root.filename = filedialog.askopenfilename(
             initialdir=current_working_directory,
             title="Select a File",
-            filetypes=(
-                ("xlsx files", "*.xlsx"),
-                ("all files", "*.*")
-            )
+            filetypes=(("xlsx files", "*.xlsx"),)
         )
         # If cancel is selected, then just return back to simulator.
         if not root.filename:
