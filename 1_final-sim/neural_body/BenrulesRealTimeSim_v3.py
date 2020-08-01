@@ -909,10 +909,39 @@ class BenrulesRealTimeSim:
         # Time how long it takes to fill the queue and set an appropriate
         # framerate so the queue doesn't get drained too quick.
         start = time.time()
+        # Create progress bar for simulation initialization.
+        # Create tkinter window to show progress.
+        root = Tk()
+        root.title('Simulator Processing')
+        screen_height = root.winfo_screenheight()
+        screen_width = root.winfo_screenwidth()
+        window_height = 50
+        window_width = 1000
+        geometry = "%sx%s+%s+%s" % (window_width,
+                                    window_height,
+                                    int(screen_width / 2 - window_width / 2),
+                                    int(2))
+        root.geometry(geometry)
+        root.overrideredirect(True)
+        root.resizable(width=FALSE, height=FALSE)
+        # Create ttk progress bar widget.
+        my_progress = ttk.Progressbar(root,
+                                      orient=HORIZONTAL,
+                                      length=window_width - 40,
+                                      mode='determinate')
+        my_progress.pack(pady=20)
         # Sleep until the queue is filled.
         while self._output_queue.qsize() < self._out_queue_max_size:
+            progress_val = int(
+                (self._output_queue.qsize() /
+                 self._out_queue_max_size) * 100
+            )
+            my_progress['value'] = progress_val
+            root.update()
             time.sleep(0.1)
         duration = time.time() - start
+        root.quit()
+        root.withdraw()
         self._max_fps = self._out_queue_max_size / duration
         if self._max_fps > 50:
             self._max_fps = 50
@@ -1538,22 +1567,6 @@ class BenrulesRealTimeSim:
         if key == keyboard.Key.esc:
             return False
 
-    @staticmethod
-    def _indeterminate_progress_bar():
-        # Create tkinter window to show progress.
-        root = Tk()
-        root.title('Simulator Processing')
-        root.geometry("300x100")
-        # Create ttk progress bar widget.
-        my_progress = ttk.Progressbar(root,
-                                      orient=HORIZONTAL,
-                                      length=200,
-                                      mode='indeterminate')
-        my_progress.pack(pady=20)
-        root.mainloop()
-        # Close progress screen
-        root.withdraw()
-
     @current_time_step.setter
     def current_time_step(self, in_time_step):
         """
@@ -1576,10 +1589,6 @@ class BenrulesRealTimeSim:
         # If time goes beyond the max time the simulator has reached, advance
         # the simulator to that time.
         if in_time_step > self._max_time_step_reached:
-            # # Launch processing progress bar
-            # progress_bar = Thread(target=self._indeterminate_progress_bar())
-            # # Shared variable to signal progress bar.
-            # close_progress_bar = Value('I', 1)
             # Create tkinter window to show progress.
             root = Tk()
             root.title('Simulator Processing')
