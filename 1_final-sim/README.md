@@ -104,7 +104,7 @@ Example config file is available for download <a href="https://github.com/nedgar
 After you have your config file, it can be loaded into the simulator by 
 selecting "New Simulation", browsing to it and selecting the file.  After selecting,
 there will be a short delay while the simulator preps a simulation buffer.
-
+![Config File Overview](https://github.com/nedgar76/neural-body/blob/final-sim/1_final-sim/readme_resources/loading_new_sim.gif?raw=true)
 
 
 ### Is NASA Right?
@@ -223,8 +223,8 @@ Team members include:
 - Cory Robertson
 - Andrew Sowinski
  
-The Github repo for this initial demonstration is located at: 
-<a href="https://github.com/nedgar76/neural-body/tree/demo-sim/0_demo-sim" target="_blank"> https://github.com/nedgar76/neural-body/tree/demo-sim/0_demo-sim </a>
+The Github repo for this demonstration is located at: 
+<a href="https://github.com/nedgar76/neural-body/tree/final-sim/1_final-sim" target="_blank"> https://github.com/nedgar76/neural-body/tree/final-sim/1_final-sim </a>
 
 ## License
 
