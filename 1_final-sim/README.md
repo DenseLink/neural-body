@@ -106,7 +106,6 @@ selecting "New Simulation", browsing to it and selecting the file.  After select
 there will be a short delay while the simulator preps a simulation buffer.
 ![Config File Overview](https://github.com/nedgar76/neural-body/blob/final-sim/1_final-sim/readme_resources/loading_new_sim.gif?raw=true)
 
-
 ### Is NASA Right?
 If you disagree with NASA, you can bring Pluto back as a planet.  
 ![Setup Overview GIF](https://github.com/nedgar76/neural-body/blob/demo-sim/0_demo-sim/readme_resources/is_nasa_right.GIF?raw=true)
@@ -115,11 +114,11 @@ Hovering over this option displays a color coded key of all planets in the syste
 ![Setup Overview GIF](https://github.com/nedgar76/neural-body/blob/demo-sim/0_demo-sim/readme_resources/show_planet_key.GIF?raw=true)
 ### Travel to a Day
 Selecting this option allows the user to rewind or fast forward the simulation by 
-entering the day they would like to jump to.  There is a heavy delay for fast forwarding
-as the simulator right now must inefficiently calculate every frame between the current
-day and the day you entered.  Negative time values will be treated as reverting 
-back to 0 day.
-![Setup Overview GIF](https://github.com/nedgar76/neural-body/blob/demo-sim/0_demo-sim/readme_resources/travel_to_a_day.GIF?raw=true)
+entering the day they would like to jump to.  There can be a heavier delay for 
+longer time step jumps as once the buffer is depleted, all intermediate time steps
+must be calculated.  At any point, the jump can be canceled by pressing the 
+escape key.
+![Setup Overview GIF](https://github.com/nedgar76/neural-body/blob/final-sim/1_final-sim/readme_resources/travel_to_a_day.gif?raw=true)
 
 ---
 ## Documentation
