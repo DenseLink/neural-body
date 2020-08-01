@@ -4,6 +4,8 @@ from tqdm import tqdm
 import h5py
 import sys
 from random import randint
+import pandas as pd
+from tabulate import tabulate
 
 
 def main():
@@ -38,6 +40,13 @@ def main():
     with h5py.File(universe_data_folder + 'v.hdf5', 'r') as f:
         data = f['vel']
         initial_vel = data[universe_time_step]
+    # Print initial positions and velocities to the console.
+    pd.set_option("display.max_rows", None, "display.max_columns", None)
+    pd.options.display.float_format = "{:,.5f}".format
+    print(tabulate(pd.DataFrame(initial_pos), headers='keys', tablefmt='psql'))
+    print(tabulate(pd.DataFrame(initial_vel), headers='keys', tablefmt='psql'))
+    pd.DataFrame(initial_pos).to_excel('output/planet_pos.xlsx')
+    pd.DataFrame(initial_vel).to_excel('output/planet_vel.xlsx')
     # Read in masses for the planets from the universe simulation.
     masses = np.load(universe_data_folder + 'm.npy')
     # Setup the initial set of planets for the simulation
