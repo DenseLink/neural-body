@@ -845,7 +845,7 @@ def menu(screen, states, scr_width, scr_height, numDays):
         # Display warning of nn taking longer to load.
         messagebox.showwarning(
             title='Neural Net Warning',
-            message='Loading a simulation that uses the neural networ can '
+            message='Loading a simulation that uses the neural network can '
                     'result in longer loading times and reduced performance.\n'
                     '\nPlease be patient.'
         )
