@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: neural-body
-Version: 0.1.4
+Version: 0.1.5
 Summary: An n-body simulator
 Home-page: https://github.com/nedgar76/neural-body
 Author: AstroGators
@@ -58,9 +58,9 @@ Description: # Neural Body N-Body Simulator
         ### Setup
         
         Installing from .tar.gz:
-        - Download `neural_body-0.1.3.tar.gz` from the `dist` directory.
+        - Download `neural_body-0.1.5.tar.gz` from the `dist` directory.
         - Navigate to local folder where download is located.
-        - Use `pip install neural_body-0.1.3.tar.gz`
+        - Use `pip install neural_body-0.1.5.tar.gz`
         - Use the `neural_body` command to run the simulator from terminal.
         
         Installing from PyPi:
