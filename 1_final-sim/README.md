@@ -51,9 +51,9 @@ All dependencies above except for Python 3.8 should install when `pip install` i
 ### Setup
 
 Installing from .tar.gz:
-- Download `neural_body-0.1.3.tar.gz` from the `dist` directory.
+- Download `neural_body-0.1.5.tar.gz` from the `dist` directory.
 - Navigate to local folder where download is located.
-- Use `pip install neural_body-0.1.3.tar.gz`
+- Use `pip install neural_body-0.1.5.tar.gz`
 - Use the `neural_body` command to run the simulator from terminal.
 
 Installing from PyPi:
